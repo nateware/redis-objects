@@ -1,0 +1,68 @@
+== Redis Atoms - Leverage Redis to handle counters and atomicity in your app
+
+Redis is great not as a replacement for MySQL, but because it is a server that
+provides atomic operations on data structure primitives, like counters, lists,
+and sets.  People that are wrapping ORM's around Redis are completely missing
+the point.  This gem, instead, provides methods that you can use *with* your
+existing ActiveRecord/DataMapper/CouchDB/MongoDB ORM, or in code that has nothing
+to do with an ORM or even a database, but needs support for atomicity.
+
+=== Installation
+
+    gem install gemcutter
+    gem tumble
+    gem install redis-atoms
+   
+=== Example
+
+    require 'redis'
+    require 'redis/atoms'
+    class Roster
+      include Redis::Atoms
+      
+      list :members
+      counter :available_slots, :start => 30
+    end
+
+    Redis::Atoms.connection = Redis.new
+    
+    roster = Roster.new
+    if roster.available_slots.decrement >= 0
+      
+    else
+      # reset counter
+      roster.available_slots.increment
+    end
+
+    roster.available_slots.if_gt(0) do
+      # atomic block
+    end
+
+=== You Are Probably Doing Things Wrong
+
+You are probably not handling atomic operations properly in your app.  Even if
+you're using an ACID database like MySQL, this still doesn't guarantee that
+your app is free from significant race conditions.  The worst part is these
+will get worse as your user count increases, are very difficult to reproduce,
+and usually happen to your most critical pieces of code.
+
+As an example, let's assume you're writing an app to enable students to enroll
+in courses online.  You need to ensure that no more than 30 people can sign
+up for a given class.  In your enrollment code, you have something like this:
+
+    @course = Course.find(1)
+    if @course.num_students < 30
+      @course.course_students.create(:user_id => 101)
+      @course.num_students += 1
+      @course.save!
+    else
+      # course is full
+    end
+    
+You're screwed.
+
+The easiest way to spot race conditions is ask whether somebody else could
+access that 
+
+
+    
