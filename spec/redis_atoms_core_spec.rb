@@ -5,6 +5,8 @@ class Roster
   include Redis::Atoms
   counter :available_slots, :start => 10
   counter :num_pitchers, :start => 1
+  counter :basic
+  lock :resort, :timeout => 3
 
   def id; 1; end
 end
@@ -16,16 +18,20 @@ describe Redis::Atoms do
 
     @roster.clear_available_slots
     @roster.clear_num_pitchers
+    @roster.clear_basic
+    @roster.clear_resort_lock
   end
 
   after :each do
     @roster.reset_available_slots
     @roster.reset_num_pitchers
+    @roster.reset_basic
+    @roster.clear_resort_lock
   end
 
   it "should provide a connection method" do
-    Roster.connection.should == Redis::Atoms.connection
-    Roster.connection.should be_kind_of(Redis)
+    Roster.redis.should == Redis::Atoms.redis
+    Roster.redis.should be_kind_of(Redis)
   end
 
   it "should create counter accessors" do
@@ -52,6 +58,8 @@ describe Redis::Atoms do
     @roster.reset_available_slots(15).should == true
     @roster.available_slots.should == 15
     @roster.num_pitchers.should == 1
+    @roster.increment_basic.should == 1
+    @roster2.decrement_basic.should == 0
   end
   
   it "should support class-level increment/decrement of counters" do
@@ -64,6 +72,18 @@ describe Redis::Atoms do
     Roster.get_counter(:available_slots, @roster.id).should == 10
   end
 
+  it "should provide an if_counter method with defaults" do
+    a = false
+    @roster.if_available_slots_left do
+      a = true
+    end
+    a.should be_true
+    
+    Roster.if_counter_left(:available_slots, @roster.id) do
+      
+    end
+  end
+
   it "should properly throw errors on bad counters" do
     error = nil
     begin
@@ -72,5 +92,25 @@ describe Redis::Atoms do
     end
     error.should_not be_nil
     error.should be_kind_of(Redis::Atoms::UndefinedCounter)
+  end
+  
+  it "should provide a lock method that accepts a block" do
+    @roster.resort_lock_name.should == 'roster:1:resort_lock'
+    a = false
+    @roster.lock_resort do
+      a = true
+    end
+    a.should be_true
+  end
+  
+  it "should raise an exception if the timeout is exceeded" do
+    @roster.redis.set(@roster.resort_lock_name, 1)
+    error = nil
+    begin
+      @roster.lock_resort {}
+    rescue => error
+    end
+    error.should_not be_nil
+    error.should be_kind_of(Redis::Atoms::LockTimeout)
   end
 end
