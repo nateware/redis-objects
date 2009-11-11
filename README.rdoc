@@ -22,14 +22,14 @@ all have id methods which are known to be suitable.
     # Somewhere in your app initialization
     require 'redis'
     require 'redis/atoms'
-    Redis::Atoms.redis = Redis.new
+    Redis::Atoms.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
     # Include atoms in any type of class
     class Roster < ActiveRecord::Base
       include Redis::Atoms
       
       counter :available_slots, :start => 10
-      lock :resort, :timeout => 30
+      lock :resort, :timeout => 5
     end
 
     # Usage
@@ -87,7 +87,7 @@ You're screwed.  You now have 32 people in your 30 person class, and you have
 no idea what happened.
 
 The easiest way to spot race conditions is ask whether somebody else could
-access a given data structure _in_between_each_line_of_code_, and whether
+access a given data structure _in_ _between_ _each_ _line_ _of_ _code_, and whether
 that would cause problems.  Here's one way to visualize it:
 
   @course = Course.find(1)
@@ -108,14 +108,14 @@ clients concurrently with the original client.  As you can see, there's
 a ton of potential for that "< 30" check to be true even when the course
 is full.
 
-As a rule of thumb: Any operation that changes a value must return that
+As a rule of thumb: Any operation that changes a value *must* return that
 value in the same operation.  If you do a separate get then set, or
 set then get, you're open to a race condition.  There are very few
-systems that support a "getset" operation, and Redis is one of them
+systems that support a "getset" type operation, and Redis is one of them
 (Oracle DB sequences are another).
 
 In the specific example above, you could lock the +Course+ record.  In
-ActiveRecord that would look like this:
++ActiveRecord+ that would look like this:
 
     @course = Course.find(1, :lock => true)
     if @course.num_students < 30
@@ -170,7 +170,7 @@ So, taking our +Course+ example:
 Then:
 
     @course = Course.find(1)
-    @course.if_remaining_slots(:>, 0) do
+    @course.if_remaining_slots_left do
       @course.course_students.create!(:student_id => 101)
       @course.increment_current_students
     end
@@ -184,4 +184,4 @@ context in a view, you won't see this manifest in real-world usage.
 == Author
 
 Copyright (c) 2009, Nate Wiger, http://nate.wiger.org.  All Rights Reserved.
-Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php]
+Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
