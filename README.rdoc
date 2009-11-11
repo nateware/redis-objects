@@ -1,48 +1,68 @@
-== Redis Atoms - Leverage Redis to handle counters and atomicity in your app
+= Redis Atoms - Leverage Redis to handle counters and atomicity in your app
 
-Redis is great not as a replacement for MySQL, but because it is a server that
-provides atomic operations on data structure primitives, like counters, lists,
-and sets.  People that are wrapping ORM's around Redis are completely missing
-the point.  This gem, instead, provides methods that you can use *with* your
-existing ActiveRecord/DataMapper/CouchDB/MongoDB ORM, or in code that has nothing
-to do with an ORM or even a database, but needs support for atomicity.
+Redis is great _not_ as a replacement for MySQL, but because it provides atomic
+operations on _individual_ data structures, like counters, lists, and sets.  People
+that are wrapping ORM's around Redis are missing the point.  This gem, instead,
+provides methods that you can use *with* your existing ActiveRecord/DataMapper/etc
+models, or in code that has nothing to do with an ORM or even a database, but needs
+support for atomic operations that can scale.
 
-=== Installation
+The only requirement that Redis::Atoms has is your class must provide an +id+ method,
+which returns the id for that instance.  ActiveRecord, DataMapper, and MongoRecord
+all have id methods which are known to be suitable.
+
+== Installation
 
     gem install gemcutter
     gem tumble
     gem install redis-atoms
    
-=== Example
+== Example
 
+    # Somewhere in your app initialization
     require 'redis'
     require 'redis/atoms'
-    class Roster
+    Redis::Atoms.connection = Redis.new
+
+    # Include atoms in any type of class
+    class Roster < ActiveRecord::Base
       include Redis::Atoms
       
-      list :members
-      counter :available_slots, :start => 30
+      counter :available_slots, :start => 10
+      lock :reorder, :timeout => 30
     end
 
-    Redis::Atoms.connection = Redis.new
-    
-    roster = Roster.new
-    if roster.available_slots.decrement >= 0
-      
+    # Usage
+    @roster = Roster.find(1)
+    if @roster.decrement_available_slots >= 0
+      # do stuff
     else
-      # reset counter
-      roster.available_slots.increment
+      # reset counter state
+      @roster.increment_available_slots
     end
 
-    roster.available_slots.if_gt(0) do
+    # Another way to do the above (handles exceptions)
+    @roster.if_available_slots(:>, 0) do
       # atomic block
     end
 
-=== You Are Probably Doing Things Wrong
+    # Serialize anything we decide is a "reorder" operation
+    @roster.lock_reorder do
+      # atomic block
+    end
+
+    # Class methods work too - notice these replace ActiveRecord methods
+    Roster.increment_counter :available_slots, @roster.id
+    Roster.decrement_counter :available_slots, @roster.id, 2
+    Roster.lock_reorder @roster.id do
+      # atomic block
+    end
+
+== You Are Probably Doing Things Wrong
 
 You are probably not handling atomic operations properly in your app.  Even if
-you're using an ACID database like MySQL, this still doesn't guarantee that
-your app is free from significant race conditions.  The worst part is these
+you're using an ACID database like MySQL, this doesn't guarantee that your
+app doesn't have significant race conditions.  The worst part is these
 will get worse as your user count increases, are very difficult to reproduce,
 and usually happen to your most critical pieces of code.
 
@@ -52,17 +72,64 @@ up for a given class.  In your enrollment code, you have something like this:
 
     @course = Course.find(1)
     if @course.num_students < 30
-      @course.course_students.create(:user_id => 101)
+      @course.course_students.create(:student_id => 101)
       @course.num_students += 1
       @course.save!
     else
       # course is full
     end
     
-You're screwed.
+You're screwed.  You now have 32 people in your 30 person class, and you have
+no idea what happened.
 
 The easiest way to spot race conditions is ask whether somebody else could
-access that 
+access a given data structure *in between each line of code*, and whether
+that would cause problems.  Here's one way to visualize it:
+
+  @course = Course.find(1)
+  course_client1 = Course.find(1)
+  if @course.num_students < 30
+    course_client2 = Course.find(1)
+    @course.course_students.create(:user_id => 101)
+    course_client3 = Course.find(1)
+    @course.num_students += 1
+    course_client4 = Course.find(1)
+    @course.save!
+  else
+    # course is full
+  end
+
+The +course_clientN+ variables represent access to that course from other
+clients concurrently with the original client.  As you can see, there's
+a ton of potential for that "< 30" check to be true even when the course
+is full.
+
+Here's a rule of thumb: *Any operation that changes a value
+must return that value in the same operation*.  If you do a separate
+get then set, or set then get, you're open to a race condition.  There are
+very few systems that support a "getset" operation, and Redis is one of
+them (Oracle DB sequences are another).
+
+In the specific example above, you could lock the +@course+ record.  In
+ActiveRecord that would look like this:
+
+    @course = Course.find(1, :lock => true)
+    if @course.num_students < 30
+      @course.course_students.create(:student_id => 101)
+      @course.num_students += 1
+      @course.save!
+    else
+      # course is full
+    end
+
+But now you've introduced other issues.  Any other piece of code that needs
+to update anything about the course - for example, maybe the course name, or
+start date, or location - is now serialized.  If you need high concurrency,
+once again you're screwed.
+
+What you need is a way to handle very specific operations atomically, which
+is what this gem provides.
 
 
-    
+
+
