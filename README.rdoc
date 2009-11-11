@@ -115,7 +115,7 @@ systems that support a "getset" type operation, and Redis is one of them
 (Oracle DB sequences are another).
 
 In the specific example above, you could lock the +Course+ record.  In
-+ActiveRecord+ that would look like this:
+ActiveRecord that would look like this:
 
     @course = Course.find(1, :lock => true)
     if @course.num_students < 30
@@ -143,7 +143,7 @@ reduce to numeric operations.  For example:
 * Must have more than 2 but less than 6 people in a game
 * A chat room has a max of 50 people
 * Correctly recording the total number of blog posts
-* Only allowing one piece of code to resort a whole table at a time
+* Only allowing one piece of code to reorder a large dataset at a time
 
 All except the last one can be implemented with counters.  The last one 
 will need a carefully placed lock.
@@ -151,12 +151,12 @@ will need a carefully placed lock.
 The best way I've found to balance atomicity and concurrency is to split
 your counters into two types:
 
-* Counters users see (eg, total_users).  These typically increment.
-* Counters you base logic on (eg, remaining_slots).  These typically decrement.
+* Counters users see (eg, +current_students+).  These typically increment.
+* Counters you base logic on (eg, +remaining_slots+).  These typically decrement.
 
-The reason you want two counters is you need to change the value *FIRST*, before
-checking it (this means it could go negative momentarily).  Again, otherwise
-you're open to a race condition.
+The reason you want two counters is you need to change the value of the logic
+counter *FIRST*, _before_ checking it and doing stuff.  This means the value
+can get wonky momentarily.  If not, again, you're open to a race condition.
 
 So, taking our +Course+ example:
 
@@ -178,10 +178,10 @@ Then:
 That way, your views get consistent information about the course, since
 +current_students+ will only be incremented on success.  There is still a
 race condition where it could be less than the real number of +CourseStudent+
-records, but because you will (at least, should) be using this in a fetched-record
+records, but because you will (very likely) be using this in a fetched-record
 context in a view, you won't see this manifest in real-world usage. 
 
 == Author
 
-Copyright (c) 2009, Nate Wiger, http://nate.wiger.org.  All Rights Reserved.
+Copyright (c) 2009 {Nate Wiger}[http://nate.wiger.org].  All Rights Reserved.
 Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
