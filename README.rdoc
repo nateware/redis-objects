@@ -211,9 +211,11 @@ Then:
 
 That way, your views get consistent information about the course, since
 +current_students+ will only be incremented on success.  There is still a
-race condition where it could be less than the real number of +CourseStudent+
-records, but because you will (very likely) be using this in a fetched-record
-context in a view, you won't see this manifest in real-world usage. 
+race condition where +current_students+ could be less than the real number
+of +CourseStudent+ records, but since you'll be displaying these values in a view
+(after both are updated) you shouldn't see this manifest in real-world usage.
+
+For more examples, see the examples/ folder.
 
 == Author
 
