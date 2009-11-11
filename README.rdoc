@@ -32,6 +32,7 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
       include Redis::Atoms
       
       counter :available_slots, :start => 10
+      counter :max_pitchers, :start => 0, :limit => 3
       lock :reorder, :timeout => 5
     end
 
@@ -45,8 +46,12 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
     end
 
     # Another way to do the above (handles exceptions)
-    # Default is 0 and can be omitted
-    @roster.if_available_slots_left(0) do
+    @roster.if_available_slots_left do
+      # atomic block
+    end
+
+    # Similar functionality for incrementing counters
+    @roster.if_max_pitchers_limit do
       # atomic block
     end
 
@@ -60,7 +65,7 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
     Roster.decrement_counter :available_slots, @roster.id, 2
 
     # And class-level if/lock (saves a DB fetch)
-    Roster.if_counter(:available_slots, @roster.id, :>, 0) do
+    Roster.if_counter_left(:available_slots, @roster.id, 0) do
       # atomic block
     end
     Roster.obtain_lock :reorder, @roster.id do
@@ -69,9 +74,10 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
 
 == You Likely Have Some Huge Bugs
 
-You are probably not handling atomic operations properly in your app.  The
-worst part is these will get worse as your user count increases, are
-difficult to reproduce, and usually happen to your most critical pieces of code.
+You are probably not handling atomic operations properly in your app, and 
+probably have some nasty lurking race conditions.  The worst part is these
+will get worse as your user count increases, are difficult to reproduce,
+and usually happen to your most critical pieces of code.
 
 Let's assume you're writing an app to enable students to enroll in courses.
 You need to ensure that no more than 30 people can sign up for a given class.
@@ -96,28 +102,73 @@ so I'll just use that."
     if @course.num_students < 30
       # ...
 
-But now you've introduced other issues.  Any other piece of code in your entire
-app that needs to update anything about the course - for example, maybe the course
-name, or start date, or location - is now serialized.  If you need high concurrency,
-you're still screwed.
+Nice try, but this still doesn't work.  Locking only stops other _updates_ from
+happening.  It does nothing about _access_.  You could still have 13 people
+simultaneously hit that "< 30" check.
+
+And even if it did work, now you've introduced other issues.  Any other piece of
+code in your entire app that needs to update _anything_ about the course - maybe
+the course name, or start date, or location - is now serialized.  If you need high
+concurrency, you're still screwed.
 
 == The Root Down
 
-It's worth understanding the root issue.
+It's worth understanding the root issue, and how to address it.
+
+Race conditions arise from the difference in time between *evaluating* and *altering*
+a value.  In our example, we did a find on the record, then checked the value, then
+did a save.  The more lines of code between those operations, and the higher your user
+count, the bigger the window of opportunity for another client to get the data in an
+inconsistent state.
+
+Basically any code that does this:
+
+    a = 10
+    if a < 15
+      a += 1
+      
+Has a race condition.  Sometimes these don't matter, since you're the only one
+operating on a piece of data.  For example, this probably doesn't matter:
+
+    @post = Post.create(:user_id => 372, :title => "Whattup", ...)
+    @user.total_posts += 1  # update my post count
+    
+Because a user is only creating their own posts.
+
+But this _would_ matter:
+
+    @post = Post.create(:user_id => 372, :title => "Whattup", ...)
+    @blog.total_posts += 1  # update post count across all users
+
+Because multiple users could be adding posts concurrently.
+
+In a traditional RDBMS, you can handle counters atomically by firing off an
+update statement that self-references the column:
+
+    update users set total_posts = total_posts + 1 where id = 372
+
+You may have seen {ActiveRecord's increment_counter class method}[http://api.rubyonrails.org/classes/ActiveRecord/Base.html#M002278],
+which wraps this functionality.  This approach is cumbersome, though,
+since your @user object will no longer be in sync.  And if you do:
+
+    User.increment_counter :total_posts, @user.id
+    if @user.total_posts >= 100
+      # award them a gold star!
+
+Now the DB says 100, but your @user object still says 99, and the user doesn't
+get their gold star.  Sad faces all around.
+
+== A Better Way
 
 Bottom line: Any operation that changes a value *must* return that value in
 the _same_ _operation_ for it to be atomic.  If you do a separate get then set,
-or set then get, you're open to a race conditions.  In our example, we did a
-get (find), then checked the value, then did a set (save).  The more time between
-those operations, the bigger the window of opportunity for another client to get
-the data in an inconsistent state.
+or set then get, you're open to a race conditions, and generally getting your
+data in a weird state.  
 
 There are very few systems that support a "getset" type operation, and Redis
-is one of them (Oracle DB sequences are another).  To solve this issue, what
-you need is a way to handle very _specific_ conditions atomically, which
+is one of them (Oracle sequences are another).  To best address this issue,
+what you need is a way to handle _specific_ conditions atomically, which
 is what this gem provides.
-
-== A Better Way
 
 Think of the specific things that you need to ensure.  Many of these will
 reduce to numeric operations.  For example:
@@ -137,9 +188,9 @@ your counters into two types:
 * Counters users see (eg, +current_students+).  These typically increment.
 * Counters you base logic on (eg, +remaining_slots+).  These typically decrement.
 
-The reason you want two counters is you need to change the value of the logic
-counter *FIRST*, _before_ checking it and doing stuff.  This means the value
-can get wonky momentarily.  If not, again, you're open to a race condition.
+The reason you want two counters is you'll need to change the value of the logic
+counter *first*, _before_ checking it, to address any race conditions.  This means
+the value can get wonky momentarily, which just means you don't want to display it.
 
 So, taking our +Course+ example:
 
