@@ -3,12 +3,13 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 class Roster
   include Redis::Atoms
-  counter :available_slots, :start => 10
-  counter :num_pitchers, :start => 1
+  counter :available_slots, :start => 10, :type => :decrement
+  counter :pitchers, :limit => :max_pitchers
   counter :basic
-  lock :resort, :timeout => 3
+  lock :resort, :timeout => 2
 
   def id; 1; end
+  def max_pitchers; 3; end
 end
 
 describe Redis::Atoms do
@@ -17,14 +18,14 @@ describe Redis::Atoms do
     @roster2 = Roster.new
 
     @roster.clear_available_slots
-    @roster.clear_num_pitchers
+    @roster.clear_pitchers
     @roster.clear_basic
     @roster.clear_resort_lock
   end
 
   after :each do
     @roster.reset_available_slots
-    @roster.reset_num_pitchers
+    @roster.reset_pitchers
     @roster.reset_basic
     @roster.clear_resort_lock
   end
@@ -57,7 +58,7 @@ describe Redis::Atoms do
     @roster.available_slots.should == 10
     @roster.reset_available_slots(15).should == true
     @roster.available_slots.should == 15
-    @roster.num_pitchers.should == 1
+    @roster.increment_pitchers.should == 1
     @roster.increment_basic.should == 1
     @roster2.decrement_basic.should == 0
   end
@@ -74,14 +75,51 @@ describe Redis::Atoms do
 
   it "should provide an if_counter method with defaults" do
     a = false
-    @roster.if_available_slots_left do
+    @roster.if_available_slots_free do
       a = true
     end
     a.should be_true
-    
-    Roster.if_counter_left(:available_slots, @roster.id) do
-      
+
+    @roster.available_slots.should == 9
+    begin
+      @roster.if_available_slots_free do
+        @roster.available_slots.should == 8
+        raise 'oops'
+      end
+    rescue
     end
+    @roster.available_slots.should == 9
+
+    a = false
+    Roster.if_counter_free(:available_slots, @roster.id) do
+      a = true
+    end
+    a.should be_true
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+    
+    begin
+      Roster.if_counter_free(:available_slots, @roster.id) do
+        Roster.get_counter(:available_slots, @roster.id).should == 7
+        raise 'oops2'
+      end
+    rescue
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+  end
+
+  it "should handle a symbol passed to :limit as a method callback" do
+    @roster.increment_pitchers.should == 1
+    @roster.increment_pitchers.should == 2
+    a = false
+    @roster.if_pitchers_free do
+      a = true
+    end
+    a.should be_true
+    a = false
+    @roster.if_pitchers_free do
+      a = true
+    end
+    a.should be_false
   end
 
   it "should properly throw errors on bad counters" do

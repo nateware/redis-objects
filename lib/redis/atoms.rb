@@ -16,6 +16,7 @@ class Redis
         klass.instance_variable_set('@redis', @redis)
         klass.instance_variable_set('@counters', {})
         klass.instance_variable_set('@locks', {})
+        klass.instance_variable_set('@initialized_counters', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
       end
@@ -23,7 +24,8 @@ class Redis
 
     module ClassMethods
       attr_accessor :redis
-      
+      attr_reader :counters, :locks, :initialized_counters
+
       # Set the Redis prefix to use. Defaults to model_name
       def prefix=(prefix) @prefix = prefix end
       def prefix #:nodoc:
@@ -42,14 +44,15 @@ class Redis
       # so it can be used alongside ActiveRecord/DataMapper, etc.
       def counter(name, options={})
         options[:start] ||= 0
+        options[:type]  ||= options[:start] == 0 ? :increment : :decrement
         @counters[name] = options
+
         class_eval <<-EndMethods
           def #{name}_counter_name
             # lazily initialize counter to save trip
             @#{name}_counter_name ||= begin
-              name = field_key(:#{name})
-              redis.setnx(name, #{options[:start]})
-              name
+              self.class.initialize_counter!(:#{name}, id) #:nodoc:
+              field_key(:#{name})
             end
           end
           def #{name}
@@ -69,63 +72,96 @@ class Redis
             @#{name}_counter_name = nil  # triggers setnx
             ret
           end
-          def if_#{name}_left(test=0, &block)
-            raise ArgumentError, "Missing block to if_#{name}" unless block_given?
-            val = decrement_#{name}
-            if val >= test  # >= because of decrement
+        EndMethods
+        
+        if options[:limit] || options[:start] != 0
+          back  = options[:type] == :increment ? :decrement : :increment
+          test  = options[:type] == :increment ? :<= : :>=
+          value = options[:type] == :decrement ? 0 : options[:limit]
+          value = ":#{value}" if value.is_a?(Symbol)
+          class_eval <<-EndMethods
+          def if_#{name}_free(against=#{value}, &block)
+            raise ArgumentError, "Missing block to if_#{name}_free" unless block_given?
+            val = #{options[:type]}_#{name}
+            against = send(against) if against.is_a?(Symbol)
+            if val #{test} against
               begin
                 yield
               rescue
-                increment_#{name}
+                #{back}_#{name}
                 raise
               end
             else
-              increment_#{name}
+              #{back}_#{name}
             end
           end
         EndMethods
+        end
       end
 
-      # Get the current value of the counter.
+      # Get the current value of the counter. It is slightly
+      # more efficient to use the instance method if possible.
       def get_counter(name, id)
         verify_counter_defined!(name)
-        redis.setnx(field_key(name, id), @counters[name][:start])  # have to do each time from the class
+        initialize_counter!(name, id)
         redis.get(field_key(name, id)).to_i
       end
 
       # Increment a counter with the specified name and id.  It is slightly
-      # more efficient to use the model instance method if possible.
+      # more efficient to use the instance method if possible.
       def increment_counter(name, id, by=1)
         verify_counter_defined!(name)
-        redis.setnx(field_key(name, id), @counters[name][:start])  # have to do each time from the class
+        initialize_counter!(name, id)
         redis.incr(field_key(name, id), by).to_i
       end
 
       # Decrement a counter with the specified name and id.  It is slightly
-      # more efficient to use the model instance method if possible.
+      # more efficient to use the instance method if possible.
       def decrement_counter(name, id, by=1)
         verify_counter_defined!(name)
-        redis.setnx(field_key(name, id), @counters[name][:start])  # have to do each time from the class
+        initialize_counter!(name, id)
         redis.decr(field_key(name, id), by).to_i
       end
 
-      # Reset a counter
+      # Reset a counter to its starting value.
       def reset_counter(name, id, to=nil)
         verify_counter_defined!(name)
         to = @counters[name][:start] if to.nil?
         redis.set(field_key(name, id), to)
       end
 
-      # Only execute the block if a counter is above a certain threshold.
-      def if_counter_left(name, id, test=0)
+      # Only execute the block if a counter is above a certain threshold.  If the block
+      # raises an exception, it will result in resetting the counter back to its previous value.
+      def if_counter_free(name, id, against=nil)
         verify_counter_defined!(name)
-        redis.setnx(field_key(name, id), @counters[name][:start])  # have to do each time from the class
-        to = @counters[name][:start] if to.nil?
-        redis.set(field_key(name, id), to)
+        initialize_counter!(name, id)
+        fwd   = @counters[name][:type] == :increment ? :increment_counter : :decrement_counter
+        back  = @counters[name][:type] == :increment ? :decrement_counter : :increment_counter
+        test  = @counters[name][:type] == :increment ? :<= : :>=
+        against ||= @counters[name][:type] == :decrement ? 0 : @counters[name][:limit]
+        val = send(fwd, name, id)
+        if val.send(test, against)
+          begin
+            yield
+          rescue
+            send(back, name, id)
+            raise
+          end
+        else
+          send(back, name, id)
+        end
       end
 
-      def verify_counter_defined!(name)
+      def verify_counter_defined!(name) #:nodoc:
         raise UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless @counters.has_key?(name)
+      end
+
+      def initialize_counter!(name, id) #:nodoc:
+        key = field_key(name, id)
+        unless @initialized_counters[key]
+          redis.setnx(key, @counters[name][:start])
+        end
+        @initialized_counters[key] = true
       end
 
       # Define a new lock.  It will function like a model attribute,
@@ -147,7 +183,9 @@ class Redis
         EndMethods
       end
 
-      # Obtain a lock
+      # Obtain a lock, and execute the block synchronously.  Any other code
+      # (on any server) will spin waiting for the lock up to the :timeout
+      # that was specified when the lock was defined.
       def obtain_lock(name, id, &block)
         raise ArgumentError, "Missing block to #{self.name}.obtain_lock" unless block_given?
         verify_lock_defined!(name)
@@ -167,8 +205,10 @@ class Redis
         end
       end
 
+      # Clear the lock.  Use with care - usually only in an Admin page to clear
+      # stale locks (a stale lock should only happen if a server crashes.)
       def clear_lock(name, id)
-        verify_counter_defined!(name)
+        verify_lock_defined!(name)
         lock_name = field_key("#{name}_lock", id)
         redis.del(lock_name)
       end

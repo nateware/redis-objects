@@ -3,16 +3,17 @@
 Redis is great _not_ as a replacement for MySQL, but as a way to perform atomic
 operations on _individual_ data structures, like counters, lists, and sets.  People
 that are wrapping ORM's around Redis are missing the point.  Plus, their performance
-can be quite poor (worse than a DB), since a save is 10+ network calls.
+can be quite poor (worse than a DB), since a save can easily be 10+ network calls.
 
 This gem, instead, provides atomic methods that you can use *with* your existing
 ActiveRecord/DataMapper/etc models, or in classes that have nothing to do with an
-ORM or even a database, but need support for atomic operations that can scale.
+ORM or even a database, but need support for high-performance atomic operations.
 
 The only requirement Redis::Atoms has is that your class must provide an +id+ instance
 method which returns the ID for that instance.  ActiveRecord, DataMapper, and MongoRecord
 all have id methods which are known to be suitable.  Since +id+ can be anything as
-far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
+far as Redis::Atoms is concerned, you can even write an +id+ method of your own that
+just returns a string, or an MD5 of the name, or something else unique.
 
 == Installation
 
@@ -28,48 +29,51 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
     Redis::Atoms.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
     # Include atoms in any type of class
-    class Roster < ActiveRecord::Base
+    class Team < ActiveRecord::Base
       include Redis::Atoms
       
       counter :available_slots, :start => 10
-      counter :max_pitchers, :start => 0, :limit => 3
-      lock :reorder, :timeout => 5
+      counter :pitchers, :limit => :max_pitchers
+      lock :reorder, :timeout => 5  # seconds
     end
 
-    # Usage (to handle concurrency)
-    @roster = Roster.find(1)
-    if @roster.decrement_available_slots >= 0
+    # Using to handle concurrency
+    @team = Team.find(1)
+    if @team.decrement_available_slots >= 0
       # do stuff
+      @team.team_players.create!(:player_id => 221)
     else
       # reset counter state
-      @roster.increment_available_slots
+      @team.increment_available_slots
     end
 
-    # Another way to do the above (handles exceptions)
-    @roster.if_available_slots_left do
-      # atomic block
+    # Atomic block - a cleaner way to do the above
+    # Exceptions put counter back to previous state
+    @team.if_available_slots_free do
+      @team.team_players.create!(:player_id => 221)
     end
 
     # Similar functionality for incrementing counters
-    @roster.if_max_pitchers_limit do
-      # atomic block
+    @team.if_pitchers_free do
+      @team.team_pitchers.create!(:pitcher_id => 181)
     end
 
     # Serialize any "reorder" operation since it affects multiple records
-    @roster.lock_reorder do
-      # atomic block
+    @team.lock_reorder do
+      @team.reorder_all_players
     end
 
-    # Class methods work too - notice we replace ActiveRecord counters
-    Roster.increment_counter :available_slots, @roster.id
-    Roster.decrement_counter :available_slots, @roster.id, 2
+    # Class methods work too - notice we override ActiveRecord counters
+    Team.increment_counter :available_slots, team_id
+    Team.decrement_counter :available_slots, team_id, 2
 
-    # And class-level if/lock (saves a DB fetch)
-    Roster.if_counter_left(:available_slots, @roster.id, 0) do
-      # atomic block
+    # Class-level if/lock (may save a DB fetch depending on your app)
+    Team.if_counter_free(:available_slots, team_id) do
+      TeamPitcher.create!(:team_id => team_id, :pitcher_id => 181)
     end
-    Roster.obtain_lock :reorder, @roster.id do
-      # atomic block
+
+    Team.obtain_lock :reorder, team_id do
+      Team.reorder_all_players(team_id)
     end
 
 == You Likely Have Some Huge Bugs
@@ -77,15 +81,16 @@ far as Redis::Atoms is concerned, you can even write an +id+ method of your own.
 You are probably not handling atomic operations properly in your app, and 
 probably have some nasty lurking race conditions.  The worst part is these
 will get worse as your user count increases, are difficult to reproduce,
-and usually happen to your most critical pieces of code.
+and usually happen to your most critical pieces of code.  (And no, your
+rspec tests can't catch them either.)
 
 Let's assume you're writing an app to enable students to enroll in courses.
-You need to ensure that no more than 30 people can sign up for a given class.
+You need to ensure that no more than 30 students can sign up for a given course.
 In your enrollment code, you have something like this:
 
     @course = Course.find(1)
     if @course.num_students < 30
-      @course.course_students.create(:student_id => 101)
+      @course.course_students.create!(:student_id => 101)
       @course.num_students += 1
       @course.save!
     else
@@ -102,120 +107,120 @@ so I'll just use that."
     if @course.num_students < 30
       # ...
 
-Nice try, but this still doesn't work.  Locking only stops other _updates_ from
-happening.  It does nothing about _access_.  You could still have 13 people
-simultaneously hit that "< 30" check.
-
-And even if it did work, now you've introduced other issues.  Any other piece of
-code in your entire app that needs to update _anything_ about the course - maybe
+Nice try, but now you've introduced other issues.  Any other piece of code
+in your entire app that needs to update _anything_ about the course - maybe
 the course name, or start date, or location - is now serialized.  If you need high
 concurrency, you're still screwed.
+
+You think, "ah-ha, the problem is having a separate counter!"
+
+    @course = Course.find(1)
+    if @course.course_students.count < 30
+      @course.course_students.create!(:student_id => 101)
+    else
+      # course is full
+    end
+
+Nope.  Still screwed.
 
 == The Root Down
 
 It's worth understanding the root issue, and how to address it.
 
 Race conditions arise from the difference in time between *evaluating* and *altering*
-a value.  In our example, we did a find on the record, then checked the value, then
-did a save.  The more lines of code between those operations, and the higher your user
-count, the bigger the window of opportunity for another client to get the data in an
+a value.  In our example, we fetched the record, then checked the value, then
+changed it.  The more lines of code between those operations, and the higher your user
+count, the bigger the window of opportunity for other clients to get the data in an
 inconsistent state.
 
-Basically any code that does this:
-
-    a = 10
-    if a < 15
-      a += 1
-      
-Has a race condition.  Sometimes these don't matter, since you're the only one
-operating on a piece of data.  For example, this probably doesn't matter:
+Sometimes race conditions don't matter in practice, since often a user is
+only operating their own data.  This has a race condition, but is probably ok:
 
     @post = Post.create(:user_id => 372, :title => "Whattup", ...)
     @user.total_posts += 1  # update my post count
-    
-Because a user is only creating their own posts.
 
-But this _would_ matter:
+But this _would_ be problematic:
 
     @post = Post.create(:user_id => 372, :title => "Whattup", ...)
     @blog.total_posts += 1  # update post count across all users
 
-Because multiple users could be adding posts concurrently.
+As multiple users could be adding posts concurrently.
 
-In a traditional RDBMS, you can handle counters atomically by firing off an
+In a traditional RDBMS, you can increment counters atomically by firing off an
 update statement that self-references the column:
 
     update users set total_posts = total_posts + 1 where id = 372
 
 You may have seen {ActiveRecord's increment_counter class method}[http://api.rubyonrails.org/classes/ActiveRecord/Base.html#M002278],
-which wraps this functionality.  This approach is cumbersome, though,
-since your @user object will no longer be in sync.  And if you do:
+which wraps this functionality.  But outside of being cumbersome, this has
+the side effect that your object is no longer in sync with the DB, so you
+get other issues:
 
-    User.increment_counter :total_posts, @user.id
-    if @user.total_posts >= 100
-      # award them a gold star!
+    Blog.increment_counter :total_posts, @blog.id
+    if @blog.total_posts >= 100
+      # the 1000th poster - award them a gold star!
 
-Now the DB says 100, but your @user object still says 99, and the user doesn't
-get their gold star.  Sad faces all around.
+The DB says 1000, but your @blog object still says 999, and the right person
+doesn't get their gold star.  Sad faces all around.
 
 == A Better Way
 
-Bottom line: Any operation that changes a value *must* return that value in
+Bottom line: Any operation that could alter a value *must* return that value in
 the _same_ _operation_ for it to be atomic.  If you do a separate get then set,
-or set then get, you're open to a race conditions, and generally getting your
-data in a weird state.  
+or set then get, you're open to a race condition.  There are very few systems that
+support an "increment and return" type operation, and Redis is one of them
+(Oracle sequences are another).
 
-There are very few systems that support a "getset" type operation, and Redis
-is one of them (Oracle sequences are another).  To best address this issue,
-what you need is a way to handle _specific_ conditions atomically, which
-is what this gem provides.
+When you think of the specific things that you need to ensure, many of these will
+reduce to numeric operations:
 
-Think of the specific things that you need to ensure.  Many of these will
-reduce to numeric operations.  For example:
-
-* No more than 30 students in a course
-* Must have more than 2 but less than 6 people in a game
-* A chat room has a max of 50 people
+* Ensuring there are no more than 30 students in a course
+* Getting more than 2 but less than 6 people in a game
+* Keeping a chat room to a max of 50 people
 * Correctly recording the total number of blog posts
 * Only allowing one piece of code to reorder a large dataset at a time
 
 All except the last one can be implemented with counters.  The last one 
 will need a carefully placed lock.
 
-The best way I've found to balance atomicity and concurrency is to split
-your counters into two types:
+The best way I've found to balance atomicity and concurrency is, for each value,
+actually create two counters:
 
-* Counters users see (eg, +current_students+).  These typically increment.
-* Counters you base logic on (eg, +remaining_slots+).  These typically decrement.
+* A counter you base logic on (eg, +available_slots+).  This will decrement.
+* A counter users see (eg, +current_students+).  This will increment.
 
 The reason you want two counters is you'll need to change the value of the logic
 counter *first*, _before_ checking it, to address any race conditions.  This means
-the value can get wonky momentarily, which just means you don't want to display it.
+the value can get wonky momentarily (eg, there could be -2 +available_slots+ for a course).
+This doesn't affect its function - indeed, it's part of what makes it work - but
+does mean you don't want to display it.
 
 So, taking our +Course+ example:
 
     class Course < ActiveRecord::Base
       include Redis::Atoms
       
-      counter :remaining_slots, :start => 30
+      counter :available_slots, :start => 30
       counter :current_students
     end
 
 Then:
 
     @course = Course.find(1)
-    @course.if_remaining_slots_left do
+    @course.if_available_slots_free do
       @course.course_students.create!(:student_id => 101)
       @course.increment_current_students
     end
 
-That way, your views get consistent information about the course, since
-+current_students+ will only be incremented on success.  There is still a
-race condition where +current_students+ could be less than the real number
-of +CourseStudent+ records, but since you'll be displaying these values in a view
-(after both are updated) you shouldn't see this manifest in real-world usage.
+Race-condition free.  And, with the separate +current_students+ counter, your
+views get consistent information about the course, since it will only be
+incremented on success.  There is still a race condition where +current_students+
+could be less than the real number of +CourseStudent+ records, but since you'll be
+displaying these values in a view (after that block completes) you shouldn't see
+this manifest in real-world usage.
 
-For more examples, see the examples/ folder.
+Now you can sleep soundly, without fear of getting fired at 3am via an angry
+phone call from your boss.  (At least, not about this...)
 
 == Author
 
