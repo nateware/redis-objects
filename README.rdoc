@@ -157,7 +157,7 @@ the side effect that your object is no longer in sync with the DB, so you
 get other issues:
 
     Blog.increment_counter :total_posts, @blog.id
-    if @blog.total_posts >= 100
+    if @blog.total_posts == 1000
       # the 1000th poster - award them a gold star!
 
 The DB says 1000, but your @blog object still says 999, and the right person
