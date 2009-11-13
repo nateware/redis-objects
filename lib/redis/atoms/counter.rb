@@ -35,7 +35,7 @@ class Redis
       
       # Increment the counter atomically and return the new value.  If passed
       # a block, that block will be evaluated with the new value of the counter
-      # as an argument. If the block returns false or throws an exception, the
+      # as an argument. If the block returns nil or throws an exception, the
       # counter will automatically be decremented to its previous value.  This
       # method is aliased as incr() for brevity.
       def increment(by=1, &block)
@@ -46,7 +46,7 @@ class Redis
 
       # Decrement the counter atomically and return the new value.  If passed
       # a block, that block will be evaluated with the new value of the counter
-      # as an argument. If the block returns false or throws an exception, the
+      # as an argument. If the block returns nil or throws an exception, the
       # counter will automatically be incremented to its previous value.  This
       # method is aliased as incr() for brevity.
       def decrement(by=1, &block)
@@ -87,7 +87,7 @@ class Redis
           send(rewind)
           raise
         end
-        send(rewind) if ret == false
+        send(rewind) if ret.nil?
       end
     end
   end

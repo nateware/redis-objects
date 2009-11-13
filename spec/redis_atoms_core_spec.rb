@@ -89,27 +89,25 @@ describe Redis::Atoms do
     end
     @roster.available_slots.to_i.should == 9
     a.should be_true
-
+    
     @roster.available_slots.to_i.should == 9
     @roster.available_slots.decr do |cnt|
       @roster.available_slots.to_i.should == 8
-      nil
+      false
     end
     @roster.available_slots.to_i.should == 8
-
+    
     @roster.available_slots.to_i.should == 8
     @roster.available_slots.decr do |cnt|
       @roster.available_slots.to_i.should == 7
-      false  # should rewind
+      nil  # should rewind
     end
     @roster.available_slots.to_i.should == 8
-
+    
     @roster.available_slots.to_i.should == 8
     @roster.available_slots.incr do |cnt|
-      if 1 == 2
+      if 1 == 2  # should rewind
         true
-      else
-        false  # should rewind
       end
     end
     @roster.available_slots.to_i.should == 8
@@ -146,23 +144,21 @@ describe Redis::Atoms do
     Roster.get_counter(:available_slots, @roster.id).should == 9
     Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
       Roster.get_counter(:available_slots, @roster.id).should == 8
-      nil
+      false
     end
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
     Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
       Roster.get_counter(:available_slots, @roster.id).should == 7
-      false  # should rewind
+      nil  # should rewind
     end
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
     Roster.increment_counter(:available_slots, @roster.id) do |cnt|
-      if 1 == 2
+      if 1 == 2  # should rewind
         true
-      else
-        false  # should rewind
       end
     end
     Roster.get_counter(:available_slots, @roster.id).should == 8

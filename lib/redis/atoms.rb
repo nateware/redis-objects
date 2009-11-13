@@ -4,13 +4,46 @@ require 'redis'
 require 'redis/atoms/counter'
 require 'redis/atoms/lock'
 class Redis
+  #
+  # Redis::Atoms enables high-performance atomic operations in your app
+  # by leveraging the atomic features of the Redis server.  To use Redis::Atoms,
+  # first include it in any class you want.  (This example uses an ActiveRecord
+  # subclass, but that is *not* required.) Then, use +counter+ and +lock+
+  # to define your primitives:
+  #
+  #   class Game < ActiveRecord::Base
+  #     include Redis::Atoms
+  #
+  #     counter :joined_players
+  #     counter :active_players
+  #     lock :archive_game
+  #   end
+  # 
+  # The, you can use these counters both for bookeeping and as atomic actions:
+  #
+  #   @game = Game.find(id)
+  #   @game_user = @game.joined_players.increment do |val|
+  #     break if val > @game.max_players
+  #     gu = @game.game_users.create!(:user_id => @user.id)
+  #     @game.active_players.increment
+  #     gu
+  #   end
+  #   if @game_user.nil?
+  #     # game is full - error screen
+  #   else
+  #     # success
+  #   end
+  #
+  #
+  #
   module Atoms
+    class NotConnected  < StandardError; end
     class UndefinedAtom < StandardError; end
 
     class << self
       def redis=(conn) @redis = conn end
       def redis
-        @redis ||= $redis || raise("Redis::Atoms.redis not set to a valid Redis connection")
+        @redis ||= $redis || raise(NotConnected, "Redis::Atoms.redis not set to a Redis.new connection")
       end
 
       def included(klass)
@@ -148,7 +181,7 @@ class Redis
           send(rewind, name, id)
           raise
         end
-        send(rewind, name, id) if ret == false
+        send(rewind, name, id) if ret.nil?
       end
     end
 
