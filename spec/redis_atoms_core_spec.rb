@@ -3,12 +3,13 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 class Roster
   include Redis::Atoms
-  counter :available_slots, :start => 10, :type => :decrement
+  counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
   lock :resort, :timeout => 2
 
-  def id; 1; end
+  def initialize(id=1) @id = id end
+  def id; @id; end
   def max_pitchers; 3; end
 end
 
@@ -16,18 +17,13 @@ describe Redis::Atoms do
   before :all do
     @roster  = Roster.new
     @roster2 = Roster.new
-
-    @roster.clear_available_slots
-    @roster.clear_pitchers
-    @roster.clear_basic
-    @roster.clear_resort_lock
   end
-
-  after :each do
-    @roster.reset_available_slots
-    @roster.reset_pitchers
-    @roster.reset_basic
-    @roster.clear_resort_lock
+  
+  before :each do
+    @roster.available_slots.reset
+    @roster.pitchers.reset
+    @roster.basic.reset
+    @roster.resort_lock.clear
   end
 
   it "should provide a connection method" do
@@ -36,31 +32,41 @@ describe Redis::Atoms do
   end
 
   it "should create counter accessors" do
-    [:available_slots, :increment_available_slots, :decrement_available_slots,
-     :reset_available_slots, :clear_available_slots].each do |m|
+    [:available_slots, :pitchers, :basic].each do |m|
        @roster.respond_to?(m).should == true
      end
   end
   
   it "should support increment/decrement of counters" do
-    @roster.available_slots_counter_name.should == 'roster:1:available_slots'
-    @roster.available_slots.should == 10
-    @roster.increment_available_slots.should == 11
-    @roster.increment_available_slots.should == 12
-    @roster2.increment_available_slots.should == 13
-    @roster2.increment_available_slots(2).should == 15
-    @roster.decrement_available_slots.should == 14
-    @roster2.decrement_available_slots.should == 13
-    @roster.decrement_available_slots.should == 12
-    @roster2.decrement_available_slots(4).should == 8
-    @roster.available_slots.should == 8
-    @roster.reset_available_slots.should == true
-    @roster.available_slots.should == 10
-    @roster.reset_available_slots(15).should == true
+    @roster.available_slots.key.should == 'roster:1:available_slots'
+    @roster.available_slots.to_i.should == 10
+    
+    # math proxy ops
+    (@roster.available_slots == 10).should be_true
+    (@roster.available_slots <= 10).should be_true
+    (@roster.available_slots < 11).should be_true
+    (@roster.available_slots > 9).should be_true
+    (@roster.available_slots >= 10).should be_true
+    "#{@roster.available_slots}".should == "10"
+
+    @roster.available_slots.increment.should == 11
+    @roster.available_slots.increment.should == 12
+    @roster2.available_slots.increment.should == 13
+    @roster2.available_slots.increment(2).should == 15
+    @roster.available_slots.decrement.should == 14
+    @roster2.available_slots.decrement.should == 13
+    @roster.available_slots.decrement.should == 12
+    @roster2.available_slots.decrement(4).should == 8
+    @roster.available_slots.to_i.should == 12
+    @roster.available_slots.get.should == 8
+    @roster.available_slots.reset.should == 10
+    @roster.available_slots.to_i.should == 10
+    @roster.available_slots.reset(15).should == 15
     @roster.available_slots.should == 15
-    @roster.increment_pitchers.should == 1
-    @roster.increment_basic.should == 1
-    @roster2.decrement_basic.should == 0
+    @roster.pitchers.increment.should == 1
+    @roster.basic.increment.should == 1
+    @roster2.basic.decrement.should == 0
+    @roster.basic.get.should == 0
   end
   
   it "should support class-level increment/decrement of counters" do
@@ -73,53 +79,110 @@ describe Redis::Atoms do
     Roster.get_counter(:available_slots, @roster.id).should == 10
   end
 
-  it "should provide an if_counter method with defaults" do
+  it "should take an atomic block for increment/decrement" do
     a = false
-    @roster.if_available_slots_free do
-      a = true
+    @roster.available_slots.to_i.should == 10
+    @roster.available_slots.decr do |cnt|
+      if cnt >= 0
+        a = true
+      end
     end
+    @roster.available_slots.to_i.should == 9
     a.should be_true
 
-    @roster.available_slots.should == 9
+    @roster.available_slots.to_i.should == 9
+    @roster.available_slots.decr do |cnt|
+      @roster.available_slots.to_i.should == 8
+      nil
+    end
+    @roster.available_slots.to_i.should == 8
+
+    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.decr do |cnt|
+      @roster.available_slots.to_i.should == 7
+      false  # should rewind
+    end
+    @roster.available_slots.to_i.should == 8
+
+    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.incr do |cnt|
+      if 1 == 2
+        true
+      else
+        false  # should rewind
+      end
+    end
+    @roster.available_slots.to_i.should == 8
+
+    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.incr do |cnt|
+      @roster.available_slots.to_i.should == 9
+      []
+    end
+    @roster.available_slots.to_i.should == 9
+
+    @roster.available_slots.to_i.should == 9
     begin
-      @roster.if_available_slots_free do
-        @roster.available_slots.should == 8
+      @roster.available_slots.decr do |cnt|
+        @roster.available_slots.to_i.should == 8
         raise 'oops'
       end
     rescue
     end
     @roster.available_slots.should == 9
+  end
 
+  it "should take an atomic block for increment/decrement class methods" do
     a = false
-    Roster.if_counter_free(:available_slots, @roster.id) do
-      a = true
+    Roster.get_counter(:available_slots, @roster.id).should == 10
+    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+      if cnt >= 0
+        a = true
+      end
     end
+    Roster.get_counter(:available_slots, @roster.id).should == 9
     a.should be_true
+
+    Roster.get_counter(:available_slots, @roster.id).should == 9
+    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+      Roster.get_counter(:available_slots, @roster.id).should == 8
+      nil
+    end
     Roster.get_counter(:available_slots, @roster.id).should == 8
-    
+
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+      Roster.get_counter(:available_slots, @roster.id).should == 7
+      false  # should rewind
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+    Roster.increment_counter(:available_slots, @roster.id) do |cnt|
+      if 1 == 2
+        true
+      else
+        false  # should rewind
+      end
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+    Roster.increment_counter(:available_slots, @roster.id) do |cnt|
+      Roster.get_counter(:available_slots, @roster.id).should == 9
+      []
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 9
+
+    Roster.get_counter(:available_slots, @roster.id).should == 9
     begin
-      Roster.if_counter_free(:available_slots, @roster.id) do
-        Roster.get_counter(:available_slots, @roster.id).should == 7
-        raise 'oops2'
+      Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+        Roster.get_counter(:available_slots, @roster.id).should == 8
+        raise 'oops'
       end
     rescue
     end
-    Roster.get_counter(:available_slots, @roster.id).should == 8
-  end
-
-  it "should handle a symbol passed to :limit as a method callback" do
-    @roster.increment_pitchers.should == 1
-    @roster.increment_pitchers.should == 2
-    a = false
-    @roster.if_pitchers_free do
-      a = true
-    end
-    a.should be_true
-    a = false
-    @roster.if_pitchers_free do
-      a = true
-    end
-    a.should be_false
+    Roster.get_counter(:available_slots, @roster.id).should == 9
   end
 
   it "should properly throw errors on bad counters" do
@@ -128,24 +191,51 @@ describe Redis::Atoms do
       Roster.increment_counter(:badness, 2)
     rescue => error
     end
-    error.should_not be_nil
-    error.should be_kind_of(Redis::Atoms::UndefinedCounter)
+    error.should be_kind_of(Redis::Atoms::UndefinedAtom)
+
+    error = nil
+    begin
+      Roster.obtain_lock(:badness, 2){}
+    rescue => error
+    end
+    error.should be_kind_of(Redis::Atoms::UndefinedAtom)
+
+    error = nil
+    begin
+      @roster.available_slots = 42
+    rescue => error
+    end
+    error.should be_kind_of(NoMethodError)
+
+    error = nil
+    begin
+      @roster.available_slots += 69
+    rescue => error
+    end
+    error.should be_kind_of(NoMethodError)
+
+    error = nil
+    begin
+      @roster.available_slots -= 15
+    rescue => error
+    end
+    error.should be_kind_of(NoMethodError)
   end
   
   it "should provide a lock method that accepts a block" do
-    @roster.resort_lock_name.should == 'roster:1:resort_lock'
+    @roster.resort_lock.key.should == 'roster:1:resort_lock'
     a = false
-    @roster.lock_resort do
+    @roster.resort_lock.lock do
       a = true
     end
     a.should be_true
   end
   
   it "should raise an exception if the timeout is exceeded" do
-    @roster.redis.set(@roster.resort_lock_name, 1)
+    @roster.redis.set(@roster.resort_lock.key, 1)
     error = nil
     begin
-      @roster.lock_resort {}
+      @roster.resort_lock.lock {}
     rescue => error
     end
     error.should_not be_nil

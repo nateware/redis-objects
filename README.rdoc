@@ -39,12 +39,12 @@ just returns a string, or an MD5 of the name, or something else unique.
 
     # Using to handle concurrency
     @team = Team.find(1)
-    if @team.decrement_available_slots >= 0
+    if @team.available_slots.decrement >= 0
       # do stuff
       @team.team_players.create!(:player_id => 221)
     else
       # reset counter state
-      @team.increment_available_slots
+      @team.available_slots.increment
     end
 
     # Atomic block - a cleaner way to do the above
