@@ -5,6 +5,7 @@ class Redis
   module Atoms
     class UndefinedCounter < StandardError; end
     class LockTimeout < StandardError; end
+    class InstanceRequired < StandardError; end
 
     class << self
       def redis=(conn) @redis = conn end
@@ -139,6 +140,9 @@ class Redis
         back  = @counters[name][:type] == :increment ? :decrement_counter : :increment_counter
         test  = @counters[name][:type] == :increment ? :<= : :>=
         against ||= @counters[name][:type] == :decrement ? 0 : @counters[name][:limit]
+        if against.is_a?(Symbol)
+          raise InstanceRequired, "Cannot use #{self.name}.if_counter_free :#{name} class method as :limit is a symbol"
+        end
         val = send(fwd, name, id)
         if val.send(test, against)
           begin
