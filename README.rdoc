@@ -23,12 +23,14 @@ just returns a string, or an MD5 of the name, or something else unique.
    
 == Example
 
-    # In your app initialization
+Somewhere in your app initialization
+
     require 'redis'
     require 'redis/atoms'
     Redis::Atoms.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
-    # Include atoms in any type of class
+Model class:
+
     class Team < ActiveRecord::Base
       include Redis::Atoms
       
@@ -37,7 +39,8 @@ just returns a string, or an MD5 of the name, or something else unique.
       lock :reorder, :timeout => 5  # seconds
     end
 
-    # Using to handle concurrency
+Using counters to handle concurrency:
+
     @team = Team.find(1)
     if @team.drafted_players.increment <= @team.max_players
       # do stuff
@@ -48,15 +51,17 @@ just returns a string, or an MD5 of the name, or something else unique.
       @team.drafted_players.decrement
     end
 
-    # Atomic block - a cleaner way to do the above
-    # Exceptions or nil results rewind counter back to previous state
+Atomic block - a cleaner way to do the above. Exceptions or nil results
+rewind counter back to previous state:
+
     @team.drafted_players.increment do |val|
       raise Team::TeamFullError if val > @team.max_players
       @team.team_players.create!(:player_id => 221)
       @team.active_players.increment
     end
 
-    # Similar approach, using an if block (failure rewinds counter)
+Similar approach, using an if block (failure rewinds counter):
+
     @team.drafted_players.increment do |val|
       if val <= @team.max_players
         @team.team_players.create!(:player_id => 221)
@@ -64,23 +69,26 @@ just returns a string, or an MD5 of the name, or something else unique.
       end
     end
 
-    # Serialize any "reorder" operation since it affects multiple records
-    # On completion or exception the lock is released.
-    @team.reorder_lock.lock do
-      @team.reorder_all_players
-    end
+Class methods work too - notice we override ActiveRecord counters:
 
-    # Class methods work too - notice we override ActiveRecord counters
     Team.increment_counter :drafted_players, team_id
     Team.decrement_counter :drafted_players, team_id, 2
 
-    # Class-level atomic block (may save a DB fetch depending on your app)
+Class-level atomic block (may save a DB fetch depending on your app):
+
     Team.increment_counter(:drafted_players, team_id) do |val|
       TeamPitcher.create!(:team_id => team_id, :pitcher_id => 181)
       Team.increment_counter(:active_players, team_id)
     end
 
-    # Class-level lock (same concept)
+Locks with Redis. On completion or exception the lock is released:
+
+    @team.reorder_lock.lock do
+      @team.reorder_all_players
+    end
+
+Class-level lock (same concept)
+
     Team.obtain_lock(:reorder, team_id) do
       Team.reorder_all_players(team_id)
     end
