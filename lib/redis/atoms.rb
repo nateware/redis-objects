@@ -182,6 +182,7 @@ class Redis
           raise
         end
         send(rewind, name, id) if ret.nil?
+        ret
       end
     end
 

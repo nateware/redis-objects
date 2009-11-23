@@ -137,7 +137,6 @@ describe Redis::Atoms do
       end
     value.should == 42
     @roster.available_slots.should == 8
-    
   end
 
   it "should take an atomic block for increment/decrement class methods" do
@@ -189,6 +188,15 @@ describe Redis::Atoms do
     rescue
     end
     Roster.get_counter(:available_slots, @roster.id).should == 9
+
+    # check return value from the block
+    value =
+      Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+        Roster.get_counter(:available_slots, @roster.id).should == 8
+        42
+      end
+    value.should == 42
+    Roster.get_counter(:available_slots, @roster.id).should == 8
   end
 
   it "should properly throw errors on bad counters" do
