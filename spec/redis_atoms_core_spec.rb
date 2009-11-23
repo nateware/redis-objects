@@ -128,6 +128,16 @@ describe Redis::Atoms do
     rescue
     end
     @roster.available_slots.should == 9
+    
+    # check return value from the block
+    value =
+      @roster.available_slots.decr do |cnt|
+        @roster.available_slots.to_i.should == 8
+        42
+      end
+    value.should == 42
+    @roster.available_slots.should == 8
+    
   end
 
   it "should take an atomic block for increment/decrement class methods" do

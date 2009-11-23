@@ -88,6 +88,7 @@ class Redis
           raise
         end
         send(rewind) if ret.nil?
+        ret
       end
     end
   end
