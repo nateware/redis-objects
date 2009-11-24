@@ -9,6 +9,7 @@ class Roster
   counter :all_players_online, :global => true
   lock :resort, :timeout => 2
   value :starting_pitcher
+  list :player_stats
 
   def initialize(id=1) @id = id end
   def id; @id; end
@@ -27,6 +28,7 @@ describe Redis::Objects do
     @roster.basic.reset
     @roster.resort_lock.clear
     @roster.starting_pitcher.delete
+    @roster.player_stats.delete
   end
 
   it "should provide a connection method" do
@@ -246,6 +248,11 @@ describe Redis::Objects do
     @roster.starting_pitcher.get.should == 'Trevor Hoffman'
     @roster.starting_pitcher.del
     @roster.starting_pitcher.should be_nil
+  end
+
+  it "should handle lists of simple values" do
+    @roster.player_stats.should be_empty
+    
   end
 
   it "should provide a lock method that accepts a block" do

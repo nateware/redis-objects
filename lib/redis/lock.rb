@@ -9,7 +9,7 @@ class Redis
   class Lock
     class LockTimeout < StandardError; end #:nodoc:
 
-    attr_reader :key, :options, :redis, :value
+    attr_reader :key, :options, :redis
     def initialize(key, options={})
       @key = key
       @options = options
@@ -23,6 +23,7 @@ class Redis
     def clear
       redis.del(key)
     end
+    alias_method :delete, :clear
 
     # Get the lock and execute the code block. Any other code that needs the lock
     # (on any server) will spin waiting for the lock up to the :timeout

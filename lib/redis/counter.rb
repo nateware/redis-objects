@@ -34,8 +34,15 @@ class Redis
       @value = redis.get(key).to_i
     end
 
+    # Delete a counter.  Usage discouraged.  Consider +reset+ instead.
+    def delete
+      redis.del(key)
+      @value = nil
+    end
+    alias_method :del, :delete
+
     # Returns the (possibly cached) value of the counter.  Use +get+ to
-    # force a re-get from Redis.
+    # force a re-get from the Redis server.
     def value
       @value ||= get
     end
@@ -79,8 +86,8 @@ class Redis
     end
    
     private
-    
-    # Implements increment/decrement blocks
+
+    # Implements atomic increment/decrement blocks
     def rewindable_block(rewind, value, &block)
       raise ArgumentError, "Missing block to rewindable_block somehow" unless block_given?
       ret = nil

@@ -4,7 +4,7 @@ class Redis
   # behave as much like Ruby arrays as possible.
   #
   class List
-    attr_reader :key, :options, :redis, :values
+    attr_reader :key, :options, :redis
     def initialize(key, options={})
       @key = key
       @options = options
@@ -19,11 +19,34 @@ class Redis
     end
     
     def push(value)
-      @redis.rpush key, value
+      @redis.rpush(key, value.to_redis)
     end
 
     def unshift(value)
-      @values << value
+      redis.lpush(key, value.to_redis)
+      @values.unshift value
     end
+
+    def values
+      @values ||= get
+    end
+
+    def value=(val)
+      redis.set(key, val)
+      @values = val
+    end
+    
+    def get
+      @values = lrange(key,0,-1)
+    end
+    
+    def lrange(start_index, end_index)
+      redis.lrange(key, start_index, end_index)
+    end
+    
+    def length
+      redis.length
+    end
+    alias_method :size, :length
   end
 end
