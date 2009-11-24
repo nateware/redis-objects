@@ -37,12 +37,25 @@ by using +new+ with the type of data structure you want to create.
       counter :drafted_players
       counter :active_players
       counter :total_online_players, :global => true
-      list :player_stats
+      list :on_base
       set :outfielders
-      lock :reorder, :timeout => 5  # seconds
+      value :coach
     end
     
-Familiar Ruby operations Just Work (TM):
+Familiar Ruby operations Just Work:
+
+    @team = Team.find(1)
+    @team.on_base << 'player1'
+    @team.on_base << 'player2'
+    puts @team.on_base   # ['player1', 'player2']
+    @team.on_base.pop
+
+With one purposeful exception - counters cannot be set, only incremented/decremented:
+
+    @team.drafted_players.increment  # or incr
+    @team.drafted_players.decrement  # or decr
+    @team.drafted_players = 4   # exception
+    @team.drafted_players += 1  # exception
 
 === Instance Usage
 
