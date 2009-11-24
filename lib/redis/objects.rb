@@ -1,7 +1,6 @@
 # Redis::Objects - Lightweight object layer around redis-rb
 # See README.rdoc for usage and approach.
 require 'redis'
-
 class Redis
   #
   # Redis::Objects enables high-performance atomic operations in your app
@@ -58,6 +57,10 @@ class Redis
         klass.instance_variable_set('@redis', @redis)
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
+        
+        # Adapted from Redis::Model for marshaling complex data
+        require 'redis/data_types'
+        klass.send :include, Redis::DataTypes
         
         # Pull in each object type
         klass.send :include, Redis::Objects::Counters

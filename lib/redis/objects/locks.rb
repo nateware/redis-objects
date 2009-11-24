@@ -19,7 +19,7 @@ class Redis
         # so it can be used alongside ActiveRecord/DataMapper, etc.
         def lock(name, options={})
           options[:timeout] ||= 5  # seconds
-          @locks[name.to_sym] = options
+          @locks[name] = options
           class_eval <<-EndMethods
             def #{name}_lock(&block)
               @#{name}_lock ||= Redis::Lock.new(field_key(:#{name}_lock), self.class.locks[:#{name}].merge(:redis => redis))

@@ -8,6 +8,7 @@ class Roster
   counter :basic
   counter :all_players_online, :global => true
   lock :resort, :timeout => 2
+  value :starting_pitcher
 
   def initialize(id=1) @id = id end
   def id; @id; end
@@ -25,6 +26,7 @@ describe Redis::Objects do
     @roster.pitchers.reset
     @roster.basic.reset
     @roster.resort_lock.clear
+    @roster.starting_pitcher.delete
   end
 
   it "should provide a connection method" do
@@ -40,7 +42,7 @@ describe Redis::Objects do
   
   it "should support increment/decrement of counters" do
     @roster.available_slots.key.should == 'roster:1:available_slots'
-    @roster.available_slots.to_i.should == 10
+    @roster.available_slots.should == 10
     
     # math proxy ops
     (@roster.available_slots == 10).should be_true
@@ -58,10 +60,10 @@ describe Redis::Objects do
     @roster2.available_slots.decrement.should == 13
     @roster.available_slots.decrement.should == 12
     @roster2.available_slots.decrement(4).should == 8
-    @roster.available_slots.to_i.should == 12
+    @roster.available_slots.should == 12
     @roster.available_slots.get.should == 8
     @roster.available_slots.reset.should == 10
-    @roster.available_slots.to_i.should == 10
+    @roster.available_slots.should == 10
     @roster.available_slots.reset(15).should == 15
     @roster.available_slots.should == 15
     @roster.pitchers.increment.should == 1
@@ -82,48 +84,48 @@ describe Redis::Objects do
 
   it "should take an atomic block for increment/decrement" do
     a = false
-    @roster.available_slots.to_i.should == 10
+    @roster.available_slots.should == 10
     @roster.available_slots.decr do |cnt|
       if cnt >= 0
         a = true
       end
     end
-    @roster.available_slots.to_i.should == 9
+    @roster.available_slots.should == 9
     a.should be_true
     
-    @roster.available_slots.to_i.should == 9
+    @roster.available_slots.should == 9
     @roster.available_slots.decr do |cnt|
-      @roster.available_slots.to_i.should == 8
+      @roster.available_slots.should == 8
       false
     end
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
     
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
     @roster.available_slots.decr do |cnt|
-      @roster.available_slots.to_i.should == 7
+      @roster.available_slots.should == 7
       nil  # should rewind
     end
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
     
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
     @roster.available_slots.incr do |cnt|
       if 1 == 2  # should rewind
         true
       end
     end
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
 
-    @roster.available_slots.to_i.should == 8
+    @roster.available_slots.should == 8
     @roster.available_slots.incr do |cnt|
-      @roster.available_slots.to_i.should == 9
+      @roster.available_slots.should == 9
       []
     end
-    @roster.available_slots.to_i.should == 9
+    @roster.available_slots.should == 9
 
-    @roster.available_slots.to_i.should == 9
+    @roster.available_slots.should == 9
     begin
       @roster.available_slots.decr do |cnt|
-        @roster.available_slots.to_i.should == 8
+        @roster.available_slots.should == 8
         raise 'oops'
       end
     rescue
@@ -133,7 +135,7 @@ describe Redis::Objects do
     # check return value from the block
     value =
       @roster.available_slots.decr do |cnt|
-        @roster.available_slots.to_i.should == 8
+        @roster.available_slots.should == 8
         42
       end
     value.should == 42
@@ -237,6 +239,15 @@ describe Redis::Objects do
     error.should be_kind_of(NoMethodError)
   end
   
+  it "should handle simple values" do
+    @roster.starting_pitcher.should == nil
+    @roster.starting_pitcher = 'Trevor Hoffman'
+    @roster.starting_pitcher.should == 'Trevor Hoffman'
+    @roster.starting_pitcher.get.should == 'Trevor Hoffman'
+    @roster.starting_pitcher.del
+    @roster.starting_pitcher.should be_nil
+  end
+
   it "should provide a lock method that accepts a block" do
     @roster.resort_lock.key.should == 'roster:1:resort_lock'
     a = false
@@ -246,7 +257,7 @@ describe Redis::Objects do
     a.should be_true
   end
   
-  it "should raise an exception if the timeout is exceeded" do
+  xit "should raise an exception if the timeout is exceeded" do
     @roster.redis.set(@roster.resort_lock.key, 1)
     error = nil
     begin

@@ -1,17 +1,17 @@
 class Redis
   #
-  # Class representing a counter.  This functions like a proxy class, in
-  # that you can say @object.counter_name to get the value and also
+  # Class representing a Redis counter.  This functions like a proxy class, in
+  # that you can say @object.counter_name to get the value and then
   # @object.counter_name.increment to operate on it.  You can use this
   # directly, or you can use the counter :foo class method in your
   # class to define a counter.
   #
   class Counter
-    attr_reader :key, :value, :options, :redis
+    attr_reader :key, :options, :redis
     def initialize(key, options={})
       @key = key
       @options = options
-      @redis = options[:redis] || Redis::Objects.redis
+      @redis = options[:redis] || $redis || Redis::Objects.redis
       @options[:start] ||= 0
       @options[:type]  ||= @options[:start] == 0 ? :increment : :decrement
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
@@ -26,14 +26,20 @@ class Redis
       @value = to.to_i
     end
 
-    # Gets the current value of the counter.  Normally just calling the
+    # Re-gets the current value of the counter.  Normally just calling the
     # counter will lazily fetch the value, and only update it if increment
     # or decrement is called.  This forces a network call to redis-server
     # to get the current value.
     def get
       @value = redis.get(key).to_i
     end
-    
+
+    # Returns the (possibly cached) value of the counter.  Use +get+ to
+    # force a re-get from Redis.
+    def value
+      @value ||= get
+    end
+
     # Increment the counter atomically and return the new value.  If passed
     # a block, that block will be evaluated with the new value of the counter
     # as an argument. If the block returns nil or throws an exception, the
@@ -58,20 +64,16 @@ class Redis
 
     ##
     # Proxy methods to help make @object.counter == 10 work
-    def to_i #:nodoc:
-      @value ||= get
-    end
-
-    def to_s #:nodoc:
-      (@value ||= get).to_s
-    end
+    def to_s; value.to_s; end
     alias_method :to_str, :to_s
+    alias_method :to_i, :value
+    def nil?; value.nil? end
 
     # Math ops
-    %w(== < > <= >= ==).each do |m|
+    %w(== < > <= >=).each do |m|
       class_eval <<-EndOverload
         def #{m}(x)
-          to_i #{m} x
+          value #{m} x
         end
       EndOverload
     end

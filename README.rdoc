@@ -1,15 +1,18 @@
-= Redis Objects - Lightweight, atomic object layer around redis-rb
+= Redis::Objects - Lightweight, atomic object layer around redis-rb
 
-Redis is great _not_ as a replacement for MySQL, but as a way to perform atomic
-operations on _individual_ data structures, like counters, lists, and sets.  People
-that are wrapping ORM's around Redis are missing the point.  
+This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
+the point.
 
-This gem, instead, provides atomic methods that you can use *with* your existing
-ActiveRecord/DataMapper/etc models, or in classes that have nothing to do with an
-ORM or even a database.  This gem originally arose out of a need for high-concurrency
-operations for online games; for a fun rant on the topic, see
+The killer feature of Redis that it allows you to perform atomic operations
+on _individual_ data structures, like counters, lists, and sets, that you can use
+*with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
+nothing to do with an ORM or even a database. That's where this gem comes in.
+
+
+This gem originally arose out of a need for high-concurrency operations for online
+games; for a fun rant on the topic, see
 {ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
-or scroll down to "Atomicity" for the API.
+or scroll down to "Atomicity" in this README.
 
 There are two ways to use Redis::Objects, either as an +include+ in a class, or
 by using +new+ with the type of data structure you want to create.

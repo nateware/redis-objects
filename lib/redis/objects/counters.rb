@@ -21,7 +21,7 @@ class Redis
         def counter(name, options={})
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
-          @counters[name.to_sym] = options
+          @counters[name] = options
           class_eval <<-EndMethods
             def #{name}
               @#{name} ||= Redis::Counter.new(field_key(:#{name}), self.class.counters[:#{name}].merge(:redis => redis))
@@ -94,11 +94,6 @@ class Redis
 
       # Instance methods that appear in your class when you include Redis::Objects.
       module InstanceMethods
-        def redis() self.class.redis end
-        def field_key(name) #:nodoc:
-          self.class.field_key(name, id)
-        end
-
         # Increment a counter.
         # It is more efficient to use increment_[counter_name] directly.
         # This is mainly just for completeness to override ActiveRecord.
