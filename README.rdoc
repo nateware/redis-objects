@@ -122,3 +122,4 @@ Class-level lock (same concept)
 
 Copyright (c) 2009 {Nate Wiger}[http://nate.wiger.org].  All Rights Reserved.
 Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
+
