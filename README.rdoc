@@ -2,11 +2,13 @@
 
 Redis is great _not_ as a replacement for MySQL, but as a way to perform atomic
 operations on _individual_ data structures, like counters, lists, and sets.  People
-that are wrapping ORM's around Redis are missing the point.
+that are wrapping ORM's around Redis are missing the point.  
 
 This gem, instead, provides atomic methods that you can use *with* your existing
 ActiveRecord/DataMapper/etc models, or in classes that have nothing to do with an
-ORM or even a database, but need support for high-performance atomic structures.
+ORM or even a database.  This gem originally arose out of a need for high-concurrency
+operations for online games; for a fun rant on the topic, see {ATOMICITY}[ATOMICITY.rdoc],
+or scroll down to "Atomicity" for the API.
 
 There are two ways to use Redis::Objects, either as an +include+ in a class, or
 by using +new+ with the type of data structure you want to create.
