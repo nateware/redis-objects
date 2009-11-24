@@ -7,8 +7,8 @@ that are wrapping ORM's around Redis are missing the point.
 This gem, instead, provides atomic methods that you can use *with* your existing
 ActiveRecord/DataMapper/etc models, or in classes that have nothing to do with an
 ORM or even a database.  This gem originally arose out of a need for high-concurrency
-operations for online games; for a fun rant on the topic, see {ATOMICITY}
-[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
+operations for online games; for a fun rant on the topic, see
+{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
 or scroll down to "Atomicity" for the API.
 
 There are two ways to use Redis::Objects, either as an +include+ in a class, or
