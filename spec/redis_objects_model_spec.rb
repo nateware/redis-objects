@@ -2,10 +2,11 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 class Roster
-  include Redis::Atoms
+  include Redis::Objects
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
+  counter :all_players_online, :global => true
   lock :resort, :timeout => 2
 
   def initialize(id=1) @id = id end
@@ -13,7 +14,7 @@ class Roster
   def max_pitchers; 3; end
 end
 
-describe Redis::Atoms do
+describe Redis::Objects do
   before :all do
     @roster  = Roster.new
     @roster2 = Roster.new
@@ -27,7 +28,7 @@ describe Redis::Atoms do
   end
 
   it "should provide a connection method" do
-    Roster.redis.should == Redis::Atoms.redis
+    Roster.redis.should == Redis::Objects.redis
     Roster.redis.should be_kind_of(Redis)
   end
 
@@ -205,14 +206,14 @@ describe Redis::Atoms do
       Roster.increment_counter(:badness, 2)
     rescue => error
     end
-    error.should be_kind_of(Redis::Atoms::UndefinedAtom)
+    error.should be_kind_of(Redis::Objects::UndefinedCounter)
 
     error = nil
     begin
       Roster.obtain_lock(:badness, 2){}
     rescue => error
     end
-    error.should be_kind_of(Redis::Atoms::UndefinedAtom)
+    error.should be_kind_of(Redis::Objects::UndefinedLock)
 
     error = nil
     begin
@@ -253,6 +254,6 @@ describe Redis::Atoms do
     rescue => error
     end
     error.should_not be_nil
-    error.should be_kind_of(Redis::Atoms::LockTimeout)
+    error.should be_kind_of(Redis::Lock::LockTimeout)
   end
 end

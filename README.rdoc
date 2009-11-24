@@ -1,41 +1,41 @@
-= Redis Atoms - Leverage Redis to handle counters and atomicity in your app
+= Redis Objects - Lightweight object layer around redis-rb you can also use in a model
 
 Redis is great _not_ as a replacement for MySQL, but as a way to perform atomic
 operations on _individual_ data structures, like counters, lists, and sets.  People
-that are wrapping ORM's around Redis are missing the point.  Plus, their performance
-can be quite poor (worse than a DB), since a save can easily be 10+ network calls.
+that are wrapping ORM's around Redis are missing the point.
 
 This gem, instead, provides atomic methods that you can use *with* your existing
 ActiveRecord/DataMapper/etc models, or in classes that have nothing to do with an
-ORM or even a database, but need support for high-performance atomic operations.
+ORM or even a database, but need support for high-performance atomic structures.
 
-The only requirement Redis::Atoms has is that your class must provide an +id+ instance
-method which returns the ID for that instance.  ActiveRecord, DataMapper, and MongoRecord
-all have id methods which are known to be suitable.  Since +id+ can be anything as
-far as Redis::Atoms is concerned, you can even write an +id+ method of your own that
-just returns a string, or an MD5 of the name, or something else unique.
+There are two ways to use Redis::Objects, either as an +include+ in a class, or
+by using +new+ with the type of data structure you want to create.
 
 == Installation
 
     gem install gemcutter
     gem tumble
-    gem install redis-atoms
+    gem install redis-objects
    
-== Example
+== Initialization
 
-Somewhere in your app initialization
-
+    # If on Rails, config/initializers/redis.rb is a good place for this
     require 'redis'
-    require 'redis/atoms'
-    Redis::Atoms.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+    require 'redis/objects'
+    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+
+== Examples of Class Usage
 
 Model class:
 
     class Team < ActiveRecord::Base
-      include Redis::Atoms
+      include Redis::Objects
       
       counter :drafted_players
       counter :active_players
+      counter :total_online_players, :global => true
+      list :player_stats
+      set :
       lock :reorder, :timeout => 5  # seconds
     end
 
@@ -51,7 +51,7 @@ Using counters to handle concurrency:
       @team.drafted_players.decrement
     end
 
-Atomic block - a cleaner way to do the above. Exceptions or nil results
+Atomic block - a cleaner way to do the above. Exceptions or return nil
 rewind counter back to previous state:
 
     @team.drafted_players.increment do |val|
@@ -73,6 +73,7 @@ Class methods work too - notice we override ActiveRecord counters:
 
     Team.increment_counter :drafted_players, team_id
     Team.decrement_counter :drafted_players, team_id, 2
+    Team.increment_counter :total_online_players  # no ID on global counter
 
 Class-level atomic block (may save a DB fetch depending on your app):
 
@@ -93,153 +94,21 @@ Class-level lock (same concept)
       Team.reorder_all_players(team_id)
     end
 
-== You Likely Have Some Huge Bugs
+== Examples of Instance Usage
 
-You are probably not handling atomic operations properly in your app, and 
-probably have some nasty lurking race conditions.  The worst part is these
-will get worse as your user count increases, are difficult to reproduce,
-and usually happen to your most critical pieces of code.  (And no, your
-rspec tests can't catch them either.)
+=== Counters
 
-Let's assume you're writing an app to enable students to enroll in courses.
-You need to ensure that no more than 30 students can sign up for a given course.
-In your enrollment code, you have something like this:
+    @counter = Redis::Counter.new('counter_name')
+    @counter.increment
+    puts @counter
+    puts @counter.get  # force re-fetch
 
-    @course = Course.find(1)
-    if @course.num_students < 30
-      @course.course_students.create!(:student_id => 101)
-      @course.num_students += 1
-      @course.save!
-    else
-      # course is full
-    end
-    
-You're screwed.  You now have 32 people in your 30 person class, and you have
-no idea what happened.
+=== Lists
 
-"Well no duh," you're saying, "even the {ActiveRecord docs mention locking}[http://api.rubyonrails.org/classes/ActiveRecord/Locking/Pessimistic.html],
-so I'll just use that."
-
-    @course = Course.find(1, :lock => true)
-    if @course.num_students < 30
-      # ...
-
-Nice try, but now you've introduced other issues.  Any other piece of code
-in your entire app that needs to update _anything_ about the course - maybe
-the course name, or start date, or location - is now serialized.  If you need high
-concurrency, you're still screwed.
-
-You think, "ah-ha, the problem is having a separate counter!"
-
-    @course = Course.find(1)
-    if @course.course_students.count < 30
-      @course.course_students.create!(:student_id => 101)
-    else
-      # course is full
-    end
-
-Nope.  Still screwed.
-
-== The Root Down
-
-It's worth understanding the root issue, and how to address it.
-
-Race conditions arise from the difference in time between *evaluating* and *altering*
-a value.  In our example, we fetched the record, then checked the value, then
-changed it.  The more lines of code between those operations, and the higher your user
-count, the bigger the window of opportunity for other clients to get the data in an
-inconsistent state.
-
-Sometimes race conditions don't matter in practice, since often a user is
-only operating their own data.  This has a race condition, but is probably ok:
-
-    @post = Post.create(:user_id => @user.id, :title => "Whattup", ...)
-    @user.total_posts += 1  # update my post count
-
-But this _would_ be problematic:
-
-    @post = Post.create(:user_id => @user.id, :title => "Whattup", ...)
-    @blog.total_posts += 1  # update post count across all users
-
-As multiple users could be adding posts concurrently.
-
-In a traditional RDBMS, you can increment counters atomically (but not return them)
-by firing off an update statement that self-references the column:
-
-    update users set total_posts = total_posts + 1 where id = 372
-
-You may have seen {ActiveRecord's increment_counter class method}[http://api.rubyonrails.org/classes/ActiveRecord/Base.html#M002278],
-which wraps this functionality.  But outside of being cumbersome, this has
-the side effect that your object is no longer in sync with the DB, so you
-get other issues:
-
-    Blog.increment_counter :total_posts, @blog.id
-    if @blog.total_posts == 1000
-      # the 1000th poster - award them a gold star!
-
-The DB says 1000, but your @blog object still says 999, and the right person
-doesn't get their gold star.  Sad faces all around.
-
-== A Better Way
-
-Bottom line: Any operation that could alter a value *must* return that value in
-the _same_ _operation_ for it to be atomic.  If you do a separate get then set,
-or set then get, you're open to a race condition.  There are very few systems that
-support an "increment and return" type operation, and Redis is one of them
-(Oracle sequences are another).
-
-When you think of the specific things that you need to ensure, many of these will
-reduce to numeric operations:
-
-* Ensuring there are no more than 30 students in a course
-* Getting more than 2 but less than 6 people in a game
-* Keeping a chat room to a max of 50 people
-* Correctly recording the total number of blog posts
-* Only allowing one piece of code to reorder a large dataset at a time
-
-All except the last one can be implemented with counters.  The last one 
-will need a carefully placed lock.
-
-The best way I've found to balance atomicity and concurrency is, for each value,
-actually create two counters:
-
-* A counter you base logic on (eg, +slots_taken+)
-* A counter users see (eg, +current_students+)
-
-The reason you want two counters is you'll need to change the value of the logic
-counter *first*, _before_ checking it, to address any race conditions.  This means
-the value can get wonky momentarily (eg, there could be 32 +slots_taken+ for a 30-person
-course).  This doesn't affect its function - indeed, it's part of what makes it work - but
-does mean you don't want to display it.
-
-So, taking our +Course+ example:
-
-    class Course < ActiveRecord::Base
-      include Redis::Atoms
-      
-      counter :slots_taken
-      counter :current_students
-    end
-
-Then:
-
-    @course = Course.find(1)
-    @course.slots_taken.increment do |val|
-      if val <= @course.max_students
-        @course.course_students.create!(:student_id => 101)
-        @course.current_students.increment
-      end
-    end
-
-Race-condition free.  And, with the separate +current_students+ counter, your
-views get consistent information about the course, since it will only be
-incremented on success.  There is still a race condition where +current_students+
-could be less than the real number of +CourseStudent+ records, but since you'll be
-displaying these values in a view (after that block completes) you shouldn't see
-this manifest in real-world usage.
-
-Now you can sleep soundly, without fear of getting fired at 3am via an angry
-phone call from your boss.  (At least, not about this...)
+    @list = Redis::List.new('list_name')
+    @list << 'a'
+    @list << 'b'
+    puts @list
 
 == Author
 
