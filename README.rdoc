@@ -1,4 +1,4 @@
-= Redis Objects - Lightweight object layer around redis-rb you can also use in a model
+= Redis Objects - Lightweight, atomic object layer around redis-rb
 
 Redis is great _not_ as a replacement for MySQL, but as a way to perform atomic
 operations on _individual_ data structures, like counters, lists, and sets.  People
@@ -17,16 +17,16 @@ by using +new+ with the type of data structure you want to create.
     gem tumble
     gem install redis-objects
    
-== Initialization
+=== Initialization
 
     # If on Rails, config/initializers/redis.rb is a good place for this
     require 'redis'
     require 'redis/objects'
     Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
-== Examples of Class Usage
+== Examples
 
-Model class:
+=== Model Class Usage
 
     class Team < ActiveRecord::Base
       include Redis::Objects
@@ -35,11 +35,34 @@ Model class:
       counter :active_players
       counter :total_online_players, :global => true
       list :player_stats
-      set :
+      set :outfielders
       lock :reorder, :timeout => 5  # seconds
     end
+    
+Familiar Ruby operations Just Work (TM):
 
-Using counters to handle concurrency:
+=== Instance Usage
+
+=== Counters
+
+    @counter = Redis::Counter.new('counter_name')
+    @counter.increment
+    puts @counter
+    puts @counter.get  # force re-fetch
+
+=== Lists
+
+    @list = Redis::List.new('list_name')
+    @list << 'a'
+    @list << 'b'
+    puts @list
+
+== Atomicity
+
+You are probably not handling atomicity correctly in your app.  For a fun rant
+on the topic, see {ATOMICITY}[ATOMICITY.doc]
+
+Atomic counters are a good way to handle concurrency:
 
     @team = Team.find(1)
     if @team.drafted_players.increment <= @team.max_players
@@ -94,21 +117,6 @@ Class-level lock (same concept)
       Team.reorder_all_players(team_id)
     end
 
-== Examples of Instance Usage
-
-=== Counters
-
-    @counter = Redis::Counter.new('counter_name')
-    @counter.increment
-    puts @counter
-    puts @counter.get  # force re-fetch
-
-=== Lists
-
-    @list = Redis::List.new('list_name')
-    @list << 'a'
-    @list << 'b'
-    puts @list
 
 == Author
 
