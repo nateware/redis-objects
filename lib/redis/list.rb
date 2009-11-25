@@ -16,6 +16,7 @@ class Redis
 
     def <<(value)
       push(value)
+      self  # for << 'a' << 'b'
     end
     
     def push(value)
@@ -35,6 +36,7 @@ class Redis
 
     def shift
       redis.lpop(key)
+      @values.shift
     end
 
     def values
@@ -50,17 +52,18 @@ class Redis
       @values = range(0, -1)
     end
     
-    def [](index)
+    def [](index, length=nil)
       case index
       when Range
         range(index.first, index.last)
       else
-        range(index, index)
+        range(index, length || index)
       end
     end
     
     def delete(name, count=0)
-      redis.lrem(name, count)
+      redis.lrem(key, count, name)  # weird api
+      get
     end
 
     def range(start_index, end_index)
@@ -77,17 +80,18 @@ class Redis
 
     def clear
       redis.del(key)
+      @values = []
     end
 
     def length
-      redis.length
+      redis.llen(key)
     end
     alias_method :size, :length
     
     def empty?
       values.empty?
     end
-    
+ 
     def ==(x)
       values == x
     end

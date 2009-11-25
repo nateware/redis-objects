@@ -254,6 +254,32 @@ describe Redis::Objects do
     @roster.player_stats.should be_empty
     @roster.player_stats << 'a'
     @roster.player_stats.should == ['a']
+    @roster.player_stats.get.should == ['a']
+    @roster.player_stats.unshift 'b'
+    @roster.player_stats.should == ['b','a']
+    @roster.player_stats.get.should == ['b','a']
+    @roster.player_stats.push 'c'
+    @roster.player_stats.should == ['b','a','c']
+    @roster.player_stats.get.should == ['b','a','c']
+    @roster.player_stats << 'd'
+    @roster.player_stats.should == ['b','a','c','d']
+    @roster.player_stats.pop
+    @roster.player_stats.should == ['b','a','c']
+    @roster.player_stats.get.should == ['b','a','c']
+    @roster.player_stats.shift
+    @roster.player_stats.should == ['a','c']
+    @roster.player_stats.get.should == ['a','c']
+    @roster.player_stats << 'e' << 'f' << 'e'
+    @roster.player_stats.should == ['a','c','e','f','e']
+    @roster.player_stats.get.should == ['a','c','e','f','e']
+    @roster.player_stats.delete('e')
+    @roster.player_stats.should == ['a','c','f']
+    @roster.player_stats.get.should == ['a','c','f']
+    @roster.player_stats << 'j'
+    @roster.player_stats.should == ['a','c','f','j']
+    @roster.player_stats[0..2].should == ['a','c','f']
+    @roster.player_stats[1, 3].should == ['c','f','j']
+    @roster.player_stats.get.should == ['a','c','f','j']
   end
 
   it "should provide a lock method that accepts a block" do
