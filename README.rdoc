@@ -4,13 +4,12 @@ This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
 the point.
 
 The killer feature of Redis that it allows you to perform atomic operations
-on _individual_ data structures, like counters, lists, and sets, that you can use
-*with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
+on _individual_ data structures, like counters, lists, and sets. You can then use
+these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
 nothing to do with an ORM or even a database. That's where this gem comes in.
 
-
-This gem originally arose out of a need for high-concurrency operations for online
-games; for a fun rant on the topic, see
+This gem originally arose out of a need for high-concurrency atomic operations;
+for a fun rant on the topic, see
 {ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
 or scroll down to "Atomicity" in this README.
 
@@ -45,13 +44,16 @@ by using +new+ with the type of data structure you want to create.
       value :coach
     end
     
-Familiar Ruby operations Just Work:
+Familiar Ruby operations Just Work (TM):
 
     @team = Team.find(1)
     @team.on_base << 'player1'
     @team.on_base << 'player2'
-    puts @team.on_base   # ['player1', 'player2']
+    @team.on_base << 'player3'
+    puts @team.on_base    # ['player1', 'player2']
     @team.on_base.pop
+    @team.on_base.shift
+    @team.on_base.length  # 1
 
 With one purposeful exception - counters cannot be set, only incremented/decremented:
 

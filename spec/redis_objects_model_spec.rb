@@ -279,6 +279,8 @@ describe Redis::Objects do
     @roster.player_stats.should == ['a','c','f','j']
     @roster.player_stats[0..2].should == ['a','c','f']
     @roster.player_stats[1, 3].should == ['c','f','j']
+    @roster.player_stats.length.should == 4
+    @roster.player_stats.size.should == 4
     @roster.player_stats.get.should == ['a','c','f','j']
   end
 
