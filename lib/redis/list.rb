@@ -13,18 +13,28 @@ class Redis
       @options[:type]  ||= @options[:start] == 0 ? :increment : :decrement
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
-    
+
     def <<(value)
       push(value)
     end
     
     def push(value)
-      @redis.rpush(key, value.to_redis)
+      redis.rpush(key, value)
+      @values << value
+    end
+
+    def pop
+      redis.rpop(key)
+      @values.pop
     end
 
     def unshift(value)
-      redis.lpush(key, value.to_redis)
+      redis.lpush(key, value)
       @values.unshift value
+    end
+
+    def shift
+      redis.lpop(key)
     end
 
     def values
@@ -37,16 +47,49 @@ class Redis
     end
     
     def get
-      @values = lrange(key,0,-1)
+      @values = range(0, -1)
     end
     
-    def lrange(start_index, end_index)
+    def [](index)
+      case index
+      when Range
+        range(index.first, index.last)
+      else
+        range(index, index)
+      end
+    end
+    
+    def delete(name, count=0)
+      redis.lrem(name, count)
+    end
+
+    def range(start_index, end_index)
       redis.lrange(key, start_index, end_index)
     end
-    
+ 
+    def at(index)
+      redis.lrange(key, index, index)
+    end
+
+    def last
+      redis.lrange(key, -1, -1)
+    end
+
+    def clear
+      redis.del(key)
+    end
+
     def length
       redis.length
     end
     alias_method :size, :length
+    
+    def empty?
+      values.empty?
+    end
+    
+    def ==(x)
+      values == x
+    end
   end
 end

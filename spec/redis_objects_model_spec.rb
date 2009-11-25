@@ -28,7 +28,7 @@ describe Redis::Objects do
     @roster.basic.reset
     @roster.resort_lock.clear
     @roster.starting_pitcher.delete
-    @roster.player_stats.delete
+    @roster.player_stats.clear
   end
 
   it "should provide a connection method" do
@@ -252,7 +252,8 @@ describe Redis::Objects do
 
   it "should handle lists of simple values" do
     @roster.player_stats.should be_empty
-    
+    @roster.player_stats << 'a'
+    @roster.player_stats.should == ['a']
   end
 
   it "should provide a lock method that accepts a block" do
