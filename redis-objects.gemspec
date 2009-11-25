@@ -1,8 +1,8 @@
 spec = Gem::Specification.new do |s|
   s.name = 'redis-objects'
   s.version = '0.1.0'
-  s.summary = "Lightweight map of Redis types to Ruby objects"
-  s.description = %{Redis::Objects is a lightweight library that lets you use Redis primitives as Ruby objects from any class or ORM}
+  s.summary = "Maps Redis types to Ruby objects"
+  s.description = %{Maps Redis types to Ruby objects, for easy use in any class or ORM}
   s.files = Dir['lib/**/*.rb'] + Dir['spec/**/*.rb']
   s.require_path = 'lib'
   #s.autorequire = 'redis/objects'
