@@ -53,22 +53,21 @@ Familiar Ruby array operations Just Work (TM):
     @team.on_base << 'player1'
     @team.on_base << 'player2'
     @team.on_base << 'player3'
-    puts @team.on_base    # ['player1', 'player2']
+    @team.on_base    # ['player1', 'player2']
     @team.on_base.pop
     @team.on_base.shift
     @team.on_base.length  # 1
     @team.on_base.delete('player3')
-    
+
 Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
     
-    @team.outfielders['1b'] = 'outfielder1'
-    @team.outfielders['lf'] = 'outfielder3'
-    @team.outfielders['lf'] = 'outfielder2'
-    @team.outfielders.keys
-    @team.outfielders.each do |position,player|
-      puts "#{player} is playing #{position}"
+    @team.outfielders << 'outfielder1' << 'outfielder1'
+    @team.outfielders << 'outfielder2'
+    @team.outfielders  # ['outfielder1', 'outfielder2']
+    @team.outfielders.each do |player|
+      puts player
     end
-    position = @team.outfielders.detect{|pos,of| of == 'outfielder3'}
+    player = @team.outfielders.detect{|of| of == 'outfielder2'}
 
 Note counters cannot be assigned to, only incremented/decremented:
 
@@ -101,15 +100,48 @@ Or can pass the handle into the new method:
     @counter = Redis::Counter.new('counter_name')
     @counter.increment
     @counter.decrement
-    puts @counter
-    puts @counter.get  # force re-fetch
+    puts @counter.value
+    @counter.increment do |val|
+      raise "Full" if val > MAX_VAL  # rewind counter
+    end
+
+See the section on "Atomicity" for cool uses of atomic counter blocks.
 
 === Lists
+
+These work just like Ruby arrays:
 
     @list = Redis::List.new('list_name')
     @list << 'a'
     @list << 'b'
-    puts @list
+    @list.include? 'c'   # false
+    @list.values  # ['a','b']
+    @list.shift
+    @list.pop
+    @list.clear
+    # etc
+
+=== Sets
+
+Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
+
+    @set = Redis::Set.new('set_name')
+    @set << 'a'
+    @set << 'b'
+    @set << 'a'
+    @set.member? 'c'   # false
+    @set.members  # ['a','b']
+    @set.each do |member|
+      puts member
+    end
+    @set.clear
+    # etc
+
+=== Values
+
+    @value = Redis::Value.new('value_name')
+    @value.value = 'a'
+    @value.delete
 
 == Atomicity
 

@@ -264,12 +264,16 @@ describe Redis::Objects do
     @roster.player_stats.push 'c'
     @roster.player_stats.should == ['b','a','c']
     @roster.player_stats.get.should == ['b','a','c']
+    @roster.player_stats.first.should == 'b'
+    @roster.player_stats.last.should == 'c'
     @roster.player_stats << 'd'
     @roster.player_stats.should == ['b','a','c','d']
     @roster.player_stats[1].should == 'a'
     @roster.player_stats[0].should == 'b'
     @roster.player_stats[2].should == 'c'
     @roster.player_stats[3].should == 'd'
+    @roster.player_stats.include?('c').should be_true
+    @roster.player_stats.include?('no').should be_false
     @roster.player_stats.pop
     @roster.player_stats[0].should == @roster.player_stats.at(0)
     @roster.player_stats[1].should == @roster.player_stats.at(1)
@@ -350,7 +354,9 @@ describe Redis::Objects do
     @roster.outfielders.get.should == ['a','b']
 
     @roster.outfielders << 'c'
-    @roster.outfielders.member? 'c'
+    @roster.outfielders.member?('c').should be_true
+    @roster.outfielders.include?('c').should be_true
+    @roster.outfielders.member?('no').should be_false
     coll = @roster.outfielders.select{|st| st == 'c'}
     coll.should == ['c']
     @roster.outfielders.sort.should == ['a','b','c']

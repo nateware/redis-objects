@@ -35,6 +35,7 @@ class Redis
     def member?(value)
       redis.sismember(key, value)
     end
+    alias_method :include?, :member?
 
     # Delete the value from the set.  Redis: SREM
     def delete(name)
