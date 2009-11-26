@@ -146,7 +146,8 @@ Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
 == Atomicity
 
 You are probably not handling atomicity correctly in your app.  For a fun rant
-on the topic, see {ATOMICITY}[ATOMICITY.doc]
+on the topic, see
+{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc].
 
 Atomic counters are a good way to handle concurrency:
 
