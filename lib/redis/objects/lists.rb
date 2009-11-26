@@ -20,7 +20,7 @@ class Redis
           @lists[name] = options
           class_eval <<-EndMethods
             def #{name}
-              @#{name} ||= Redis::List.new(field_key(:#{name}), self.class.lists[:#{name}].merge(:redis => redis))
+              @#{name} ||= Redis::List.new(field_key(:#{name}), redis, self.class.lists[:#{name}])
             end
           EndMethods
         end

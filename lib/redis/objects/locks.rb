@@ -22,7 +22,7 @@ class Redis
           @locks[name] = options
           class_eval <<-EndMethods
             def #{name}_lock(&block)
-              @#{name}_lock ||= Redis::Lock.new(field_key(:#{name}_lock), self.class.locks[:#{name}].merge(:redis => redis))
+              @#{name}_lock ||= Redis::Lock.new(field_key(:#{name}_lock), redis, self.class.locks[:#{name}])
             end
           EndMethods
         end

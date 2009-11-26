@@ -20,7 +20,7 @@ class Redis
           @values[name] = options
           class_eval <<-EndMethods
             def #{name}
-              @#{name} ||= Redis::Value.new(field_key(:#{name}), self.class.values[:#{name}].merge(:redis => redis))
+              @#{name} ||= Redis::Value.new(field_key(:#{name}), redis, self.class.values[:#{name}])
             end
             def #{name}=(value)
               #{name}.value = value

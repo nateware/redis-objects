@@ -22,6 +22,8 @@ by using +new+ with the type of data structure you want to create.
     gem tumble
     gem install redis-objects
    
+== Example 1: Class Usage
+
 === Initialization
 
     # If on Rails, config/initializers/redis.rb is a good place for this
@@ -29,22 +31,23 @@ by using +new+ with the type of data structure you want to create.
     require 'redis/objects'
     Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
-== Examples
+=== Model Class
 
-=== Model Class Usage
+Include in any type of class:
 
     class Team < ActiveRecord::Base
       include Redis::Objects
       
-      counter :drafted_players
-      counter :active_players
-      counter :total_online_players, :global => true
+      counter :hits
+      counter :runs
+      counter :outs
+      counter :inning, :start => 1
       list :on_base
       set :outfielders
-      value :coach
+      value :at_bat
     end
     
-Familiar Ruby operations Just Work (TM):
+Familiar Ruby array operations Just Work (TM):
 
     @team = Team.find(1)
     @team.on_base << 'player1'
@@ -54,20 +57,50 @@ Familiar Ruby operations Just Work (TM):
     @team.on_base.pop
     @team.on_base.shift
     @team.on_base.length  # 1
+    @team.on_base.delete('player3')
+    
+Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
+    
+    @team.outfielders['1b'] = 'outfielder1'
+    @team.outfielders['lf'] = 'outfielder3'
+    @team.outfielders['lf'] = 'outfielder2'
+    @team.outfielders.keys
+    @team.outfielders.each do |position,player|
+      puts "#{player} is playing #{position}"
+    end
+    position = @team.outfielders.detect{|pos,of| of == 'outfielder3'}
 
-With one purposeful exception - counters cannot be set, only incremented/decremented:
+Note counters cannot be assigned to, only incremented/decremented:
 
-    @team.drafted_players.increment  # or incr
-    @team.drafted_players.decrement  # or decr
-    @team.drafted_players = 4   # exception
-    @team.drafted_players += 1  # exception
+    @team.hits.increment  # or incr
+    @team.hits.decrement  # or decr
+    @team.runs = 4        # exception
+    @team.runs += 1       # exception
 
-=== Instance Usage
+It would be cool to get that last one working, but Ruby's implementation of +=
+is problematic.
+
+== Example 2: Instance Usage
+
+Each data type can be used independently.
+
+=== Initialization
+
+Can follow the +$redis+ global variable pattern:
+
+    $redis = Redis.new(:host => 'localhost', :port => 6379)
+    @value = Redis::Value.new('myvalue')
+
+Or can pass the handle into the new method:
+    
+    redis  = Redis.new(:host => 'localhost', :port => 6379)
+    @value = Redis::Value.new('myvalue', redis)
 
 === Counters
 
     @counter = Redis::Counter.new('counter_name')
     @counter.increment
+    @counter.decrement
     puts @counter
     puts @counter.get  # force re-fetch
 

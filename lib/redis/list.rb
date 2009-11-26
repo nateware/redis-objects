@@ -4,60 +4,58 @@ class Redis
   # behave as much like Ruby arrays as possible.
   #
   class List
-    attr_reader :key, :options, :redis
-    def initialize(key, options={})
-      @key = key
-      @options = options
-      @redis   = options[:redis] || $redis || Redis::Objects.redis
-      @options[:start] ||= 0
-      @options[:type]  ||= @options[:start] == 0 ? :increment : :decrement
-      @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
-    end
+    require 'enumerator'
+    include Enumerable
 
+    attr_reader :key, :options, :redis
+    def initialize(key, redis=$redis, options={})
+      @key = key
+      @redis = redis
+      @options = options
+    end
+    
+    # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)
       push(value)
       self  # for << 'a' << 'b'
     end
-    
+
+    # Add a member to the end of the list. Redis: RPUSH
     def push(value)
       redis.rpush(key, value)
-      @values << value
     end
 
+    # Remove a member from the end of the list. Redis: RPOP
     def pop
       redis.rpop(key)
-      @values.pop
     end
 
+    # Add a member to the start of the list. Redis: LPUSH
     def unshift(value)
       redis.lpush(key, value)
-      @values.unshift value
     end
 
+    # Remove a member from the start of the list. Redis: LPOP
     def shift
       redis.lpop(key)
-      @values.shift
     end
 
+    # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      @values ||= get
+      range(0, -1)
     end
+    alias_method :get, :values
 
-    def value=(val)
-      redis.set(key, val)
-      @values = val
-    end
-    
-    def get
-      @values = range(0, -1)
-    end
-    
+    # Same functionality as Ruby arrays.  If a single number is given, return
+    # just the element at that index using Redis: LINDEX. Otherwise, return
+    # a range of values using Redis: LRANGE.
     def [](index, length=nil)
-      case index
-      when Range
+      if index.is_a? Range
         range(index.first, index.last)
+      elsif length
+        range(index, length)
       else
-        range(index, length || index)
+        at(index)
       end
     end
     
@@ -66,12 +64,17 @@ class Redis
       get
     end
 
+    def each(&block)
+      values.each(&block)
+    end
+
     def range(start_index, end_index)
       redis.lrange(key, start_index, end_index)
     end
- 
+
+    # Return the value at the given index.
     def at(index)
-      redis.lrange(key, index, index)
+      redis.lindex(key, index)
     end
 
     def last
@@ -80,7 +83,6 @@ class Redis
 
     def clear
       redis.del(key)
-      @values = []
     end
 
     def length
@@ -89,11 +91,15 @@ class Redis
     alias_method :size, :length
     
     def empty?
-      values.empty?
+      length == 0
     end
  
     def ==(x)
       values == x
+    end
+    
+    def to_s
+      values.join(', ')
     end
   end
 end

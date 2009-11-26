@@ -4,10 +4,10 @@ class Redis
   #
   class Value
     attr_reader :key, :options, :redis
-    def initialize(key, options={})
+    def initialize(key, redis=$redis, options={})
       @key = key
+      @redis = redis
       @options = options
-      @redis   = options[:redis] || $redis || Redis::Objects.redis
       @redis.setnx(key, @options[:default]) if @options[:default]
     end
 

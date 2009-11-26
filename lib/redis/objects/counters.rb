@@ -24,7 +24,7 @@ class Redis
           @counters[name] = options
           class_eval <<-EndMethods
             def #{name}
-              @#{name} ||= Redis::Counter.new(field_key(:#{name}), self.class.counters[:#{name}].merge(:redis => redis))
+              @#{name} ||= Redis::Counter.new(field_key(:#{name}), redis, self.class.counters[:#{name}])
             end
           EndMethods
         end

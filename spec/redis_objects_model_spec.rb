@@ -10,6 +10,7 @@ class Roster
   lock :resort, :timeout => 2
   value :starting_pitcher
   list :player_stats
+  set :outfielders
 
   def initialize(id=1) @id = id end
   def id; @id; end
@@ -29,6 +30,7 @@ describe Redis::Objects do
     @roster.resort_lock.clear
     @roster.starting_pitcher.delete
     @roster.player_stats.clear
+    @roster.outfielders.clear
   end
 
   it "should provide a connection method" do
@@ -256,6 +258,7 @@ describe Redis::Objects do
     @roster.player_stats.should == ['a']
     @roster.player_stats.get.should == ['a']
     @roster.player_stats.unshift 'b'
+    @roster.player_stats.to_s.should == 'b, a'
     @roster.player_stats.should == ['b','a']
     @roster.player_stats.get.should == ['b','a']
     @roster.player_stats.push 'c'
@@ -263,7 +266,14 @@ describe Redis::Objects do
     @roster.player_stats.get.should == ['b','a','c']
     @roster.player_stats << 'd'
     @roster.player_stats.should == ['b','a','c','d']
+    @roster.player_stats[1].should == 'a'
+    @roster.player_stats[0].should == 'b'
+    @roster.player_stats[2].should == 'c'
+    @roster.player_stats[3].should == 'd'
     @roster.player_stats.pop
+    @roster.player_stats[0].should == @roster.player_stats.at(0)
+    @roster.player_stats[1].should == @roster.player_stats.at(1)
+    @roster.player_stats[2].should == @roster.player_stats.at(2)
     @roster.player_stats.should == ['b','a','c']
     @roster.player_stats.get.should == ['b','a','c']
     @roster.player_stats.shift
@@ -281,7 +291,69 @@ describe Redis::Objects do
     @roster.player_stats[1, 3].should == ['c','f','j']
     @roster.player_stats.length.should == 4
     @roster.player_stats.size.should == 4
+    @roster.player_stats.should == ['a','c','f','j']
     @roster.player_stats.get.should == ['a','c','f','j']
+
+    i = -1
+    @roster.player_stats.each do |st|
+      st.should == @roster.player_stats[i += 1]
+    end
+    @roster.player_stats.should == ['a','c','f','j']
+    @roster.player_stats.get.should == ['a','c','f','j']
+
+    @roster.player_stats.each_with_index do |st,i|
+      st.should == @roster.player_stats[i]
+    end
+    @roster.player_stats.should == ['a','c','f','j']
+    @roster.player_stats.get.should == ['a','c','f','j']
+
+    coll = @roster.player_stats.collect{|st| st}
+    coll.should == ['a','c','f','j']
+    @roster.player_stats.should == ['a','c','f','j']
+    @roster.player_stats.get.should == ['a','c','f','j']
+
+    @roster.player_stats << 'a'
+    coll = @roster.player_stats.select{|st| st == 'a'}
+    coll.should == ['a','a']
+    @roster.player_stats.should == ['a','c','f','j','a']
+    @roster.player_stats.get.should == ['a','c','f','j','a']
+  end
+
+  it "should handle sets of simple values" do
+    @roster.outfielders.should be_empty
+    @roster.outfielders << 'a' << 'a' << 'a'
+    @roster.outfielders.should == ['a']
+    @roster.outfielders.get.should == ['a']
+    @roster.outfielders << 'b' << 'b'
+    @roster.outfielders.to_s.should == 'a, b'
+    @roster.outfielders.should == ['a','b']
+    @roster.outfielders.members.should == ['a','b']
+    @roster.outfielders.get.should == ['a','b']
+    @roster.outfielders << 'c'
+    @roster.outfielders.sort.should == ['a','b','c']
+    @roster.outfielders.get.sort.should == ['a','b','c']
+    @roster.outfielders.delete('c')
+    @roster.outfielders.should == ['a','b']
+    @roster.outfielders.get.sort.should == ['a','b']
+    @roster.outfielders.length.should == 2
+    @roster.outfielders.size.should == 2
+    
+    i = 0
+    @roster.outfielders.each do |st|
+      i += 1
+    end
+    i.should == @roster.outfielders.length
+
+    coll = @roster.outfielders.collect{|st| st}
+    coll.should == ['a','b']
+    @roster.outfielders.should == ['a','b']
+    @roster.outfielders.get.should == ['a','b']
+
+    @roster.outfielders << 'c'
+    @roster.outfielders.member? 'c'
+    coll = @roster.outfielders.select{|st| st == 'c'}
+    coll.should == ['c']
+    @roster.outfielders.sort.should == ['a','b','c']
   end
 
   it "should provide a lock method that accepts a block" do

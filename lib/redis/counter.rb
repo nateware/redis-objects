@@ -8,12 +8,11 @@ class Redis
   #
   class Counter
     attr_reader :key, :options, :redis
-    def initialize(key, options={})
+    def initialize(key, redis=$redis, options={})
       @key = key
+      @redis = redis
       @options = options
-      @redis = options[:redis] || $redis || Redis::Objects.redis
       @options[:start] ||= 0
-      @options[:type]  ||= @options[:start] == 0 ? :increment : :decrement
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
 
