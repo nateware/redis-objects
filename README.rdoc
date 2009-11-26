@@ -1,4 +1,4 @@
-= Redis::Objects - Lightweight, atomic object layer around redis-rb
+= Redis::Objects - Map Redis types directly to Ruby objects
 
 This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
 the point.
