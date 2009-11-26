@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
   s.name = 'redis-objects'
-  s.version = '0.1.2'
+  s.version = '0.2.0'
   s.summary = "Maps Redis types to Ruby objects"
   s.description = %{Map Redis types directly to Ruby objects. Works with any class or ORM.}
   s.files = Dir['lib/**/*.rb'] + Dir['spec/**/*.rb']
@@ -13,4 +13,7 @@ spec = Gem::Specification.new do |s|
   s.author = "Nate Wiger"
   s.email = "nate@wiger.org"
   s.homepage = "http://github.com/nateware/redis-objects"
+  s.requirements << 'redis, v0.1 or greater'
+  s.add_dependency('redis', '>= 0.1')
 end
+

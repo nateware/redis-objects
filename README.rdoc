@@ -6,34 +6,133 @@ the point.
 The killer feature of Redis that it allows you to perform atomic operations
 on _individual_ data structures, like counters, lists, and sets. You can then use
 these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
-nothing to do with an ORM or even a database. That's where this gem comes in.
+nothing to do with an ORM or even a database.  This gem maps Ezra's +redis+ library
+to Ruby objects to make use seamless.
 
 This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see
 {ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
 or scroll down to "Atomicity" in this README.
 
-There are two ways to use Redis::Objects, either as an +include+ in a class, or
-by using +new+ with the type of data structure you want to create.
+There are two ways to use Redis::Objects, either as an +include+ in a model class,
+or by using +new+ with the type of data structure you want to create.
 
 == Installation
 
     gem install gemcutter
     gem tumble
     gem install redis-objects
-   
-== Example 1: Class Usage
+
+== Example 1: Individual Usage
+
+There is a Ruby object that maps to each Redis type.
 
 === Initialization
 
-    # If on Rails, config/initializers/redis.rb is a good place for this
+You can either set the $redis global variable to your Redis handle:
+
+    $redis = Redis.new(:host => 'localhost', :port => 6379)
+    @value = Redis::Value.new('myvalue')
+
+Or you can pass the Redis handle into the new method:
+
+    redis  = Redis.new(:host => 'localhost', :port => 6379)
+    @value = Redis::Value.new('myvalue', redis)
+
+=== Counters
+
+Create a new counter. The +counter_name+ is the key stored in Redis.
+
+    @counter = Redis::Counter.new('counter_name')
+    @counter.increment
+    @counter.decrement
+    puts @counter.value
+    @counter.increment do |val|
+      raise "Full" if val > MAX_VAL  # rewind counter
+    end
+
+See the section on "Atomicity" for cool uses of atomic counter blocks.
+
+=== Lists
+
+Lists work just like Ruby arrays:
+
+    @list = Redis::List.new('list_name')
+    @list << 'a'
+    @list << 'b'
+    @list.include? 'c'   # false
+    @list.values  # ['a','b']
+    @list << 'c'
+    @list.delete('c')
+    @list[0]
+    @list[0,1]
+    @list[0..1]
+    @list.shift
+    @list.pop
+    @list.clear
+    # etc
+
+=== Sets
+
+Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
+
+    @set = Redis::Set.new('set_name')
+    @set << 'a'
+    @set << 'b'
+    @set << 'a'  # dup ignored
+    @set.member? 'c'   # false
+    @set.members  # ['a','b']
+    @set.each do |member|
+      puts member
+    end
+    @set.clear
+    # etc
+
+You can perform Redis intersections/unions easily:
+
+    @set1 = Redis::Set.new('set1')
+    @set2 = Redis::Set.new('set2')
+    @set3 = Redis::Set.new('set3')
+    members = @set1 & @set2   # intersection
+    members = @set1 | @set2   # union
+    members = @set1 + @set2   # union
+    members = @set1.intersection(@set2, @set3)  # multiple
+    members = @set1.union(@set2, @set3)         # multiple
+
+Or store them in Redis:
+
+    @set1.interstore('intername', @set2, @set3)
+    members = @set1.redis.get('intername')
+    @set1.unionstore('unionname', @set2, @set3)
+    members = @set1.redis.get('unionname')
+
+=== Values
+
+Simple values are easy as well:
+
+    @value = Redis::Value.new('value_name')
+    @value.value = 'a'
+    @value.delete
+
+== Example 2: Class Usage
+
+This method of use makes it easy to integrate Redis types with an existing
+ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
+will work with any class that provides an +id+ method that returns a unique
+value.  Redis::Objects will automatically create keys that are unique to
+each object.
+
+=== Initialization
+
+If on Rails, config/initializers/redis.rb is a good place for this:
+
     require 'redis'
     require 'redis/objects'
     Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
 === Model Class
 
-Include in any type of class:
+Include Redis::Objects in any type of class:
 
     class Team < ActiveRecord::Base
       include Redis::Objects
@@ -46,10 +145,10 @@ Include in any type of class:
       set :outfielders
       value :at_bat
     end
-    
+
 Familiar Ruby array operations Just Work (TM):
 
-    @team = Team.find(1)
+    @team = Team.find_by_name('New York Yankees')
     @team.on_base << 'player1'
     @team.on_base << 'player2'
     @team.on_base << 'player3'
@@ -73,75 +172,15 @@ Note counters cannot be assigned to, only incremented/decremented:
 
     @team.hits.increment  # or incr
     @team.hits.decrement  # or decr
+    @team.hits.incr(3)    # add 3
     @team.runs = 4        # exception
-    @team.runs += 1       # exception
 
-It would be cool to get that last one working, but Ruby's implementation of +=
-is problematic.
+For free, you get a +redis+ handle usable in your class:
 
-== Example 2: Instance Usage
+    @team.redis.get('somekey')
+    @team.redis.smembers('someset')
 
-Each data type can be used independently.
-
-=== Initialization
-
-Can follow the +$redis+ global variable pattern:
-
-    $redis = Redis.new(:host => 'localhost', :port => 6379)
-    @value = Redis::Value.new('myvalue')
-
-Or can pass the handle into the new method:
-    
-    redis  = Redis.new(:host => 'localhost', :port => 6379)
-    @value = Redis::Value.new('myvalue', redis)
-
-=== Counters
-
-    @counter = Redis::Counter.new('counter_name')
-    @counter.increment
-    @counter.decrement
-    puts @counter.value
-    @counter.increment do |val|
-      raise "Full" if val > MAX_VAL  # rewind counter
-    end
-
-See the section on "Atomicity" for cool uses of atomic counter blocks.
-
-=== Lists
-
-These work just like Ruby arrays:
-
-    @list = Redis::List.new('list_name')
-    @list << 'a'
-    @list << 'b'
-    @list.include? 'c'   # false
-    @list.values  # ['a','b']
-    @list.shift
-    @list.pop
-    @list.clear
-    # etc
-
-=== Sets
-
-Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
-
-    @set = Redis::Set.new('set_name')
-    @set << 'a'
-    @set << 'b'
-    @set << 'a'
-    @set.member? 'c'   # false
-    @set.members  # ['a','b']
-    @set.each do |member|
-      puts member
-    end
-    @set.clear
-    # etc
-
-=== Values
-
-    @value = Redis::Value.new('value_name')
-    @value.value = 'a'
-    @value.delete
+You can call any operation supported by {Redis}[http://code.google.com/p/redis/wiki/CommandReference]
 
 == Atomicity
 

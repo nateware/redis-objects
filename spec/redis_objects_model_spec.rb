@@ -1,6 +1,9 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+UNIONSTORE_KEY = 'test:unionstore'
+INTERSTORE_KEY = 'test:interstore'
+
 class Roster
   include Redis::Objects
   counter :available_slots, :start => 10
@@ -21,6 +24,10 @@ describe Redis::Objects do
   before :all do
     @roster  = Roster.new
     @roster2 = Roster.new
+    
+    @roster_1 = Roster.new(1)
+    @roster_2 = Roster.new(2)
+    @roster_3 = Roster.new(3)
   end
   
   before :each do
@@ -31,6 +38,11 @@ describe Redis::Objects do
     @roster.starting_pitcher.delete
     @roster.player_stats.clear
     @roster.outfielders.clear
+    @roster_1.outfielders.clear
+    @roster_2.outfielders.clear
+    @roster_3.outfielders.clear
+    @roster.redis.del(UNIONSTORE_KEY)
+    @roster.redis.del(INTERSTORE_KEY)
   end
 
   it "should provide a connection method" do
@@ -361,6 +373,33 @@ describe Redis::Objects do
     coll.should == ['c']
     @roster.outfielders.sort.should == ['a','b','c']
   end
+  
+  it "should handle set intersections and unions" do
+    @roster_1.outfielders << 'a' << 'b' << 'c' << 'd' << 'e'
+    @roster_2.outfielders << 'c' << 'd' << 'e' << 'f' << 'g'
+    @roster_3.outfielders << 'a' << 'd' << 'g' << 'l' << 'm'
+    @roster_1.outfielders.sort.should == %w(a b c d e)
+    @roster_2.outfielders.sort.should == %w(c d e f g)
+    @roster_3.outfielders.sort.should == %w(a d g l m)
+    (@roster_1.outfielders & @roster_2.outfielders).sort.should == ['c','d','e']
+    @roster_1.outfielders.intersection(@roster_2.outfielders).sort.should == ['c','d','e']
+    @roster_1.outfielders.intersection(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
+    @roster_1.outfielders.intersect(@roster_2.outfielders).sort.should == ['c','d','e']
+    @roster_1.outfielders.inter(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
+    @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders).should == 3
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
+    @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 1
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
+
+    (@roster_1.outfielders | @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+    (@roster_1.outfielders + @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+    @roster_1.outfielders.union(@roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+    @roster_1.outfielders.union(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['a','b','c','d','e','f','g','l','m']
+    @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders).should == 7
+    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
+    @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
+    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+  end
 
   it "should provide a lock method that accepts a block" do
     @roster.resort_lock.key.should == 'roster:1:resort_lock'
@@ -371,7 +410,7 @@ describe Redis::Objects do
     a.should be_true
   end
   
-  xit "should raise an exception if the timeout is exceeded" do
+  it "should raise an exception if the timeout is exceeded" do
     @roster.redis.set(@roster.resort_lock.key, 1)
     error = nil
     begin
