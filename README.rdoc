@@ -6,8 +6,8 @@ the point.
 The killer feature of Redis that it allows you to perform atomic operations
 on _individual_ data structures, like counters, lists, and sets. You can then use
 these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
-nothing to do with an ORM or even a database.  This gem maps Ezra's +redis+ library
-to Ruby objects to make use seamless.
+nothing to do with an ORM or even a database.  This gem maps {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
+to Ruby objects, via a thin layer over Ezra's +redis+ gem.
 
 This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see
@@ -23,13 +23,14 @@ or by using +new+ with the type of data structure you want to create.
     gem tumble
     gem install redis-objects
 
-== Example 1: Individual Usage
+== Example 1: Standalone Usage
 
 There is a Ruby object that maps to each Redis type.
 
 === Initialization
 
-You can either set the $redis global variable to your Redis handle:
+This gem needs a handle to the +redis+ server.  For stanalone use, you can
+either set the $redis global variable to your Redis.new handle:
 
     $redis = Redis.new(:host => 'localhost', :port => 6379)
     @value = Redis::Value.new('myvalue')
@@ -43,6 +44,7 @@ Or you can pass the Redis handle into the new method:
 
 Create a new counter. The +counter_name+ is the key stored in Redis.
 
+    require 'redis/counter'
     @counter = Redis::Counter.new('counter_name')
     @counter.increment
     @counter.decrement
@@ -60,6 +62,7 @@ See the section on "Atomicity" for cool uses of atomic counter blocks.
 
 Lists work just like Ruby arrays:
 
+    require 'redis/list'
     @list = Redis::List.new('list_name')
     @list << 'a'
     @list << 'b'
@@ -87,6 +90,7 @@ Complex data types are no problem:
 
 Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
 
+    require 'redis/set'
     @set = Redis::Set.new('set_name')
     @set << 'a'
     @set << 'b'
@@ -131,6 +135,7 @@ And use complex data types too:
 
 Simple values are easy as well:
 
+    require 'redis/value'
     @value = Redis::Value.new('value_name')
     @value.value = 'a'
     @value.delete
@@ -141,11 +146,11 @@ Of course complex data is no problem:
     @newest  = Redis::Value.new('newest_account')
     @newest.value = @account
 
-== Example 2: Class Usage
+== Example 2: Model Class Usage
 
 Using Redis::Objects this way makes it trivial to integrate Redis types with an
 existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
-will work with any class that provides an +id+ method that returns a unique
+will work with _any_ class that provides an +id+ method that returns a unique
 value.  Redis::Objects will automatically create keys that are unique to
 each object.
 
