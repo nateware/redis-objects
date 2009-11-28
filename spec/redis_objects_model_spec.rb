@@ -1,8 +1,8 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-UNIONSTORE_KEY = 'test:unionstore'
-INTERSTORE_KEY = 'test:interstore'
+require 'redis/objects'
+Redis::Objects.redis = $redis
 
 class Roster
   include Redis::Objects
@@ -76,11 +76,10 @@ describe Redis::Objects do
     @roster2.available_slots.decrement.should == 13
     @roster.available_slots.decrement.should == 12
     @roster2.available_slots.decrement(4).should == 8
-    @roster.available_slots.should == 12
-    @roster.available_slots.get.should == 8
-    @roster.available_slots.reset.should == 10
+    @roster.available_slots.should == 8
+    @roster.available_slots.reset.should be_true
     @roster.available_slots.should == 10
-    @roster.available_slots.reset(15).should == 15
+    @roster.available_slots.reset(15).should be_true
     @roster.available_slots.should == 15
     @roster.pitchers.increment.should == 1
     @roster.basic.increment.should == 1
@@ -260,7 +259,16 @@ describe Redis::Objects do
     @roster.starting_pitcher = 'Trevor Hoffman'
     @roster.starting_pitcher.should == 'Trevor Hoffman'
     @roster.starting_pitcher.get.should == 'Trevor Hoffman'
-    @roster.starting_pitcher.del
+    @roster.starting_pitcher.del.should be_true
+    @roster.starting_pitcher.should be_nil
+  end
+
+  it "should handle complex marshaled values" do
+    @roster.starting_pitcher.should == nil
+    @roster.starting_pitcher = {:json => 'data'}
+    @roster.starting_pitcher.should == {:json => 'data'}
+    @roster.starting_pitcher.get.should == {:json => 'data'}
+    @roster.starting_pitcher.del.should be_true
     @roster.starting_pitcher.should be_nil
   end
 
@@ -286,19 +294,19 @@ describe Redis::Objects do
     @roster.player_stats[3].should == 'd'
     @roster.player_stats.include?('c').should be_true
     @roster.player_stats.include?('no').should be_false
-    @roster.player_stats.pop
+    @roster.player_stats.pop.should == 'd'
     @roster.player_stats[0].should == @roster.player_stats.at(0)
     @roster.player_stats[1].should == @roster.player_stats.at(1)
     @roster.player_stats[2].should == @roster.player_stats.at(2)
     @roster.player_stats.should == ['b','a','c']
     @roster.player_stats.get.should == ['b','a','c']
-    @roster.player_stats.shift
+    @roster.player_stats.shift.should == 'b'
     @roster.player_stats.should == ['a','c']
     @roster.player_stats.get.should == ['a','c']
     @roster.player_stats << 'e' << 'f' << 'e'
     @roster.player_stats.should == ['a','c','e','f','e']
     @roster.player_stats.get.should == ['a','c','e','f','e']
-    @roster.player_stats.delete('e')
+    @roster.player_stats.delete('e').should == 2
     @roster.player_stats.should == ['a','c','f']
     @roster.player_stats.get.should == ['a','c','f']
     @roster.player_stats << 'j'
@@ -399,6 +407,26 @@ describe Redis::Objects do
     @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
     @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+  end
+
+  it "should handle lists of complex data types" do
+    @roster.player_stats << {:json => 'data'}
+    @roster.player_stats << {:json2 => 'data2'}
+    @roster.player_stats.first.should == {:json => 'data'}
+    @roster.player_stats.last.should == {:json2 => 'data2'}
+    @roster.player_stats << [1,2,3,[4,5]]
+    @roster.player_stats.last.should == [1,2,3,[4,5]]
+    @roster.player_stats.shift.should == {:json => 'data'}
+  end
+  
+  it "should handle sets of complex data types" do
+    @roster.outfielders << {:a => 1} << {:b => 2}
+    @roster.outfielders.member?({:b => 2})
+    @roster.outfielders.members.should == [{:b => 2}, {:a => 1}]
+    @roster_1.outfielders << {:a => 1} << {:b => 2}
+    @roster_2.outfielders << {:b => 2} << {:c => 3}
+    (@roster_1.outfielders & @roster_2.outfielders).should == [{:b => 2}]
+    (@roster_1.outfielders | @roster_2.outfielders).should == [{:b=>2}, {:c=>3}, {:a=>1}]
   end
 
   it "should provide a lock method that accepts a block" do

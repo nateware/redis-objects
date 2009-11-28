@@ -58,10 +58,6 @@ class Redis
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
         
-        # Adapted from Redis::Model for marshaling complex data
-        require 'redis/data_types'
-        klass.send :include, Redis::DataTypes
-        
         # Pull in each object type
         klass.send :include, Redis::Objects::Counters
         klass.send :include, Redis::Objects::Values

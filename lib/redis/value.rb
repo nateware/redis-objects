@@ -3,6 +3,9 @@ class Redis
   # Class representing a simple value.  You can use standard Ruby operations on it.
   #
   class Value
+    require 'redis/serialize'
+    include Redis::Serialize
+
     attr_reader :key, :options, :redis
     def initialize(key, redis=$redis, options={})
       @key = key
@@ -11,22 +14,17 @@ class Redis
       @redis.setnx(key, @options[:default]) if @options[:default]
     end
 
-    def value
-      @value ||= get
-    end
-
     def value=(val)
-      redis.set(key, val)
-      @value = val
+      redis.set(key, to_redis(val))
     end
     
-    def get
-      @value = redis.get(key)
+    def value
+      from_redis redis.get(key)
     end
-    
+    alias_method :get, :value
+
     def delete
       redis.del(key)
-      @value = nil
     end
     alias_method :del, :delete
 

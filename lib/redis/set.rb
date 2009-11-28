@@ -5,6 +5,8 @@ class Redis
   class Set
     require 'enumerator'
     include Enumerable
+    require 'redis/serialize'
+    include Redis::Serialize
 
     attr_reader :key, :options, :redis
     
@@ -24,25 +26,24 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, value)
+      redis.sadd(key, to_redis(value))
     end
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
-      redis.smembers(key)
+      from_redis redis.smembers(key)
     end
     alias_method :get, :members
 
     # Returns true if the specified value is in the set.  Redis: SISMEMBER
     def member?(value)
-      redis.sismember(key, value)
+      redis.sismember(key, to_redis(value))
     end
     alias_method :include?, :member?
 
     # Delete the value from the set.  Redis: SREM
-    def delete(name)
-      redis.srem(key, name)
-      get
+    def delete(value)
+      redis.srem(key, value)
     end
 
     # Wipe the set entirely.  Redis: DEL
@@ -68,7 +69,7 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      redis.sinter(key, *keys_from_objects(sets))
+      from_redis redis.sinter(key, *keys_from_objects(sets))
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -92,7 +93,7 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      redis.sunion(key, *keys_from_objects(sets))
+      from_redis redis.sunion(key, *keys_from_objects(sets))
     end
     alias_method :|, :union
     alias_method :+, :union

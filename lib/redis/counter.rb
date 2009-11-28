@@ -22,29 +22,22 @@ class Redis
     # disconnecting all players).
     def reset(to=options[:start])
       redis.set(key, to.to_i)
-      @value = to.to_i
     end
 
-    # Re-gets the current value of the counter.  Normally just calling the
+    # Returns the current value of the counter.  Normally just calling the
     # counter will lazily fetch the value, and only update it if increment
     # or decrement is called.  This forces a network call to redis-server
     # to get the current value.
-    def get
-      @value = redis.get(key).to_i
+    def value
+      redis.get(key).to_i
     end
+    alias_method :get, :value
 
     # Delete a counter.  Usage discouraged.  Consider +reset+ instead.
     def delete
       redis.del(key)
-      @value = nil
     end
     alias_method :del, :delete
-
-    # Returns the (possibly cached) value of the counter.  Use +get+ to
-    # force a re-get from the Redis server.
-    def value
-      @value ||= get
-    end
 
     # Increment the counter atomically and return the new value.  If passed
     # a block, that block will be evaluated with the new value of the counter
@@ -52,8 +45,8 @@ class Redis
     # counter will automatically be decremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
-      @value = redis.incr(key, by).to_i
-      block_given? ? rewindable_block(:decrement, @value, &block) : @value
+      val = redis.incr(key, by).to_i
+      block_given? ? rewindable_block(:decrement, val, &block) : val
     end
     alias_method :incr, :increment
 
@@ -63,8 +56,8 @@ class Redis
     # counter will automatically be incremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def decrement(by=1, &block)
-      @value = redis.decr(key, by).to_i
-      block_given? ? rewindable_block(:increment, @value, &block) : @value
+      val = redis.decr(key, by).to_i
+      block_given? ? rewindable_block(:increment, val, &block) : val
     end
     alias_method :decr, :decrement
 

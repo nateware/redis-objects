@@ -6,6 +6,8 @@ class Redis
   class List
     require 'enumerator'
     include Enumerable
+    require 'redis/serialize'
+    include Redis::Serialize
 
     attr_reader :key, :options, :redis
     def initialize(key, redis=$redis, options={})
@@ -22,27 +24,27 @@ class Redis
 
     # Add a member to the end of the list. Redis: RPUSH
     def push(value)
-      redis.rpush(key, value)
+      redis.rpush(key, to_redis(value))
     end
 
     # Remove a member from the end of the list. Redis: RPOP
     def pop
-      redis.rpop(key)
+      from_redis redis.rpop(key)
     end
 
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(value)
-      redis.lpush(key, value)
+      redis.lpush(key, to_redis(value))
     end
 
     # Remove a member from the start of the list. Redis: LPOP
     def shift
-      redis.lpop(key)
+      from_redis redis.lpop(key)
     end
 
     # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      range(0, -1)
+      from_redis range(0, -1)
     end
     alias_method :get, :values
 
@@ -64,7 +66,6 @@ class Redis
     # Redis: LREM
     def delete(name, count=0)
       redis.lrem(key, count, name)  # weird api
-      get
     end
 
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
@@ -76,13 +77,13 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: LRANGE
     def range(start_index, end_index)
-      redis.lrange(key, start_index, end_index)
+      from_redis redis.lrange(key, start_index, end_index)
     end
 
     # Return the value at the given index. Can also use familiar list[index] syntax.
     # Redis: LINDEX
     def at(index)
-      redis.lindex(key, index)
+      from_redis redis.lindex(key, index)
     end
 
     # Return the first element in the list. Redis: LINDEX(0)
