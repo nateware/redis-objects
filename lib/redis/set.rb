@@ -99,9 +99,31 @@ class Redis
     alias_method :+, :union
 
     # Calculate the union and store it in Redis as +name+. Returns the number
-    # of elements in the stored union. Redis: SINTERSTORE
+    # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
       redis.sunionstore(name, key, *keys_from_objects(sets))
+    end
+
+    # Return the difference vs another set.  Can pass it either another set
+    # object or set name. Also available as ^ which is a bit cleaner:
+    #
+    #    members_difference = set1 ^ set2
+    #
+    # If you want to specify multiple sets, you must use +difference+:
+    #
+    #    members_difference = set1.union(set2, set3, set4)
+    #
+    # Redis: SDIFF
+    def difference(*sets)
+      from_redis redis.sdiff(key, *keys_from_objects(sets))
+    end
+    alias_method :^, :difference
+    alias_method :diff, :difference
+
+    # Calculate the diff and store it in Redis as +name+. Returns the number
+    # of elements in the stored union. Redis: SDIFFSTORE
+    def diffstore(name, *sets)
+      redis.sdiffstore(name, key, *keys_from_objects(sets))
     end
 
     # The number of members in the set. Aliased as size. Redis: SCARD
