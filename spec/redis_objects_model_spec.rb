@@ -48,6 +48,12 @@ describe Redis::Objects do
     @roster_3.outfielders.clear
     @roster.redis.del(UNIONSTORE_KEY)
     @roster.redis.del(INTERSTORE_KEY)
+    @roster.redis.del(DIFFSTORE_KEY)
+    
+    Roster.total_players_online.reset
+    Roster.all_player_stats.clear
+    Roster.all_players_online.clear
+    Roster.last_player.delete
   end
 
   it "should provide a connection method" do
@@ -282,6 +288,8 @@ describe Redis::Objects do
     @roster.starting_pitcher = 'Trevor Hoffman'
     @roster.starting_pitcher.should == 'Trevor Hoffman'
     @roster.starting_pitcher.get.should == 'Trevor Hoffman'
+    @roster.starting_pitcher = 'Tom Selleck'
+    @roster.starting_pitcher.should == 'Tom Selleck'
     @roster.starting_pitcher.del.should be_true
     @roster.starting_pitcher.should be_nil
   end
@@ -430,6 +438,162 @@ describe Redis::Objects do
     @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
     @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+  end
+
+  it "should handle class-level global lists of simple values" do
+    Roster.all_player_stats.should be_empty
+    Roster.all_player_stats << 'a'
+    Roster.all_player_stats.should == ['a']
+    Roster.all_player_stats.get.should == ['a']
+    Roster.all_player_stats.unshift 'b'
+    Roster.all_player_stats.to_s.should == 'b, a'
+    Roster.all_player_stats.should == ['b','a']
+    Roster.all_player_stats.get.should == ['b','a']
+    Roster.all_player_stats.push 'c'
+    Roster.all_player_stats.should == ['b','a','c']
+    Roster.all_player_stats.get.should == ['b','a','c']
+    Roster.all_player_stats.first.should == 'b'
+    Roster.all_player_stats.last.should == 'c'
+    Roster.all_player_stats << 'd'
+    Roster.all_player_stats.should == ['b','a','c','d']
+    Roster.all_player_stats[1].should == 'a'
+    Roster.all_player_stats[0].should == 'b'
+    Roster.all_player_stats[2].should == 'c'
+    Roster.all_player_stats[3].should == 'd'
+    Roster.all_player_stats.include?('c').should be_true
+    Roster.all_player_stats.include?('no').should be_false
+    Roster.all_player_stats.pop.should == 'd'
+    Roster.all_player_stats[0].should == Roster.all_player_stats.at(0)
+    Roster.all_player_stats[1].should == Roster.all_player_stats.at(1)
+    Roster.all_player_stats[2].should == Roster.all_player_stats.at(2)
+    Roster.all_player_stats.should == ['b','a','c']
+    Roster.all_player_stats.get.should == ['b','a','c']
+    Roster.all_player_stats.shift.should == 'b'
+    Roster.all_player_stats.should == ['a','c']
+    Roster.all_player_stats.get.should == ['a','c']
+    Roster.all_player_stats << 'e' << 'f' << 'e'
+    Roster.all_player_stats.should == ['a','c','e','f','e']
+    Roster.all_player_stats.get.should == ['a','c','e','f','e']
+    Roster.all_player_stats.delete('e').should == 2
+    Roster.all_player_stats.should == ['a','c','f']
+    Roster.all_player_stats.get.should == ['a','c','f']
+    Roster.all_player_stats << 'j'
+    Roster.all_player_stats.should == ['a','c','f','j']
+    Roster.all_player_stats[0..2].should == ['a','c','f']
+    Roster.all_player_stats[1, 3].should == ['c','f','j']
+    Roster.all_player_stats.length.should == 4
+    Roster.all_player_stats.size.should == 4
+    Roster.all_player_stats.should == ['a','c','f','j']
+    Roster.all_player_stats.get.should == ['a','c','f','j']
+
+    i = -1
+    Roster.all_player_stats.each do |st|
+      st.should == Roster.all_player_stats[i += 1]
+    end
+    Roster.all_player_stats.should == ['a','c','f','j']
+    Roster.all_player_stats.get.should == ['a','c','f','j']
+
+    Roster.all_player_stats.each_with_index do |st,i|
+      st.should == Roster.all_player_stats[i]
+    end
+    Roster.all_player_stats.should == ['a','c','f','j']
+    Roster.all_player_stats.get.should == ['a','c','f','j']
+
+    coll = Roster.all_player_stats.collect{|st| st}
+    coll.should == ['a','c','f','j']
+    Roster.all_player_stats.should == ['a','c','f','j']
+    Roster.all_player_stats.get.should == ['a','c','f','j']
+
+    Roster.all_player_stats << 'a'
+    coll = Roster.all_player_stats.select{|st| st == 'a'}
+    coll.should == ['a','a']
+    Roster.all_player_stats.should == ['a','c','f','j','a']
+    Roster.all_player_stats.get.should == ['a','c','f','j','a']
+  end
+
+  it "should handle class-level global sets of simple values" do
+    Roster.all_players_online.should be_empty
+    Roster.all_players_online << 'a' << 'a' << 'a'
+    Roster.all_players_online.should == ['a']
+    Roster.all_players_online.get.should == ['a']
+    Roster.all_players_online << 'b' << 'b'
+    Roster.all_players_online.to_s.should == 'a, b'
+    Roster.all_players_online.should == ['a','b']
+    Roster.all_players_online.members.should == ['a','b']
+    Roster.all_players_online.get.should == ['a','b']
+    Roster.all_players_online << 'c'
+    Roster.all_players_online.sort.should == ['a','b','c']
+    Roster.all_players_online.get.sort.should == ['a','b','c']
+    Roster.all_players_online.delete('c')
+    Roster.all_players_online.should == ['a','b']
+    Roster.all_players_online.get.sort.should == ['a','b']
+    Roster.all_players_online.length.should == 2
+    Roster.all_players_online.size.should == 2
+    
+    i = 0
+    Roster.all_players_online.each do |st|
+      i += 1
+    end
+    i.should == Roster.all_players_online.length
+
+    coll = Roster.all_players_online.collect{|st| st}
+    coll.should == ['a','b']
+    Roster.all_players_online.should == ['a','b']
+    Roster.all_players_online.get.should == ['a','b']
+
+    Roster.all_players_online << 'c'
+    Roster.all_players_online.member?('c').should be_true
+    Roster.all_players_online.include?('c').should be_true
+    Roster.all_players_online.member?('no').should be_false
+    coll = Roster.all_players_online.select{|st| st == 'c'}
+    coll.should == ['c']
+    Roster.all_players_online.sort.should == ['a','b','c']
+  end
+  
+  it "should handle class-level global values" do
+    Roster.last_player.should == nil
+    Roster.last_player = 'Trevor Hoffman'
+    Roster.last_player.should == 'Trevor Hoffman'
+    Roster.last_player.get.should == 'Trevor Hoffman'
+    Roster.last_player = 'Tom Selleck'
+    Roster.last_player.should == 'Tom Selleck'
+    Roster.last_player.del.should be_true
+    Roster.last_player.should be_nil
+  end
+
+  it "should easily enable @object.class.global_objects" do
+    @roster.class.all_players_online.should be_empty
+    @roster.class.all_players_online << 'a' << 'a' << 'a'
+    @roster.class.all_players_online.should == ['a']
+    @roster2.class.all_players_online.should == ['a']
+
+    @roster.all_players_online.should == ['a']
+    @roster2.all_players_online.should == ['a']
+
+    @roster.class.all_player_stats.should be_empty
+    @roster.class.all_player_stats << 'a'
+    @roster.class.all_player_stats.should == ['a']
+    @roster.class.all_player_stats.get.should == ['a']
+    @roster.class.all_player_stats.unshift 'b'
+    @roster.class.all_player_stats.to_s.should == 'b, a'
+    @roster.class.all_player_stats.should == ['b','a']
+    @roster2.class.all_player_stats.should == ['b','a']
+
+    @roster.all_player_stats.should == ['b','a']
+    @roster2.all_player_stats.should == ['b','a']
+    @roster2.all_player_stats << 'b'
+    @roster.all_player_stats.should == ['b','a','b']
+    
+    @roster.last_player.should == nil
+    @roster.class.last_player = 'Trevor Hoffman'
+    @roster.last_player.should == 'Trevor Hoffman'
+    @roster.last_player.get.should == 'Trevor Hoffman'
+    @roster2.last_player.get.should == 'Trevor Hoffman'
+    @roster2.last_player = 'Tom Selleck'
+    @roster.last_player.should == 'Tom Selleck'
+    @roster.last_player.del.should be_true
+    @roster.last_player.should be_nil
+    @roster2.last_player.should be_nil
   end
 
   it "should handle lists of complex data types" do

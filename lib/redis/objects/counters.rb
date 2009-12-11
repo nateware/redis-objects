@@ -29,6 +29,11 @@ class Redis
                 @#{name} ||= Redis::Counter.new(field_key(:#{name}, ''), redis, @redis_objects[:#{name}])
               end
             EndMethods
+            class_eval <<-EndMethods
+              def #{name}
+                self.class.#{name}
+              end
+            EndMethods
           else
             class_eval <<-EndMethods
               def #{name}

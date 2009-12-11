@@ -17,11 +17,27 @@ class Redis
         def lock(name, options={})
           options[:timeout] ||= 5  # seconds
           @redis_objects[name] = options.merge(:type => :lock)
-          class_eval <<-EndMethods
-            def #{name}_lock(&block)
-              @#{name}_lock ||= Redis::Lock.new(field_key(:#{name}_lock), redis, self.class.redis_objects[:#{name}])
-            end
-          EndMethods
+          if options[:global]
+            instance_eval <<-EndMethods
+              def #{name}_lock(&block)
+                @#{name} ||= Redis::Lock.new(field_key(:#{name}_lock, ''), redis, @redis_objects[:#{name}])
+              end
+            EndMethods
+            class_eval <<-EndMethods
+              def #{name}_lock(&block)
+                self.class.#{name}(block)
+              end
+            EndMethods
+          else
+            class_eval <<-EndMethods
+              def #{name}_lock(&block)
+                @#{name} ||= Redis::Lock.new(field_key(:#{name}_lock), redis, self.class.redis_objects[:#{name}])
+              end
+            EndMethods
+          end
+
+          
+          
         end
 
         # Obtain a lock, and execute the block synchronously.  Any other code
