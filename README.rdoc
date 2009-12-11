@@ -29,7 +29,7 @@ There is a Ruby object that maps to each Redis type.
 
 === Initialization
 
-This gem needs a handle to the +redis+ server.  For stanalone use, you can
+This gem needs a handle to the +redis+ server.  For standalone use, you can
 either set the $redis global variable to your Redis.new handle:
 
     $redis = Redis.new(:host => 'localhost', :port => 6379)
