@@ -9,11 +9,16 @@ class Roster
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
-  counter :all_players_online, :global => true
   lock :resort, :timeout => 2
   value :starting_pitcher
   list :player_stats
   set :outfielders
+
+  # global class counters
+  counter :total_players_online, :global => true
+  list :all_player_stats, :global => true
+  set :all_players_online, :global => true
+  value :last_player, :global => true
 
   def initialize(id=1) @id = id end
   def id; @id; end
@@ -95,6 +100,24 @@ describe Redis::Objects do
     Roster.decrement_counter(:available_slots, @roster.id).should == 11
     Roster.reset_counter(:available_slots, @roster.id).should == true
     Roster.get_counter(:available_slots, @roster.id).should == 10
+  end
+
+  it "should support class-level increment/decrement of global counters" do
+    Roster.total_players_online.should == 0
+    Roster.total_players_online.increment.should == 1
+    Roster.total_players_online.decrement.should == 0
+    Roster.total_players_online.increment(3).should == 3
+    Roster.total_players_online.decrement(2).should == 1
+    Roster.total_players_online.reset.should be_true
+    Roster.total_players_online.should == 0
+    
+    Roster.get_counter(:total_players_online).should == 0
+    Roster.increment_counter(:total_players_online).should == 1
+    Roster.increment_counter(:total_players_online, nil, 3).should == 4
+    Roster.decrement_counter(:total_players_online, nil, 2).should == 2
+    Roster.decrement_counter(:total_players_online).should == 1
+    Roster.reset_counter(:total_players_online).should == true
+    Roster.get_counter(:total_players_online).should == 0
   end
 
   it "should take an atomic block for increment/decrement" do

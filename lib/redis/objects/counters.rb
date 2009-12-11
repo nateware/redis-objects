@@ -4,9 +4,10 @@ require 'redis/counter'
 class Redis
   module Objects
     class UndefinedCounter < StandardError; end #:nodoc:
+    class MissingID < StandardError; end #:nodoc:
+
     module Counters
       def self.included(klass)
-        klass.instance_variable_set('@counters', {})
         klass.instance_variable_set('@initialized_counters', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
@@ -14,33 +15,41 @@ class Redis
 
       # Class methods that appear in your class when you include Redis::Objects.
       module ClassMethods
-        attr_reader :counters, :initialized_counters
+        attr_reader :initialized_counters
 
         # Define a new counter.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def counter(name, options={})
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
-          @counters[name] = options
-          class_eval <<-EndMethods
-            def #{name}
-              @#{name} ||= Redis::Counter.new(field_key(:#{name}), redis, self.class.counters[:#{name}])
-            end
-          EndMethods
+          @redis_objects[name] = options.merge(:type => :counter)
+          if options[:global]
+            instance_eval <<-EndMethods
+              def #{name}
+                @#{name} ||= Redis::Counter.new(field_key(:#{name}, ''), redis, @redis_objects[:#{name}])
+              end
+            EndMethods
+          else
+            class_eval <<-EndMethods
+              def #{name}
+                @#{name} ||= Redis::Counter.new(field_key(:#{name}), redis, self.class.redis_objects[:#{name}])
+              end
+            EndMethods
+          end
         end
 
         # Get the current value of the counter. It is more efficient
         # to use the instance method if possible.
-        def get_counter(name, id)
-          verify_counter_defined!(name)
+        def get_counter(name, id=nil)
+          verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           redis.get(field_key(name, id)).to_i
         end
 
         # Increment a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
-        def increment_counter(name, id, by=1, &block)
-          verify_counter_defined!(name)
+        def increment_counter(name, id=nil, by=1, &block)
+          verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.incr(field_key(name, id), by).to_i
           block_given? ? rewindable_block(:decrement_counter, name, id, value, &block) : value
@@ -48,30 +57,33 @@ class Redis
 
         # Decrement a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
-        def decrement_counter(name, id, by=1, &block)
-          verify_counter_defined!(name)
+        def decrement_counter(name, id=nil, by=1, &block)
+          verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.decr(field_key(name, id), by).to_i
           block_given? ? rewindable_block(:increment_counter, name, id, value, &block) : value
         end
 
         # Reset a counter to its starting value.
-        def reset_counter(name, id, to=nil)
-          verify_counter_defined!(name)
-          to = @counters[name][:start] if to.nil?
+        def reset_counter(name, id=nil, to=nil)
+          verify_counter_defined!(name, id)
+          to = @redis_objects[name][:start] if to.nil?
           redis.set(field_key(name, id), to)
         end
         
         private
         
-        def verify_counter_defined!(name) #:nodoc:
-          raise Redis::Objects::UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless @counters.has_key?(name)
+        def verify_counter_defined!(name, id) #:nodoc:
+          raise Redis::Objects::UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless @redis_objects.has_key?(name)
+          if id.nil? and !@redis_objects[name][:global]
+            raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
+          end
         end
         
         def initialize_counter!(name, id) #:nodoc:
           key = field_key(name, id)
           unless @initialized_counters[key]
-            redis.setnx(key, @counters[name][:start])
+            redis.setnx(key, @redis_objects[name][:start])
           end
           @initialized_counters[key] = true
         end

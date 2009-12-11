@@ -5,22 +5,19 @@ class Redis
   module Objects
     module Lists
       def self.included(klass)
-        klass.instance_variable_set('@lists', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
       end
 
       # Class methods that appear in your class when you include Redis::Objects.
       module ClassMethods
-        attr_reader :lists
-
         # Define a new list.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def list(name, options={})
-          @lists[name] = options
+          @redis_objects[name] = options.merge(:type => :list)
           class_eval <<-EndMethods
             def #{name}
-              @#{name} ||= Redis::List.new(field_key(:#{name}), redis, self.class.lists[:#{name}])
+              @#{name} ||= Redis::List.new(field_key(:#{name}), redis, self.class.redis_objects[:#{name}])
             end
           EndMethods
         end

@@ -55,6 +55,7 @@ class Redis
       def included(klass)
         # Core (this file)
         klass.instance_variable_set('@redis', @redis)
+        klass.instance_variable_set('@redis_objects', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
         
@@ -69,8 +70,7 @@ class Redis
 
     # Class methods that appear in your class when you include Redis::Objects.
     module ClassMethods
-      attr_accessor :redis
-      
+      attr_accessor :redis, :redis_objects
 
       # Set the Redis prefix to use. Defaults to model_name
       def prefix=(prefix) @prefix = prefix end
