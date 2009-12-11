@@ -5,8 +5,10 @@ class Redis
   class Set
     require 'enumerator'
     include Enumerable
-    require 'redis/serialize'
-    include Redis::Serialize
+    require 'redis/helpers/core_commands'
+    include Redis::Helpers::CoreCommands
+    require 'redis/helpers/serialize'
+    include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
     
@@ -44,11 +46,6 @@ class Redis
     # Delete the value from the set.  Redis: SREM
     def delete(value)
       redis.srem(key, value)
-    end
-
-    # Wipe the set entirely.  Redis: DEL
-    def clear
-      redis.del(key)
     end
 
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,

@@ -103,7 +103,7 @@ Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
     @set.clear
     # etc
 
-You can perform Redis intersections/unions easily:
+You can perform Redis intersections/unions/diffs easily:
 
     @set1 = Redis::Set.new('set1')
     @set2 = Redis::Set.new('set2')
@@ -111,8 +111,11 @@ You can perform Redis intersections/unions easily:
     members = @set1 & @set2   # intersection
     members = @set1 | @set2   # union
     members = @set1 + @set2   # union
+    members = @set1 ^ @set2   # union
+    members = @set1 - @set2   # union
     members = @set1.intersection(@set2, @set3)  # multiple
     members = @set1.union(@set2, @set3)         # multiple
+    members = @set1.difference(@set2, @set3)    # multiple
 
 Or store them in Redis:
 
@@ -120,6 +123,8 @@ Or store them in Redis:
     members = @set1.redis.get('intername')
     @set1.unionstore('unionname', @set2, @set3)
     members = @set1.redis.get('unionname')
+    @set1.diffstore('diffname', @set2, @set3)
+    members = @set1.redis.get('diffname')
 
 And use complex data types too:
 
@@ -129,6 +134,7 @@ And use complex data types too:
     @set2 << {:name => "Jeff", :city => "Del Mar"}
 
     @set1 & @set2  # Nate
+    @set1 - @set2  # Peter
     @set1 | @set2  # all 3 people
 
 === Values

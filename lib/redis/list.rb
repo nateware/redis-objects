@@ -6,8 +6,10 @@ class Redis
   class List
     require 'enumerator'
     include Enumerable
-    require 'redis/serialize'
-    include Redis::Serialize
+    require 'redis/helpers/core_commands'
+    include Redis::Helpers::CoreCommands
+    require 'redis/helpers/serialize'
+    include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
     def initialize(key, redis=$redis, options={})
@@ -63,6 +65,7 @@ class Redis
     
     # Delete the element(s) from the list that match name. If count is specified,
     # only the first-N (if positive) or last-N (if negative) will be removed.
+    # Use .del to completely delete the entire key.
     # Redis: LREM
     def delete(name, count=0)
       redis.lrem(key, count, name)  # weird api
@@ -94,11 +97,6 @@ class Redis
     # Return the last element in the list. Redis: LINDEX(-1)
     def last
       at(-1)
-    end
-
-    # Clear the list entirely. Redis: DEL
-    def clear
-      redis.del(key)
     end
 
     # Return the length of the list. Aliased as size. Redis: LLEN

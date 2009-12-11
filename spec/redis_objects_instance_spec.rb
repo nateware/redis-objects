@@ -36,6 +36,18 @@ describe Redis::Value do
     @value.should be_nil
   end
 
+  it "should support renaming values" do
+    @value.value = 'Peter Pan'
+    @value.key.should == 'spec/value'
+    @value.rename('spec/value2').should be_true
+    @value.key.should == 'spec/value2'
+    @value.should == 'Peter Pan'
+    old = Redis::Value.new('spec/value')
+    old.should be_nil
+    old.value = 'Tuff'
+    @value.renamenx('spec/value').should be_false
+  end
+
   after :all do
     @value.delete
   end
@@ -131,6 +143,23 @@ describe Redis::List do
     @list.last.should == [1,2,3,[4,5]]
     @list.shift.should == {:json => 'data'}
   end
+  
+  it "should support renaming lists" do
+    @list.should be_empty
+    @list << 'a' << 'b' << 'a' << 3
+    @list.should == ['a','b','a','3']
+    @list.key.should == 'spec/list'
+    @list.rename('spec/list2').should be_true
+    @list.key.should == 'spec/list2'
+    old = Redis::List.new('spec/list')
+    old.should be_empty
+    old << 'Tuff'
+    @list.renamenx('spec/list').should be_false
+    @list.renamenx(old).should be_false
+    @list.renamenx('spec/foo').should be_true
+    @list.clear
+    @list.redis.del('spec/list2')
+  end
 
   after :all do
     @list.clear
@@ -219,6 +248,7 @@ describe Redis::Set do
 
     (@set_1 ^ @set_2).sort.should == ["a", "b"]
     (@set_1 - @set_2).sort.should == ["a", "b"]
+    (@set_2 - @set_1).sort.should == ["f", "g"]
     @set_1.difference(@set_2).sort.should == ["a", "b"]
     @set_1.diff(@set_2).sort.should == ["a", "b"]
     @set_1.difference(@set_2, @set_3).sort.should == ['b']
@@ -226,6 +256,23 @@ describe Redis::Set do
     @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
     @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
     @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['b']
+  end
+
+  it "should support renaming sets" do
+    @set.should be_empty
+    @set << 'a' << 'b' << 'a' << 3
+    @set.sort.should == ['3','a','b']
+    @set.key.should == 'spec/set'
+    @set.rename('spec/set2').should be_true
+    @set.key.should == 'spec/set2'
+    old = Redis::Set.new('spec/set')
+    old.should be_empty
+    old << 'Tuff'
+    @set.renamenx('spec/set').should be_false
+    @set.renamenx(old).should be_false
+    @set.renamenx('spec/foo').should be_true
+    @set.clear
+    @set.redis.del('spec/set2')
   end
 
   after :all do

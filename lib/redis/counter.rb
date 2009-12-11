@@ -7,6 +7,9 @@ class Redis
   # class to define a counter.
   #
   class Counter
+    require 'redis/helpers/core_commands'
+    include Redis::Helpers::CoreCommands
+
     attr_reader :key, :options, :redis
     def initialize(key, redis=$redis, options={})
       @key = key
@@ -21,7 +24,7 @@ class Redis
     # with a parent and starting over (for example, restarting a game and
     # disconnecting all players).
     def reset(to=options[:start])
-      redis.set(key, to.to_i)
+      redis.set key, to.to_i
     end
 
     # Returns the current value of the counter.  Normally just calling the
@@ -32,12 +35,6 @@ class Redis
       redis.get(key).to_i
     end
     alias_method :get, :value
-
-    # Delete a counter.  Usage discouraged.  Consider +reset+ instead.
-    def delete
-      redis.del(key)
-    end
-    alias_method :del, :delete
 
     # Increment the counter atomically and return the new value.  If passed
     # a block, that block will be evaluated with the new value of the counter
