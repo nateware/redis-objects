@@ -191,7 +191,7 @@ describe Redis::Set do
     @set.sort.should == ['a','b','c']
   end
   
-  it "should handle set intersections and unions" do
+  it "should handle set intersections, unions, and diffs" do
     @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
     @set_2 << 'c' << 'd' << 'e' << 'f' << 'g'
     @set_3 << 'a' << 'd' << 'g' << 'l' << 'm'
@@ -216,6 +216,16 @@ describe Redis::Set do
     @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
     @set_1.unionstore(UNIONSTORE_KEY, @set_2, @set_3).should == 9
     @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+
+    (@set_1 ^ @set_2).sort.should == ["a", "b"]
+    (@set_1 - @set_2).sort.should == ["a", "b"]
+    @set_1.difference(@set_2).sort.should == ["a", "b"]
+    @set_1.diff(@set_2).sort.should == ["a", "b"]
+    @set_1.difference(@set_2, @set_3).sort.should == ['b']
+    @set_1.diffstore(DIFFSTORE_KEY, @set_2).should == 2
+    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
+    @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
+    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['b']
   end
 
   after :all do

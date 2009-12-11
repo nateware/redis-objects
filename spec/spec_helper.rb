@@ -5,3 +5,4 @@ $redis = Redis.new(:host => ENV['REDIS_HOST'], :port => ENV['REDIS_PORT'])
 
 UNIONSTORE_KEY = 'test:unionstore'
 INTERSTORE_KEY = 'test:interstore'
+DIFFSTORE_KEY  = 'test:diffstore'
