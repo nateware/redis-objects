@@ -1,0 +1,15 @@
+
+*0.2.2 [Final] (14 December 2009)*
+
+* Added @set.diff(@set2) with "^" and "-" synonyms (oversight). [Nate Wiger]
+
+* Implemented Redis core commands in all data types, such as rename. [Nate Wiger]
+
+* Renamed Redis::Serialize to Redis::Helpers::Serialize to keep Redis:: cleaner. [Nate Wiger]
+
+* More spec coverage. [Nate Wiger]
+
+*0.2.1 [Final] (27 November 2009)*
+
+* First worthwhile public release, with good spec coverage and functionality. [Nate Wiger]
+

@@ -16,17 +16,17 @@ class Redis
         redis.type key
       end
       
-      def rename(name)
+      def rename(name, setkey=true)
         dest = name.is_a?(self.class) ? name.key : name
         ret  = redis.rename key, dest
-        @key = dest if ret
+        @key = dest if ret && setkey
         ret
       end
 
-      def renamenx(name)
+      def renamenx(name, setkey=true)
         dest = name.is_a?(self.class) ? name.key : name
         ret  = redis.renamenx key, dest
-        @key = dest if ret
+        @key = dest if ret && setkey
         ret
       end
     

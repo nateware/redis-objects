@@ -149,8 +149,13 @@ describe Redis::List do
     @list << 'a' << 'b' << 'a' << 3
     @list.should == ['a','b','a','3']
     @list.key.should == 'spec/list'
+    @list.rename('spec/list3', false).should be_true
+    @list.key.should == 'spec/list'
+    @list.redis.del('spec/list3')
+    @list << 'a' << 'b' << 'a' << 3
     @list.rename('spec/list2').should be_true
     @list.key.should == 'spec/list2'
+    @list.redis.lrange(@list.key, 0, 3).should == ['a','b','a','3']
     old = Redis::List.new('spec/list')
     old.should be_empty
     old << 'Tuff'
