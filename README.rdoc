@@ -111,8 +111,8 @@ You can perform Redis intersections/unions/diffs easily:
     members = @set1 & @set2   # intersection
     members = @set1 | @set2   # union
     members = @set1 + @set2   # union
-    members = @set1 ^ @set2   # union
-    members = @set1 - @set2   # union
+    members = @set1 ^ @set2   # difference
+    members = @set1 - @set2   # difference
     members = @set1.intersection(@set2, @set3)  # multiple
     members = @set1.union(@set2, @set3)         # multiple
     members = @set1.difference(@set2, @set3)    # multiple
@@ -190,16 +190,17 @@ Familiar Ruby array operations Just Work (TM):
     @team.on_base << 'player1'
     @team.on_base << 'player2'
     @team.on_base << 'player3'
-    @team.on_base    # ['player1', 'player2']
+    @team.on_base    # ['player1', 'player2', 'player3']
     @team.on_base.pop
     @team.on_base.shift
     @team.on_base.length  # 1
-    @team.on_base.delete('player3')
+    @team.on_base.delete('player2')
 
 Sets work too:
-    
-    @team.outfielders << 'outfielder1' << 'outfielder1'
+
+    @team.outfielders << 'outfielder1'
     @team.outfielders << 'outfielder2'
+    @team.outfielders << 'outfielder1'   # dup ignored
     @team.outfielders  # ['outfielder1', 'outfielder2']
     @team.outfielders.each do |player|
       puts player
@@ -208,8 +209,8 @@ Sets work too:
 
 And you can do intersections between ORM objects (kinda cool):
 
-    @team1.outfielders | @team2.outfielders   # all outfielders
-    @team1.outfielders & @team2.outfielders   # should be empty
+    @team1.outfielders | @team2.outfielders   # outfielders on both teams
+    @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
 
 Counters can be atomically incremented/decremented (but not assigned):
 
@@ -290,6 +291,6 @@ Class-level lock (same concept)
 
 == Author
 
-Copyright (c) 2009 {Nate Wiger}[http://nate.wiger.org].  All Rights Reserved.
+Copyright (c) 2009-2010 {Nate Wiger}[http://nate.wiger.org].  All Rights Reserved.
 Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
 
