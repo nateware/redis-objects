@@ -25,7 +25,8 @@ or by using +new+ with the type of data structure you want to create.
 
 == Example 1: Standalone Usage
 
-There is a Ruby object that maps to each Redis type.
+There is a Ruby object that maps to each Redis type.  The goal is to make Redis
+types work just like native Ruby types.
 
 === Initialization
 
