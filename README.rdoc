@@ -292,7 +292,7 @@ Class-level lock (same concept)
       Team.reorder_all_players(team_id)
     end
 
-Lock expiration.  Sometimes you want to make sure your locks are cleanup should
+Lock expiration.  Sometimes you want to make sure your locks are cleaned up should
 the unthinkable happen (server failure).  You can set lock expirations to handle
 this.  Expired locks are released by the next process to attempt lock.  Just
 make sure you expiration value is sufficiently large compared to your expected
