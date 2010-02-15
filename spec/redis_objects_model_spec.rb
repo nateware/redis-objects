@@ -635,4 +635,5 @@ describe Redis::Objects do
     error.should_not be_nil
     error.should be_kind_of(Redis::Lock::LockTimeout)
   end
+
 end
