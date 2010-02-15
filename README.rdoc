@@ -278,6 +278,10 @@ Class-level atomic block (may save a DB fetch depending on your app):
 
 Locks with Redis. On completion or exception the lock is released:
 
+    class Team < ActiveRecord::Base
+      lock :reorder # declare a lock
+    end
+
     @team.reorder_lock.lock do
       @team.reorder_all_players
     end
@@ -286,6 +290,16 @@ Class-level lock (same concept)
 
     Team.obtain_lock(:reorder, team_id) do
       Team.reorder_all_players(team_id)
+    end
+
+Lock expiration.  Sometimes you want to make sure your locks are cleanup should
+the unthinkable happen (server failure).  You can set lock expirations to handle
+this.  Expired locks are released by the next process to attempt lock.  Just
+make sure you expiration value is sufficiently large compared to your expected
+lock time.
+
+    class Team < ActiveRecord::Base
+      lock :reorder, :expiration => 15.minutes
     end
 
 

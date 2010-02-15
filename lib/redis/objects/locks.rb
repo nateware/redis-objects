@@ -16,6 +16,7 @@ class Redis
         # so it can be used alongside ActiveRecord/DataMapper, etc.
         def lock(name, options={})
           options[:timeout] ||= 5  # seconds
+          options[:init] = false if options[:init].nil? # default :init to false
           @redis_objects[name] = options.merge(:type => :lock)
           if options[:global]
             instance_eval <<-EndMethods
@@ -47,7 +48,7 @@ class Redis
           verify_lock_defined!(name)
           raise ArgumentError, "Missing block to #{self.name}.obtain_lock" unless block_given?
           lock_name = field_key("#{name}_lock", id)
-          Redis::Lock.new(redis, lock_name, self.class.redis_objects[name]).lock(&block)
+          Redis::Lock.new(lock_name, redis, self.redis_objects[name]).lock(&block)
         end
 
         # Clear the lock.  Use with care - usually only in an Admin page to clear
