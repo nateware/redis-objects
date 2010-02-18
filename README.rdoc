@@ -3,7 +3,7 @@
 This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
 the point.
 
-The killer feature of Redis that it allows you to perform atomic operations
+The killer feature of Redis is that it allows you to perform atomic operations
 on _individual_ data structures, like counters, lists, and sets. You can then use
 these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
 nothing to do with an ORM or even a database.  This gem maps {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
@@ -19,8 +19,6 @@ or by using +new+ with the type of data structure you want to create.
 
 == Installation
 
-    gem install gemcutter
-    gem tumble
     gem install redis-objects
 
 == Example 1: Model Class Usage
