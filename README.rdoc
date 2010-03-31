@@ -10,8 +10,7 @@ nothing to do with an ORM or even a database.  This gem maps {Redis types}[http:
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.
 
 This gem originally arose out of a need for high-concurrency atomic operations;
-for a fun rant on the topic, see
-{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
+for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
 or scroll down to "Atomicity" in this README.
 
 There are two ways to use Redis::Objects, either as an +include+ in a model class,
@@ -236,7 +235,7 @@ Of course complex data is no problem:
 
 You are probably not handling atomicity correctly in your app.  For a fun rant
 on the topic, see
-{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc].
+{An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant].
 
 Atomic counters are a good way to handle concurrency:
 
