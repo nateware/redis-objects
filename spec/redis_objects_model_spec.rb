@@ -282,6 +282,19 @@ describe Redis::Objects do
     end
     error.should be_kind_of(NoMethodError)
   end
+
+  it "should support obtain_lock as a class method" do
+    error = nil
+    begin
+      Roster.obtain_lock(:resort, 2) do
+        Roster.redis.get("roster:2:resort_lock").should_not be_nil
+      end
+    rescue => error
+    end
+
+    error.should be_nil
+    Roster.redis.get("roster:2:resort_lock").should be_nil
+  end
   
   it "should handle simple values" do
     @roster.starting_pitcher.should == nil
@@ -635,4 +648,5 @@ describe Redis::Objects do
     error.should_not be_nil
     error.should be_kind_of(Redis::Lock::LockTimeout)
   end
+
 end

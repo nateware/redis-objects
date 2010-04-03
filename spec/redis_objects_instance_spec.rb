@@ -5,6 +5,7 @@ require 'redis/counter'
 require 'redis/list'
 require 'redis/set'
 require 'redis/value'
+require 'redis/lock'
 
 describe Redis::Value do
   before :all do
@@ -329,4 +330,91 @@ describe Redis::Counter do
   after :all do
     @counter.delete
   end
+end
+
+describe Redis::Lock do
+
+  before :each do
+    $redis.flushall
+  end
+
+  it "should set the value to the expiration" do
+    start = Time.now
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :init => false)
+    lock.lock do
+      expiration = $redis.get("test_lock").to_f
+
+      # The expiration stored in redis should be 15 seconds from when we started
+      # or a little more
+      expiration.should be_close((start + expiry).to_f, 2.0)
+    end
+
+    # key should have been cleaned up
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should set value to 1 when no expiration is set" do
+    lock = Redis::Lock.new(:test_lock, $redis, :init => false)
+    lock.lock do
+      $redis.get('test_lock').should == '1'
+    end
+
+    # key should have been cleaned up
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should let lock be gettable when lock is expired" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+
+    # create a fake lock in the past
+    $redis.set("test_lock", Time.now-(expiry + 60))
+
+    gotit = false
+    lock.lock do
+      gotit = true
+    end
+
+    # should get the lock because it has expired
+    gotit.should be_true
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should not let non-expired locks be gettable" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+
+    # create a fake lock
+    $redis.set("test_lock", (Time.now + expiry).to_f)
+
+    gotit = false
+    error = nil
+    begin
+      lock.lock do
+        gotit = true
+      end
+    rescue => error
+    end
+
+    error.should be_kind_of(Redis::Lock::LockTimeout)
+
+    # should not have the lock
+    gotit.should_not be_true
+
+    # lock value should still be set
+    $redis.get("test_lock").should_not be_nil
+  end
+
+  it "should not remove the key if lock is held past expiration" do
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => 0.0, :init => false)
+
+    lock.lock do
+      sleep 1.1
+    end
+
+    # lock value should still be set since the lock was held for more than the expiry
+    $redis.get("test_lock").should_not be_nil
+  end
+
 end

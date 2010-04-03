@@ -3,15 +3,14 @@
 This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
 the point.
 
-The killer feature of Redis that it allows you to perform atomic operations
+The killer feature of Redis is that it allows you to perform atomic operations
 on _individual_ data structures, like counters, lists, and sets. You can then use
 these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
 nothing to do with an ORM or even a database.  This gem maps {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.
 
 This gem originally arose out of a need for high-concurrency atomic operations;
-for a fun rant on the topic, see
-{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc],
+for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
 or scroll down to "Atomicity" in this README.
 
 There are two ways to use Redis::Objects, either as an +include+ in a model class,
@@ -19,27 +18,107 @@ or by using +new+ with the type of data structure you want to create.
 
 == Installation
 
-    gem install gemcutter
-    gem tumble
     gem install redis-objects
 
-== Example 1: Standalone Usage
+== Example 1: Model Class Usage
+
+Using Redis::Objects this way makes it trivial to integrate Redis types with an
+existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
+will work with _any_ class that provides an +id+ method that returns a unique
+value.  Redis::Objects will automatically create keys that are unique to
+each object.
+
+=== Initialization
+
+Redis::Objects needs a handle created by Redis.new.  If you're on Rails,
+config/initializers/redis.rb is a good place for this:
+
+    require 'redis'
+    require 'redis/objects'
+    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+
+You can use Redis::Objects with any framework.  There are *no* dependencies on Rails.
+I use it from Sinatra and rake tasks all the time.
+
+=== Model Class
+
+Include Redis::Objects in any type of class:
+
+    class Team < ActiveRecord::Base
+      include Redis::Objects
+
+      counter :hits
+      counter :runs
+      counter :outs
+      counter :inning, :start => 1
+      list :on_base
+      set :outfielders
+      value :at_bat
+    end
+
+Familiar Ruby array operations Just Work (TM):
+
+    @team = Team.find_by_name('New York Yankees')
+    @team.on_base << 'player1'
+    @team.on_base << 'player2'
+    @team.on_base << 'player3'
+    @team.on_base    # ['player1', 'player2', 'player3']
+    @team.on_base.pop
+    @team.on_base.shift
+    @team.on_base.length  # 1
+    @team.on_base.delete('player2')
+
+Sets work too:
+
+    @team.outfielders << 'outfielder1'
+    @team.outfielders << 'outfielder2'
+    @team.outfielders << 'outfielder1'   # dup ignored
+    @team.outfielders  # ['outfielder1', 'outfielder2']
+    @team.outfielders.each do |player|
+      puts player
+    end
+    player = @team.outfielders.detect{|of| of == 'outfielder2'}
+
+And you can do intersections between ORM objects (kinda cool):
+
+    @team1.outfielders | @team2.outfielders   # outfielders on both teams
+    @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
+
+Counters can be atomically incremented/decremented (but not assigned):
+
+    @team.hits.increment  # or incr
+    @team.hits.decrement  # or decr
+    @team.hits.incr(3)    # add 3
+    @team.runs = 4        # exception
+
+Finally, for free, you get a +redis+ method that points directly to a Redis connection:
+
+    Team.redis.get('somekey')
+    @team = Team.new
+    @team.redis.get('somekey')
+    @team.redis.smembers('someset')
+
+You can use the +redis+ handle to directly call any {Redis command}[http://code.google.com/p/redis/wiki/CommandReference]
+
+== Example 2: Standalone Usage
 
 There is a Ruby object that maps to each Redis type.  The goal is to make Redis
 types work just like native Ruby types.
 
 === Initialization
 
-This gem needs a handle to the +redis+ server.  For standalone use, you can
-either set the $redis global variable to your Redis.new handle:
+Again, Redis::Objects needs a handle to the +redis+ server.  For standalone use, you
+can either set the $redis global variable:
 
     $redis = Redis.new(:host => 'localhost', :port => 6379)
     @value = Redis::Value.new('myvalue')
 
-Or you can pass the Redis handle into the new method:
+Or you can pass the Redis handle into the new method for each type:
 
     redis  = Redis.new(:host => 'localhost', :port => 6379)
     @value = Redis::Value.new('myvalue', redis)
+
+Your choice.
 
 === Counters
 
@@ -153,86 +232,11 @@ Of course complex data is no problem:
     @newest  = Redis::Value.new('newest_account')
     @newest.value = @account
 
-== Example 2: Model Class Usage
-
-Using Redis::Objects this way makes it trivial to integrate Redis types with an
-existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
-will work with _any_ class that provides an +id+ method that returns a unique
-value.  Redis::Objects will automatically create keys that are unique to
-each object.
-
-=== Initialization
-
-If on Rails, config/initializers/redis.rb is a good place for this:
-
-    require 'redis'
-    require 'redis/objects'
-    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
-
-=== Model Class
-
-Include Redis::Objects in any type of class:
-
-    class Team < ActiveRecord::Base
-      include Redis::Objects
-      
-      counter :hits
-      counter :runs
-      counter :outs
-      counter :inning, :start => 1
-      list :on_base
-      set :outfielders
-      value :at_bat
-    end
-
-Familiar Ruby array operations Just Work (TM):
-
-    @team = Team.find_by_name('New York Yankees')
-    @team.on_base << 'player1'
-    @team.on_base << 'player2'
-    @team.on_base << 'player3'
-    @team.on_base    # ['player1', 'player2', 'player3']
-    @team.on_base.pop
-    @team.on_base.shift
-    @team.on_base.length  # 1
-    @team.on_base.delete('player2')
-
-Sets work too:
-
-    @team.outfielders << 'outfielder1'
-    @team.outfielders << 'outfielder2'
-    @team.outfielders << 'outfielder1'   # dup ignored
-    @team.outfielders  # ['outfielder1', 'outfielder2']
-    @team.outfielders.each do |player|
-      puts player
-    end
-    player = @team.outfielders.detect{|of| of == 'outfielder2'}
-
-And you can do intersections between ORM objects (kinda cool):
-
-    @team1.outfielders | @team2.outfielders   # outfielders on both teams
-    @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
-
-Counters can be atomically incremented/decremented (but not assigned):
-
-    @team.hits.increment  # or incr
-    @team.hits.decrement  # or decr
-    @team.hits.incr(3)    # add 3
-    @team.runs = 4        # exception
-
-Finally, for free, you get a +redis+ handle usable in your class that
-points directly to a Redis API object:
-
-    @team.redis.get('somekey')
-    @team.redis.smembers('someset')
-
-You can use the +redis+ handle to directly call any {Redis command}[http://code.google.com/p/redis/wiki/CommandReference]
-
 == Atomic Counters and Locks
 
 You are probably not handling atomicity correctly in your app.  For a fun rant
 on the topic, see
-{ATOMICITY}[http://github.com/nateware/redis-objects/blob/master/ATOMICITY.rdoc].
+{An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant].
 
 Atomic counters are a good way to handle concurrency:
 
@@ -279,6 +283,10 @@ Class-level atomic block (may save a DB fetch depending on your app):
 
 Locks with Redis. On completion or exception the lock is released:
 
+    class Team < ActiveRecord::Base
+      lock :reorder # declare a lock
+    end
+
     @team.reorder_lock.lock do
       @team.reorder_all_players
     end
@@ -287,6 +295,16 @@ Class-level lock (same concept)
 
     Team.obtain_lock(:reorder, team_id) do
       Team.reorder_all_players(team_id)
+    end
+
+Lock expiration.  Sometimes you want to make sure your locks are cleaned up should
+the unthinkable happen (server failure).  You can set lock expirations to handle
+this.  Expired locks are released by the next process to attempt lock.  Just
+make sure you expiration value is sufficiently large compared to your expected
+lock time.
+
+    class Team < ActiveRecord::Base
+      lock :reorder, :expiration => 15.minutes
     end
 
 
