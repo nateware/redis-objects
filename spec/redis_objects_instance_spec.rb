@@ -3,9 +3,10 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/counter'
 require 'redis/list'
-require 'redis/set'
 require 'redis/value'
 require 'redis/lock'
+require 'redis/set'
+require 'redis/sorted_set'
 
 describe Redis::Value do
   before :all do
@@ -172,6 +173,134 @@ describe Redis::List do
   end
 end
 
+describe Redis::Counter do
+  before :all do
+    @counter  = Redis::Counter.new('spec/counter')
+    @counter2 = Redis::Counter.new('spec/counter')
+  end
+
+  before :each do
+    @counter.reset
+  end
+
+  it "should support increment/decrement of counters" do
+    @counter.key.should == 'spec/counter'
+    @counter.incr(10)
+    @counter.should == 10
+    
+    # math proxy ops
+    (@counter == 10).should be_true
+    (@counter <= 10).should be_true
+    (@counter < 11).should be_true
+    (@counter > 9).should be_true
+    (@counter >= 10).should be_true
+    "#{@counter}".should == "10"
+
+    @counter.increment.should == 11
+    @counter.increment.should == 12
+    @counter2.increment.should == 13
+    @counter2.increment(2).should == 15
+    @counter.decrement.should == 14
+    @counter2.decrement.should == 13
+    @counter.decrement.should == 12
+    @counter2.decrement(4).should == 8
+    @counter.should == 8
+    @counter.reset.should be_true
+    @counter.should == 0
+    @counter.reset(15).should be_true
+    @counter.should == 15
+  end
+
+  after :all do
+    @counter.delete
+  end
+end
+
+describe Redis::Lock do
+  before :each do
+    $redis.flushall
+  end
+
+  it "should set the value to the expiration" do
+    start = Time.now
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :init => false)
+    lock.lock do
+      expiration = $redis.get("test_lock").to_f
+
+      # The expiration stored in redis should be 15 seconds from when we started
+      # or a little more
+      expiration.should be_close((start + expiry).to_f, 2.0)
+    end
+
+    # key should have been cleaned up
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should set value to 1 when no expiration is set" do
+    lock = Redis::Lock.new(:test_lock, $redis, :init => false)
+    lock.lock do
+      $redis.get('test_lock').should == '1'
+    end
+
+    # key should have been cleaned up
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should let lock be gettable when lock is expired" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+
+    # create a fake lock in the past
+    $redis.set("test_lock", Time.now-(expiry + 60))
+
+    gotit = false
+    lock.lock do
+      gotit = true
+    end
+
+    # should get the lock because it has expired
+    gotit.should be_true
+    $redis.get("test_lock").should be_nil
+  end
+
+  it "should not let non-expired locks be gettable" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+
+    # create a fake lock
+    $redis.set("test_lock", (Time.now + expiry).to_f)
+
+    gotit = false
+    error = nil
+    begin
+      lock.lock do
+        gotit = true
+      end
+    rescue => error
+    end
+
+    error.should be_kind_of(Redis::Lock::LockTimeout)
+
+    # should not have the lock
+    gotit.should_not be_true
+
+    # lock value should still be set
+    $redis.get("test_lock").should_not be_nil
+  end
+
+  it "should not remove the key if lock is held past expiration" do
+    lock = Redis::Lock.new(:test_lock, $redis, :expiration => 0.0, :init => false)
+
+    lock.lock do
+      sleep 1.1
+    end
+
+    # lock value should still be set since the lock was held for more than the expiry
+    $redis.get("test_lock").should_not be_nil
+  end
+end
+
 describe Redis::Set do
   before :all do
     @set = Redis::Set.new('spec/set')
@@ -289,132 +418,122 @@ describe Redis::Set do
   end
 end
 
-describe Redis::Counter do
+describe Redis::SortedSet do
   before :all do
-    @counter  = Redis::Counter.new('spec/counter')
-    @counter2 = Redis::Counter.new('spec/counter')
+    @set = Redis::SortedSet.new('spec/zset')
+    @set_1 = Redis::SortedSet.new('spec/zset_1')
+    @set_2 = Redis::SortedSet.new('spec/zset_2')
+    @set_3 = Redis::SortedSet.new('spec/zset_3')
   end
 
   before :each do
-    @counter.reset
+    @set.clear
+    @set_1.clear
+    @set_2.clear
+    @set_3.clear
   end
 
-  it "should support increment/decrement of counters" do
-    @counter.key.should == 'spec/counter'
-    @counter.incr(10)
-    @counter.should == 10
+  it "should handle sets of simple values" do
+    @set.should be_empty
+    @set[1] = 'a'
+    @set[2] = 'a'
+    @set[3] = 'a'
+    # @set << [1, 'a'] << [2, 'a'] << [3, 'a']
+    @set.should == [3, 'a']
+    @set.get.should == ['a']
+    @set << 'b' << 'b'
+    @set.to_s.should == 'a, b'
+    @set.should == ['a','b']
+    @set.members.should == ['a','b']
+    @set.get.should == ['a','b']
+    @set << 'c'
+    @set.sort.should == ['a','b','c']
+    @set.get.sort.should == ['a','b','c']
+    @set.delete('c')
+    @set.should == ['a','b']
+    @set.get.sort.should == ['a','b']
+    @set.length.should == 2
+    @set.size.should == 2
     
-    # math proxy ops
-    (@counter == 10).should be_true
-    (@counter <= 10).should be_true
-    (@counter < 11).should be_true
-    (@counter > 9).should be_true
-    (@counter >= 10).should be_true
-    "#{@counter}".should == "10"
+    i = 0
+    @set.each do |st|
+      i += 1
+    end
+    i.should == @set.length
 
-    @counter.increment.should == 11
-    @counter.increment.should == 12
-    @counter2.increment.should == 13
-    @counter2.increment(2).should == 15
-    @counter.decrement.should == 14
-    @counter2.decrement.should == 13
-    @counter.decrement.should == 12
-    @counter2.decrement(4).should == 8
-    @counter.should == 8
-    @counter.reset.should be_true
-    @counter.should == 0
-    @counter.reset(15).should be_true
-    @counter.should == 15
+    coll = @set.collect{|st| st}
+    coll.should == ['a','b']
+    @set.should == ['a','b']
+    @set.get.should == ['a','b']
+
+    @set << 'c'
+    @set.member?('c').should be_true
+    @set.include?('c').should be_true
+    @set.member?('no').should be_false
+    coll = @set.select{|st| st == 'c'}
+    coll.should == ['c']
+    @set.sort.should == ['a','b','c']
+  end
+  
+  it "should handle set intersections, unions, and diffs" do
+    @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
+    @set_2 << 'c' << 'd' << 'e' << 'f' << 'g'
+    @set_3 << 'a' << 'd' << 'g' << 'l' << 'm'
+    @set_1.sort.should == %w(a b c d e)
+    @set_2.sort.should == %w(c d e f g)
+    @set_3.sort.should == %w(a d g l m)
+    (@set_1 & @set_2).sort.should == ['c','d','e']
+    @set_1.intersection(@set_2).sort.should == ['c','d','e']
+    @set_1.intersection(@set_2, @set_3).sort.should == ['d']
+    @set_1.intersect(@set_2).sort.should == ['c','d','e']
+    @set_1.inter(@set_2, @set_3).sort.should == ['d']
+    @set_1.interstore(INTERSTORE_KEY, @set_2).should == 3
+    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
+    @set_1.interstore(INTERSTORE_KEY, @set_2, @set_3).should == 1
+    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
+
+    (@set_1 | @set_2).sort.should == ['a','b','c','d','e','f','g']
+    (@set_1 + @set_2).sort.should == ['a','b','c','d','e','f','g']
+    @set_1.union(@set_2).sort.should == ['a','b','c','d','e','f','g']
+    @set_1.union(@set_2, @set_3).sort.should == ['a','b','c','d','e','f','g','l','m']
+    @set_1.unionstore(UNIONSTORE_KEY, @set_2).should == 7
+    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
+    @set_1.unionstore(UNIONSTORE_KEY, @set_2, @set_3).should == 9
+    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+
+    (@set_1 ^ @set_2).sort.should == ["a", "b"]
+    (@set_1 - @set_2).sort.should == ["a", "b"]
+    (@set_2 - @set_1).sort.should == ["f", "g"]
+    @set_1.difference(@set_2).sort.should == ["a", "b"]
+    @set_1.diff(@set_2).sort.should == ["a", "b"]
+    @set_1.difference(@set_2, @set_3).sort.should == ['b']
+    @set_1.diffstore(DIFFSTORE_KEY, @set_2).should == 2
+    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
+    @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
+    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['b']
+  end
+
+  it "should support renaming sets" do
+    @set.should be_empty
+    # @set << 'a' << 'b' << 'a' << 3
+    @set.sort.should == ['3','a','b']
+    @set.key.should == 'spec/zset'
+    @set.rename('spec/zset2').should be_true
+    @set.key.should == 'spec/zset2'
+    old = Redis::SortedSet.new('spec/zset')
+    old.should be_empty
+    old << 'Tuff'
+    @set.renamenx('spec/zset').should be_false
+    @set.renamenx(old).should be_false
+    @set.renamenx('spec/zfoo').should be_true
+    @set.clear
+    @set.redis.del('spec/zset2')
   end
 
   after :all do
-    @counter.delete
+    @set.clear
+    @set_1.clear
+    @set_2.clear
+    @set_3.clear
   end
-end
-
-describe Redis::Lock do
-
-  before :each do
-    $redis.flushall
-  end
-
-  it "should set the value to the expiration" do
-    start = Time.now
-    expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :init => false)
-    lock.lock do
-      expiration = $redis.get("test_lock").to_f
-
-      # The expiration stored in redis should be 15 seconds from when we started
-      # or a little more
-      expiration.should be_close((start + expiry).to_f, 2.0)
-    end
-
-    # key should have been cleaned up
-    $redis.get("test_lock").should be_nil
-  end
-
-  it "should set value to 1 when no expiration is set" do
-    lock = Redis::Lock.new(:test_lock, $redis, :init => false)
-    lock.lock do
-      $redis.get('test_lock').should == '1'
-    end
-
-    # key should have been cleaned up
-    $redis.get("test_lock").should be_nil
-  end
-
-  it "should let lock be gettable when lock is expired" do
-    expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
-
-    # create a fake lock in the past
-    $redis.set("test_lock", Time.now-(expiry + 60))
-
-    gotit = false
-    lock.lock do
-      gotit = true
-    end
-
-    # should get the lock because it has expired
-    gotit.should be_true
-    $redis.get("test_lock").should be_nil
-  end
-
-  it "should not let non-expired locks be gettable" do
-    expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
-
-    # create a fake lock
-    $redis.set("test_lock", (Time.now + expiry).to_f)
-
-    gotit = false
-    error = nil
-    begin
-      lock.lock do
-        gotit = true
-      end
-    rescue => error
-    end
-
-    error.should be_kind_of(Redis::Lock::LockTimeout)
-
-    # should not have the lock
-    gotit.should_not be_true
-
-    # lock value should still be set
-    $redis.get("test_lock").should_not be_nil
-  end
-
-  it "should not remove the key if lock is held past expiration" do
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => 0.0, :init => false)
-
-    lock.lock do
-      sleep 1.1
-    end
-
-    # lock value should still be set since the lock was held for more than the expiry
-    $redis.get("test_lock").should_not be_nil
-  end
-
 end

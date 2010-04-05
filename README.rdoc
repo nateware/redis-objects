@@ -5,7 +5,7 @@ the point.
 
 The killer feature of Redis is that it allows you to perform atomic operations
 on _individual_ data structures, like counters, lists, and sets. You can then use
-these *with* your existing ActiveRecord/DataMapper/etc models, or in classes that have
+these _with_ your existing ActiveRecord/DataMapper/etc models, or in classes that have
 nothing to do with an ORM or even a database.  This gem maps {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.
 
@@ -30,19 +30,19 @@ each object.
 
 === Initialization
 
-Redis::Objects needs a handle created by Redis.new.  If you're on Rails,
-config/initializers/redis.rb is a good place for this:
+Redis::Objects needs a handle created by Redis.new.  (If you're on Rails,
+config/initializers/redis.rb is a good place for this.)
 
     require 'redis'
     require 'redis/objects'
     Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
 
-You can use Redis::Objects with any framework.  There are *no* dependencies on Rails.
-I use it from Sinatra and rake tasks all the time.
+Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
+on Rails.  Standalone, Sinatra, Resque - no problem.
 
 === Model Class
 
-Include Redis::Objects in any type of class:
+You can include Redis::Objects in any type of class:
 
     class Team < ActiveRecord::Base
       include Redis::Objects
@@ -79,7 +79,7 @@ Sets work too:
     end
     player = @team.outfielders.detect{|of| of == 'outfielder2'}
 
-And you can do intersections between ORM objects (kinda cool):
+And you can do intersections between objects (kinda cool):
 
     @team1.outfielders | @team2.outfielders   # outfielders on both teams
     @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)

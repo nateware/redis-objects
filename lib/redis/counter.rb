@@ -42,7 +42,7 @@ class Redis
     # counter will automatically be decremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
-      val = redis.incr(key, by).to_i
+      val = redis.incrby(key, by).to_i
       block_given? ? rewindable_block(:decrement, val, &block) : val
     end
     alias_method :incr, :increment
@@ -53,7 +53,7 @@ class Redis
     # counter will automatically be incremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def decrement(by=1, &block)
-      val = redis.decr(key, by).to_i
+      val = redis.decrby(key, by).to_i
       block_given? ? rewindable_block(:increment, val, &block) : val
     end
     alias_method :decr, :decrement
