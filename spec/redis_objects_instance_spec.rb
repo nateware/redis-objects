@@ -438,10 +438,12 @@ describe Redis::SortedSet do
     @set[1] = 'a'
     @set[2] = 'a'
     @set[3] = 'a'
-    # @set << [1, 'a'] << [2, 'a'] << [3, 'a']
-    @set.should == [3, 'a']
-    @set.get.should == ['a']
-    @set << 'b' << 'b'
+    @set[0,-1].should == ['a']
+    @set.members.should == ['a', '3']
+    @set.get.should == [3, 'a']
+    @set[5] = 'b'
+    @set[6] = 'b'
+    @set.score('b').should == 6
     @set.to_s.should == 'a, b'
     @set.should == ['a','b']
     @set.members.should == ['a','b']

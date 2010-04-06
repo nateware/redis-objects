@@ -26,34 +26,41 @@ class Redis
     end
 
     # Same functionality as Ruby arrays.  If a single number is given, return
-    # just the element at that index using Redis: LINDEX. Otherwise, return
-    # a range of values using Redis: LRANGE.
+    # just the element at that index using Redis: ZRANGE. Otherwise, return
+    # a range of values using Redis: ZRANGE.
     def [](index, length=nil)
       if index.is_a? Range
         range(index.first, index.last)
       elsif length
         range(index, length)
       else
-        raise ArgumentError, "Missing [index, length] for SortedSet range"
+        range(index, index)
       end
+    end
+
+    # Return the score of the specified element of the sorted set at key. If the
+    # specified element does not exist in the sorted set, or the key does not exist
+    # at all, nil is returned. Redis: ZSCORE.
+    def score(element)
+      redis.zscore(key, element)
+    end
+
+    # Return all members of the sorted set with their scores.  Extremely CPU-intensive.
+    # Better to use a range instead.
+    def members
+      range(0, -1, true)
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, with_scores=false)
-      from_redis redis.zrange(key, start_index, end_index, with_scores)
+      from_redis redis.zrange(key, start_index, end_index, with_scores ? 'WITHSCORES' : nil)
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, with_scores=false)
-      from_redis redis.zrange(key, start_index, end_index, with_scores)
+      from_redis redis.zrange(key, start_index, end_index, with_scores ? 'WITHSCORES' : nil)
     end
-
-    # The number of members in the set. Aliased as size. Redis: ZCARD
-    def length
-      redis.zcard(key)
-    end
-    alias_method :size, :length
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
@@ -69,8 +76,8 @@ class Redis
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number. 
-    def decrement(by=-1)
-      redis.zincrby(key, by).to_i
+    def decrement(by=1)
+      redis.zincrby(key, -by).to_i
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -159,7 +166,29 @@ class Redis
     def to_s
       members.join(', ')
     end
+
+    # Return the value at the given index. Can also use familiar list[index] syntax.
+    # Redis: LINDEX
+    def at(index)
+      from_redis redis.lindex(key, index)
+    end
+
+    # Return the first element in the list. Redis: LINDEX(0)
+    def first
+      at(0)
+    end
+
+    # Return the last element in the list. Redis: LINDEX(-1)
+    def last
+      at(-1)
+    end
     
+    # The number of members in the set. Aliased as size. Redis: ZCARD
+    def length
+      redis.zcard(key)
+    end
+    alias_method :size, :length
+
     private
     
     def keys_from_objects(sets)
