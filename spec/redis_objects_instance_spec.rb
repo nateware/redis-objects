@@ -48,6 +48,7 @@ describe Redis::Value do
     old.should be_nil
     old.value = 'Tuff'
     @value.renamenx('spec/value').should be_false
+    @value.value.should == 'Peter Pan'
   end
 
   after :all do
@@ -161,9 +162,11 @@ describe Redis::List do
     old = Redis::List.new('spec/list')
     old.should be_empty
     old << 'Tuff'
+    old.values.should == ['Tuff']
     @list.renamenx('spec/list').should be_false
     @list.renamenx(old).should be_false
     @list.renamenx('spec/foo').should be_true
+    old.values.should == ['Tuff']
     @list.clear
     @list.redis.del('spec/list2')
   end
@@ -435,49 +438,49 @@ describe Redis::SortedSet do
 
   it "should handle sets of simple values" do
     @set.should be_empty
-    @set[1] = 'a'
-    @set[2] = 'a'
-    @set[3] = 'a'
-    @set[0,-1].should == ['a']
-    @set.members.should == ['a', '3']
-    @set.get.should == [3, 'a']
-    @set[5] = 'b'
-    @set[6] = 'b'
+    @set['a'] = 1
+    @set['a'] = 2
+    @set['a'] = 3
+    @set['b'] = 5
+    @set['c'] = 4
+    @set[0,-1].should == ['a','c','b']
+    @set.range(0,-1).should == ['a','c','b']
+    @set.members.should == ['a','c','b']
+    @set.members.should == ['a','c','b']
+    @set.members(:withscores => true).should == ['a','3','c','4','b','5']
+    @set.values(:withscores => true).should == ['a','3','c','4','b','5']
+    @set['b'] = 5
+    @set['b'] = 6
     @set.score('b').should == 6
+    @set.delete('c')
     @set.to_s.should == 'a, b'
     @set.should == ['a','b']
     @set.members.should == ['a','b']
-    @set.get.should == ['a','b']
-    @set << 'c'
-    @set.sort.should == ['a','b','c']
-    @set.get.sort.should == ['a','b','c']
-    @set.delete('c')
-    @set.should == ['a','b']
-    @set.get.sort.should == ['a','b']
-    @set.length.should == 2
-    @set.size.should == 2
-    
-    i = 0
-    @set.each do |st|
-      i += 1
-    end
-    i.should == @set.length
+    @set['d'] = 0
+    @set.rangebyscore(0,4).should == ['d','a']
+    @set.rangebyscore(0,4, :count => 1).should == ['d']
+    @set.rangebyscore(0,4, :count => 2).should == ['d','a']
+    #@set.rangebyscore(0,4, :withscores => true).should == ['d','a']
 
-    coll = @set.collect{|st| st}
-    coll.should == ['a','b']
-    @set.should == ['a','b']
-    @set.get.should == ['a','b']
-
-    @set << 'c'
-    @set.member?('c').should be_true
-    @set.include?('c').should be_true
-    @set.member?('no').should be_false
-    coll = @set.select{|st| st == 'c'}
-    coll.should == ['c']
-    @set.sort.should == ['a','b','c']
+    @set.delete('d')
+    @set['c'] = 0
+    @set.values.should == ['c','a','b']
+    @set.length.should == 3
+    @set.size.should == 3
   end
-  
-  it "should handle set intersections, unions, and diffs" do
+
+  # Not until Redis 1.3.5 with hashes
+  xit "Redis 1.3.5: should handle set intersections, unions, and diffs" do
+    @set_1['a'] = 5
+    @set_2['b'] = 18
+    @set_2['c'] = 12
+
+    @set_2['a'] = 10
+    @set_2['b'] = 15
+    @set_2['c'] = 15
+
+    (@set_1 & @set_2).sort.should == ['c','d','e']
+
     @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
     @set_2 << 'c' << 'd' << 'e' << 'f' << 'g'
     @set_3 << 'a' << 'd' << 'g' << 'l' << 'm'
@@ -518,13 +521,15 @@ describe Redis::SortedSet do
   it "should support renaming sets" do
     @set.should be_empty
     # @set << 'a' << 'b' << 'a' << 3
-    @set.sort.should == ['3','a','b']
+    @set['zynga'] = 151
+    @set['playfish'] = 202
+    @set.members.should == ['zynga','playfish']
     @set.key.should == 'spec/zset'
     @set.rename('spec/zset2').should be_true
     @set.key.should == 'spec/zset2'
     old = Redis::SortedSet.new('spec/zset')
     old.should be_empty
-    old << 'Tuff'
+    old['tuff'] = 54
     @set.renamenx('spec/zset').should be_false
     @set.renamenx(old).should be_false
     @set.renamenx('spec/zfoo').should be_true
