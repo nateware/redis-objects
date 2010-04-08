@@ -227,7 +227,7 @@ describe Redis::Lock do
   it "should set the value to the expiration" do
     start = Time.now
     expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :init => false)
+    lock = Redis::Lock.new(:test_lock, :expiration => expiry)
     lock.lock do
       expiration = $redis.get("test_lock").to_f
 
@@ -241,7 +241,7 @@ describe Redis::Lock do
   end
 
   it "should set value to 1 when no expiration is set" do
-    lock = Redis::Lock.new(:test_lock, $redis, :init => false)
+    lock = Redis::Lock.new(:test_lock)
     lock.lock do
       $redis.get('test_lock').should == '1'
     end
@@ -252,7 +252,7 @@ describe Redis::Lock do
 
   it "should let lock be gettable when lock is expired" do
     expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+    lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock in the past
     $redis.set("test_lock", Time.now-(expiry + 60))
@@ -269,7 +269,7 @@ describe Redis::Lock do
 
   it "should not let non-expired locks be gettable" do
     expiry = 15
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => expiry, :timeout => 0.1, :init => false)
+    lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock
     $redis.set("test_lock", (Time.now + expiry).to_f)
@@ -293,7 +293,7 @@ describe Redis::Lock do
   end
 
   it "should not remove the key if lock is held past expiration" do
-    lock = Redis::Lock.new(:test_lock, $redis, :expiration => 0.0, :init => false)
+    lock = Redis::Lock.new(:test_lock, :expiration => 0.0)
 
     lock.lock do
       sleep 1.1
@@ -445,8 +445,10 @@ describe Redis::SortedSet do
     @set['c'] = 4
     @set[0,-1].should == ['a','c','b']
     @set.range(0,-1).should == ['a','c','b']
+    @set[0..1].should == ['a','c']
+    @set[1].should == ['c']
     @set.members.should == ['a','c','b']
-    @set.members.should == ['a','c','b']
+    @set.values.should == ['a','c','b']
     @set.members(:withscores => true).should == ['a','3','c','4','b','5']
     @set.values(:withscores => true).should == ['a','3','c','4','b','5']
     @set['b'] = 5
@@ -457,14 +459,30 @@ describe Redis::SortedSet do
     @set.should == ['a','b']
     @set.members.should == ['a','b']
     @set['d'] = 0
+
     @set.rangebyscore(0,4).should == ['d','a']
     @set.rangebyscore(0,4, :count => 1).should == ['d']
     @set.rangebyscore(0,4, :count => 2).should == ['d','a']
+    # Redis 1.3.5
     #@set.rangebyscore(0,4, :withscores => true).should == ['d','a']
 
+    @set['f'] = 100
+    @set['g'] = 110
+    @set['h'] = 120
+    @set['j'] = 130
+    @set.remrangebyscore(100, 120)
+    @set.members.should == ['d','a','b','j']
+
+    # Redis 1.3.5
+    # @set['h'] = 12
+    # @set['j'] = 13
+    # @set.remrangebyrank(4,-1)
+    # @set.members.should == ['d','a','b']
+
     @set.delete('d')
-    @set['c'] = 0
-    @set.values.should == ['c','a','b']
+    @set['c'] = 200
+    @set.values.should == ['a','b','j','c']
+    @set.delete('c')
     @set.length.should == 3
     @set.size.should == 3
   end
@@ -520,7 +538,6 @@ describe Redis::SortedSet do
 
   it "should support renaming sets" do
     @set.should be_empty
-    # @set << 'a' << 'b' << 'a' << 3
     @set['zynga'] = 151
     @set['playfish'] = 202
     @set.members.should == ['zynga','playfish']

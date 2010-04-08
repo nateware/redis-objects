@@ -11,10 +11,10 @@ class Redis
     include Redis::Helpers::CoreCommands
 
     attr_reader :key, :options, :redis
-    def initialize(key, redis=$redis, options={})
+    def initialize(key, *args)
       @key = key
-      @redis = redis
-      @options = options
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @redis = args.first || $redis
       @options[:start] ||= 0
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end

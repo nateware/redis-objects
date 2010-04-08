@@ -13,7 +13,7 @@ class Redis
       module ClassMethods
         # Define a new list.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
-        def set(name, options={})
+        def sorted_set(name, options={})
           @redis_objects[name] = options.merge(:type => :sorted_set)
           if options[:global]
             instance_eval <<-EndMethods

@@ -10,11 +10,12 @@ class Redis
     class LockTimeout < StandardError; end #:nodoc:
 
     attr_reader :key, :options, :redis
-    def initialize(key, redis=$redis, options={})
+    def initialize(key, *args)
       @key = key
-      @redis = redis
-      @options = options
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @redis = args.first || $redis
       @options[:timeout] ||= 5
+      @options[:init] = false if @options[:init].nil? # default :init to false
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
 

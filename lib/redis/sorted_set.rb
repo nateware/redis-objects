@@ -13,10 +13,10 @@ class Redis
     attr_reader :key, :options, :redis
     
     # Create a new SortedSet.
-    def initialize(key, redis=$redis, options={})
+    def initialize(key, *args)
       @key = key
-      @redis = redis
-      @options = options
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @redis = args.first || $redis
     end
 
     # How to add values using a sorted set.  The key is the member, eg,
@@ -107,13 +107,13 @@ class Redis
     # -1 is the element with the highest score, -2 the element with the second highest score and so forth. 
     # Redis: ZREMRANGEBYRANK
     def remrangebyrank(min, max)
-      redis.zremrangebyrank(min, max)
+      redis.zremrangebyrank(key, min, max)
     end
 
     # Remove all the elements in the sorted set at key with a score between min and max (including
     # elements with score equal to min or max). Redis: ZREMRANGEBYSCORE
     def remrangebyscore(min, max)
-      redis.zremrangebyscore(min, max)
+      redis.zremrangebyscore(key, min, max)
     end
 
     # Delete the value from the set.  Redis: ZREM

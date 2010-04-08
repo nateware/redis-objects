@@ -56,7 +56,7 @@ class Redis
         def increment_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
-          value = redis.incr(field_key(name, id), by).to_i
+          value = redis.incrby(field_key(name, id), by).to_i
           block_given? ? rewindable_block(:decrement_counter, name, id, value, &block) : value
         end
 
@@ -65,7 +65,7 @@ class Redis
         def decrement_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
-          value = redis.decr(field_key(name, id), by).to_i
+          value = redis.decrby(field_key(name, id), by).to_i
           block_given? ? rewindable_block(:increment_counter, name, id, value, &block) : value
         end
 

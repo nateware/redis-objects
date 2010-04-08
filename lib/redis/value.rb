@@ -9,10 +9,10 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
-    def initialize(key, redis=$redis, options={})
+    def initialize(key, *args)
       @key = key
-      @redis = redis
-      @options = options
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @redis = args.first || $redis
       @redis.setnx(key, @options[:default]) if @options[:default]
     end
 
