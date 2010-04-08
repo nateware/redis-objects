@@ -20,13 +20,95 @@ structure you want to create.
 
     gem install redis-objects
 
-== Example 1: Standalone Usage
+== Example 1: Model Class Usage
+
+Using Redis::Objects this way makes it trivial to integrate Redis types with an
+existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
+will work with _any_ class that provides an +id+ method that returns a unique
+value.  Redis::Objects will automatically create keys that are unique to
+each object, in the format:
+
+    model_name:id:field_name
+
+=== Initialization
+
+Redis::Objects needs a handle created by Redis.new.  (If you're on Rails,
+config/initializers/redis.rb is a good place for this.)
+
+    require 'redis'
+    require 'redis/objects'
+    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+
+Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
+on Rails.  Standalone, Sinatra, Resque - no problem.
+
+=== Model Class
+
+You can include Redis::Objects in any type of class:
+
+    class Team < ActiveRecord::Base
+      include Redis::Objects
+
+      counter :hits
+      counter :runs
+      counter :outs
+      counter :inning, :start => 1
+      list :on_base
+      set :outfielders
+      value :at_bat
+    end
+
+Familiar Ruby array operations Just Work (TM):
+
+    @team = Team.find_by_name('New York Yankees')
+    @team.on_base << 'player1'
+    @team.on_base << 'player2'
+    @team.on_base << 'player3'
+    @team.on_base    # ['player1', 'player2', 'player3']
+    @team.on_base.pop
+    @team.on_base.shift
+    @team.on_base.length  # 1
+    @team.on_base.delete('player2')
+
+Sets work too:
+
+    @team.outfielders << 'outfielder1'
+    @team.outfielders << 'outfielder2'
+    @team.outfielders << 'outfielder1'   # dup ignored
+    @team.outfielders  # ['outfielder1', 'outfielder2']
+    @team.outfielders.each do |player|
+      puts player
+    end
+    player = @team.outfielders.detect{|of| of == 'outfielder2'}
+
+And you can do intersections between objects (kinda cool):
+
+    @team1.outfielders | @team2.outfielders   # outfielders on both teams
+    @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
+
+Counters can be atomically incremented/decremented (but not assigned):
+
+    @team.hits.increment  # or incr
+    @team.hits.decrement  # or decr
+    @team.hits.incr(3)    # add 3
+    @team.runs = 4        # exception
+
+Finally, for free, you get a +redis+ method that points directly to a Redis connection:
+
+    Team.redis.get('somekey')
+    @team = Team.new
+    @team.redis.get('somekey')
+    @team.redis.smembers('someset')
+
+You can use the +redis+ handle to directly call any {Redis command}[http://code.google.com/p/redis/wiki/CommandReference]
+
+== Example 2: Standalone Usage
 
 There is a Ruby class that maps to each Redis type, with methods for each
 {Redis API command}[http://code.google.com/p/redis/wiki/CommandReference].
-Note that calling +new+ does not imply it's actually a "new" value - it just creates
-a mapping between that object and the corresponding Redis data structure,
-which may already exist.
+Note that calling +new+ does not imply it's actually a "new" value - it just
+creates a mapping between that object and the corresponding Redis data structure,
+which may already exist on the redis-server.
 
 === Initialization
 
@@ -164,88 +246,6 @@ Of course complex data is no problem:
     @account = Account.create!(params[:account])
     @newest  = Redis::Value.new('newest_account')
     @newest.value = @account
-
-== Example 2: Model Class Usage
-
-Using Redis::Objects this way makes it trivial to integrate Redis types with an
-existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
-will work with _any_ class that provides an +id+ method that returns a unique
-value.  Redis::Objects will automatically create keys that are unique to
-each object, in the format:
-
-    model_name:id:field_name
-
-=== Initialization
-
-Redis::Objects needs a handle created by Redis.new.  (If you're on Rails,
-config/initializers/redis.rb is a good place for this.)
-
-    require 'redis'
-    require 'redis/objects'
-    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
-
-Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
-on Rails.  Standalone, Sinatra, Resque - no problem.
-
-=== Model Class
-
-You can include Redis::Objects in any type of class:
-
-    class Team < ActiveRecord::Base
-      include Redis::Objects
-
-      counter :hits
-      counter :runs
-      counter :outs
-      counter :inning, :start => 1
-      list :on_base
-      set :outfielders
-      value :at_bat
-    end
-
-Familiar Ruby array operations Just Work (TM):
-
-    @team = Team.find_by_name('New York Yankees')
-    @team.on_base << 'player1'
-    @team.on_base << 'player2'
-    @team.on_base << 'player3'
-    @team.on_base    # ['player1', 'player2', 'player3']
-    @team.on_base.pop
-    @team.on_base.shift
-    @team.on_base.length  # 1
-    @team.on_base.delete('player2')
-
-Sets work too:
-
-    @team.outfielders << 'outfielder1'
-    @team.outfielders << 'outfielder2'
-    @team.outfielders << 'outfielder1'   # dup ignored
-    @team.outfielders  # ['outfielder1', 'outfielder2']
-    @team.outfielders.each do |player|
-      puts player
-    end
-    player = @team.outfielders.detect{|of| of == 'outfielder2'}
-
-And you can do intersections between objects (kinda cool):
-
-    @team1.outfielders | @team2.outfielders   # outfielders on both teams
-    @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
-
-Counters can be atomically incremented/decremented (but not assigned):
-
-    @team.hits.increment  # or incr
-    @team.hits.decrement  # or decr
-    @team.hits.incr(3)    # add 3
-    @team.runs = 4        # exception
-
-Finally, for free, you get a +redis+ method that points directly to a Redis connection:
-
-    Team.redis.get('somekey')
-    @team = Team.new
-    @team.redis.get('somekey')
-    @team.redis.smembers('someset')
-
-You can use the +redis+ handle to directly call any {Redis command}[http://code.google.com/p/redis/wiki/CommandReference]
 
 == Atomic Counters and Locks
 
