@@ -9,10 +9,10 @@ a more Rubyish interface to Redis, by mapping {Redis types}[http://code.google.c
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several advantages
 over the lower-level redis-rb API:
 
-# Complex data structures are automatically Marshaled
-# Integers are returned as integers, rather than '17'
-# API is more Rubyish and mirrors Ruby stdlib (eg, Sets)
-# Includes higher-level classes, such as locks, that wrap several calls
+    1. Complex data structures are automatically Marshaled
+    2. Integers are returned as integers, rather than '17'
+    3. API is more Rubyish and mirrors Ruby stdlib (eg, Sets)
+    4. Includes higher-level classes, such as Locks, that wrap several calls
 
 This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
