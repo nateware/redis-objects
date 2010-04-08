@@ -40,7 +40,7 @@ class Redis
       elsif length
         range(index, length)
       else
-        range(index, index)
+        at(index)
       end
     end
 
@@ -105,7 +105,8 @@ class Redis
     # Redis: ZRANGEBYSCORE
     def rangebyscore(min, max, options={})
       args = []
-      args += ['limit', options[:offset] || 0, options[:count]] if options[:offset] || options[:count]
+      args += ['limit', options[:offset] || 0, options[:limit] || options[:count]] if
+                options[:offset] || options[:limit] || options[:count]
       args += ['withscores'] if options[:withscores]
       from_redis redis.zrangebyscore(key, min, max, *args)
     end
@@ -113,7 +114,8 @@ class Redis
     # Forwards compat (not yet implemented in Redis)
     def revrangebyscore(min, max, options={})
       args = []
-      args += ['limit', options[:offset] || 0, options[:count]] if options[:offset] || options[:count]
+      args += ['limit', options[:offset] || 0, options[:limit] || options[:count]] if
+                options[:offset] || options[:limit] || options[:count]
       args += ['withscores'] if options[:withscores]
       from_redis redis.zrevrangebyscore(key, min, max, *args)
     end
@@ -140,8 +142,8 @@ class Redis
 
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
-    def increment(by=1)
-      redis.zincrby(key, by).to_i
+    def increment(member, by=1)
+      redis.zincrby(key, by, member).to_i
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
@@ -241,7 +243,7 @@ class Redis
     # Return the value at the given index. Can also use familiar list[index] syntax.
     # Redis: ZRANGE
     def at(index)
-      range(index, index)
+      range(index, index).first
     end
 
     # Return the first element in the list. Redis: ZRANGE(0)

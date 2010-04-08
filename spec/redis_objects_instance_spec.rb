@@ -448,10 +448,10 @@ describe Redis::SortedSet do
     @set.range(0,-1).should == ['a','c','b']
     @set.revrange(0,-1).should == ['b','c','a']
     @set[0..1].should == ['a','c']
-    @set[1].should == ['c']
-    @set.at(1).should == ['c']
-    @set.first.should == ['a']
-    @set.last.should == ['b']
+    @set[1].should == 'c'
+    @set.at(1).should == 'c'
+    @set.first.should == 'a'
+    @set.last.should == 'b'
 
     @set.members.should == ['a','c','b']
     @set.members(:withscores => true).should == [['a',3],['c',4],['b',5]]
@@ -468,6 +468,7 @@ describe Redis::SortedSet do
     @set.rangebyscore(0, 4).should == ['d','a']
     @set.rangebyscore(0, 4, :count => 1).should == ['d']
     @set.rangebyscore(0, 4, :count => 2).should == ['d','a']
+    @set.rangebyscore(0, 4, :limit => 2).should == ['d','a']
 
     # Redis 1.3.5
     # @set.rangebyscore(0,4, :withscores => true).should == [['d',4],['a',3]]
@@ -480,8 +481,9 @@ describe Redis::SortedSet do
     @set['g'] = 110
     @set['h'] = 120
     @set['j'] = 130
+    @set.incr('h', 20)
     @set.remrangebyscore(100, 120)
-    @set.members.should == ['d','a','b','j']
+    @set.members.should == ['d','a','b','j','h']
 
     # Redis 1.3.5
     # @set['h'] = 12
@@ -491,10 +493,10 @@ describe Redis::SortedSet do
 
     @set.delete('d')
     @set['c'] = 200
-    @set.members.should == ['a','b','j','c']
+    @set.members.should == ['a','b','j','h','c']
     @set.delete('c')
-    @set.length.should == 3
-    @set.size.should == 3
+    @set.length.should == 4
+    @set.size.should == 4
   end
 
   # Not until Redis 1.3.5 with hashes
