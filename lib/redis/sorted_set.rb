@@ -239,17 +239,17 @@ class Redis
     end
 
     # Return the value at the given index. Can also use familiar list[index] syntax.
-    # Redis: LINDEX
+    # Redis: ZRANGE
     def at(index)
-      from_redis redis.lindex(key, index)
+      range(index, index)
     end
 
-    # Return the first element in the list. Redis: LINDEX(0)
+    # Return the first element in the list. Redis: ZRANGE(0)
     def first
       at(0)
     end
 
-    # Return the last element in the list. Redis: LINDEX(-1)
+    # Return the last element in the list. Redis: ZRANGE(-1)
     def last
       at(-1)
     end

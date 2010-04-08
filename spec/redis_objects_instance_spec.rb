@@ -449,6 +449,9 @@ describe Redis::SortedSet do
     @set.revrange(0,-1).should == ['b','c','a']
     @set[0..1].should == ['a','c']
     @set[1].should == ['c']
+    @set.at(1).should == ['c']
+    @set.first.should == ['a']
+    @set.last.should == ['b']
 
     @set.members.should == ['a','c','b']
     @set.members(:withscores => true).should == [['a',3],['c',4],['b',5]]

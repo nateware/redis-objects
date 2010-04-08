@@ -107,7 +107,7 @@ Finally, for free, you get a +redis+ method that points directly to a Redis conn
     @team.redis.get('somekey')
     @team.redis.smembers('someset')
 
-You can use the +redis+ handle to directly call any {Redis command}[http://code.google.com/p/redis/wiki/CommandReference]
+You can use the +redis+ handle to directly call any {Redis API command}[http://code.google.com/p/redis/wiki/CommandReference].
 
 == Example 2: Standalone Usage
 
