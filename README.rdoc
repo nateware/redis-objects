@@ -1,20 +1,20 @@
 = Redis::Objects - Map Redis types directly to Ruby objects
 
-This is not an ORM. People that are wrapping ORM’s around Redis are missing the point.
+This is *not* an ORM. People that are wrapping ORM’s around Redis are missing the point.
 
-The killer feature of Redis is that it allows you to perform atomic operations
+The killer feature of Redis is that it allows you to perform _atomic_ operations
 on _individual_ data structures, like counters, lists, and sets.  The *atomic* part is HUGE.
-Using an ORM layer that retrieves a "record", updates values, then sends those values back,
+Using an ORM wrapper that retrieves a "record", updates values, then sends those values back,
 _removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
 
 This gem provides a Rubyish interface to Redis, by mapping {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several advantages
 over the lower-level redis-rb API:
 
-1. Easy to integrate directly with existing ORMs - ActiveRecord, DataMapper, etc
+1. Easy to integrate directly with existing ORMs - ActiveRecord, DataMapper, etc.  Add counters to your model!
 2. Complex data structures are automatically Marshaled
 3. Integers are returned as integers, rather than '17'
-4. Higher-level type are provided, such as Locks, that wrap multiple calls
+4. Higher-level types are provided, such as Locks, that wrap multiple calls
 
 This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
