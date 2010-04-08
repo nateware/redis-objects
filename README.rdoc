@@ -1,26 +1,28 @@
 = Redis::Objects - Map Redis types directly to Ruby objects
 
-This is *not* an ORM.  People that are wrapping ORM's around Redis are missing
-the point.
+This is not an ORM. People that are wrapping ORM’s around Redis are missing the point.
 
 The killer feature of Redis is that it allows you to perform atomic operations
-on _individual_ data structures, like counters, lists, and sets.  This gem provides
-a more Rubyish interface to Redis, by mapping {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
+on _individual_ data structures, like counters, lists, and sets.  The *atomic* part is HUGE.
+Using an ORM layer that retrieves a "record", updates values, then sends those values back,
+_removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
+
+This gem provides a Rubyish interface to Redis, by mapping {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several advantages
 over the lower-level redis-rb API:
 
-1. Complex data structures are automatically Marshaled
-2. Integers are returned as integers, rather than '17'
-3. API is more Rubyish and mirrors Ruby stdlib (eg, Sets)
-4. Includes higher-level classes, such as Locks, that wrap several calls
+1. Easy to integrate directly with existing ORMs - ActiveRecord, DataMapper, etc
+2. Complex data structures are automatically Marshaled
+3. Integers are returned as integers, rather than '17'
+4. Higher-level type are provided, such as Locks, that wrap multiple calls
 
 This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
 or scroll down to "Atomicity" in this README.
 
-There are two ways to use Redis::Objects, either as an +include+ in a model class (to
-integrate with ORMs or other classes), or by using +new+ with the type of data
-structure you want to create.
+There are two ways to use Redis::Objects, either as an include in a model class (to
+integrate with ORMs or other classes), or by using new with the type of data structure
+you want to create. 
 
 == Installation
 
@@ -160,6 +162,22 @@ A convenience class that wraps the pattern of {using +setnx+ to perform locking}
 
 This can be especially useful if you're running batch jobs spread across multiple hosts.
 
+=== Values
+
+Simple values are easy as well:
+
+    require 'redis/value'
+    @value = Redis::Value.new('value_name')
+    @value.value = 'a'
+    @value.delete
+
+Of course complex data is no problem:
+
+    @account = Account.create!(params[:account])
+    @newest  = Redis::Value.new('newest_account')
+    @newest.value = @account.attributes
+    puts @newest.value['username']
+
 === Lists
 
 Lists work just like Ruby arrays:
@@ -241,20 +259,12 @@ And use complex data types too:
     @set1 - @set2  # Peter
     @set1 | @set2  # all 3 people
 
-=== Values
+=== Sets
 
-Simple values are easy as well:
+Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
 
-    require 'redis/value'
-    @value = Redis::Value.new('value_name')
-    @value.value = 'a'
-    @value.delete
-
-Of course complex data is no problem:
-
-    @account = Account.create!(params[:account])
-    @newest  = Redis::Value.new('newest_account')
-    @newest.value = @account
+    require 'redis/set'
+    @set = Redis::Set.new('set_name')
 
 == Atomic Counters and Locks
 
