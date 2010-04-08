@@ -438,19 +438,21 @@ describe Redis::SortedSet do
 
   it "should handle sets of simple values" do
     @set.should be_empty
-    @set['a'] = 1
-    @set['a'] = 2
+    @set['a'] = 11
+    @set['a'] = 21
     @set['a'] = 3
     @set['b'] = 5
     @set['c'] = 4
+
     @set[0,-1].should == ['a','c','b']
     @set.range(0,-1).should == ['a','c','b']
+    @set.revrange(0,-1).should == ['b','c','a']
     @set[0..1].should == ['a','c']
     @set[1].should == ['c']
+
     @set.members.should == ['a','c','b']
-    @set.values.should == ['a','c','b']
-    @set.members(:withscores => true).should == ['a','3','c','4','b','5']
-    @set.values(:withscores => true).should == ['a','3','c','4','b','5']
+    @set.members(:withscores => true).should == [['a',3],['c',4],['b',5]]
+
     @set['b'] = 5
     @set['b'] = 6
     @set.score('b').should == 6
@@ -459,12 +461,17 @@ describe Redis::SortedSet do
     @set.should == ['a','b']
     @set.members.should == ['a','b']
     @set['d'] = 0
+    
+    @set.rangebyscore(0, 4).should == ['d','a']
+    @set.rangebyscore(0, 4, :count => 1).should == ['d']
+    @set.rangebyscore(0, 4, :count => 2).should == ['d','a']
 
-    @set.rangebyscore(0,4).should == ['d','a']
-    @set.rangebyscore(0,4, :count => 1).should == ['d']
-    @set.rangebyscore(0,4, :count => 2).should == ['d','a']
     # Redis 1.3.5
-    #@set.rangebyscore(0,4, :withscores => true).should == ['d','a']
+    # @set.rangebyscore(0,4, :withscores => true).should == [['d',4],['a',3]]
+    # @set.revrangebyscore(0,4).should == ['d','a']
+    # @set.revrangebyscore(0,4, :count => 2).should == ['a','d']
+    # @set.rank('b').should == 2
+    # @set.revrank('b').should == 3
 
     @set['f'] = 100
     @set['g'] = 110
@@ -481,7 +488,7 @@ describe Redis::SortedSet do
 
     @set.delete('d')
     @set['c'] = 200
-    @set.values.should == ['a','b','j','c']
+    @set.members.should == ['a','b','j','c']
     @set.delete('c')
     @set.length.should == 3
     @set.size.should == 3

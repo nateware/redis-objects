@@ -68,17 +68,34 @@ class Redis
     def members(options={})
       range(0, -1, options)
     end
-    alias_method :values, :members
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      from_redis redis.zrange(key, start_index, end_index, options[:withscores] ? 'withscores' : nil)
+      if options[:withscores]
+        val = from_redis redis.zrange(key, start_index, end_index, 'withscores')
+        ret = []
+        while k = val.shift and v = val.shift
+          ret << [k, v.to_i]
+        end
+        ret
+      else
+        from_redis redis.zrange(key, start_index, end_index)
+      end
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      from_redis redis.zrange(key, start_index, end_index, options[:withscores] ? 'withscores' : nil)
+      if options[:withscores]
+        val = from_redis redis.zrevrange(key, start_index, end_index, 'withscores')
+        ret = []
+        while k = val.shift and v = val.shift
+          ret << [k, v.to_i]
+        end
+        ret
+      else
+        from_redis redis.zrevrange(key, start_index, end_index)
+      end
     end
 
     # Return the all the elements in the sorted set at key with a score between min and max

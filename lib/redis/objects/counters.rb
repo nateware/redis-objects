@@ -73,7 +73,8 @@ class Redis
         def reset_counter(name, id=nil, to=nil)
           verify_counter_defined!(name, id)
           to = @redis_objects[name][:start] if to.nil?
-          redis.set(field_key(name, id), to)
+          redis.set(field_key(name, id), to.to_i)
+          true
         end
         
         private

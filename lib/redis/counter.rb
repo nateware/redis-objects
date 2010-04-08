@@ -25,6 +25,7 @@ class Redis
     # disconnecting all players).
     def reset(to=options[:start])
       redis.set key, to.to_i
+      true  # hack for redis-rb regression
     end
 
     # Returns the current value of the counter.  Normally just calling the
