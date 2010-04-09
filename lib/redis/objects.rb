@@ -6,7 +6,7 @@ class Redis
   # Redis::Objects enables high-performance atomic operations in your app
   # by leveraging the atomic features of the Redis server.  To use Redis::Objects,
   # first include it in any class you want.  (This example uses an ActiveRecord
-  # subclass, but that is *not* required.) Then, use +counter+ and +lock+
+  # subclass, but that is *not* required.) Then, use +counter+, +lock+, +set+, etc
   # to define your primitives:
   #
   #   class Game < ActiveRecord::Base
@@ -14,8 +14,8 @@ class Redis
   #
   #     counter :joined_players
   #     counter :active_players
-  #     set :player_ids
   #     lock :archive_game
+  #     set :player_ids
   #   end
   # 
   # The, you can use these counters both for bookeeping and as atomic actions:
@@ -39,10 +39,11 @@ class Redis
     dir = File.expand_path(__FILE__.sub(/\.rb$/,''))
 
     autoload :Counters, File.join(dir, 'counters')
-    autoload :Values, File.join(dir, 'values')
     autoload :Lists, File.join(dir, 'lists')
-    autoload :Sets, File.join(dir, 'sets')
     autoload :Locks, File.join(dir, 'locks')
+    autoload :Sets, File.join(dir, 'sets')
+    autoload :SortedSets, File.join(dir, 'sorted_sets')
+    autoload :Values, File.join(dir, 'values')
 
     class NotConnected  < StandardError; end
 
@@ -61,10 +62,11 @@ class Redis
         
         # Pull in each object type
         klass.send :include, Redis::Objects::Counters
-        klass.send :include, Redis::Objects::Values
         klass.send :include, Redis::Objects::Lists
-        klass.send :include, Redis::Objects::Sets
         klass.send :include, Redis::Objects::Locks
+        klass.send :include, Redis::Objects::Sets
+        klass.send :include, Redis::Objects::SortedSets
+        klass.send :include, Redis::Objects::Values
       end
     end
 

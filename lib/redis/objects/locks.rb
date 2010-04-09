@@ -16,7 +16,6 @@ class Redis
         # so it can be used alongside ActiveRecord/DataMapper, etc.
         def lock(name, options={})
           options[:timeout] ||= 5  # seconds
-          options[:init] = false if options[:init].nil? # default :init to false
           @redis_objects[name] = options.merge(:type => :lock)
           if options[:global]
             instance_eval <<-EndMethods
@@ -36,9 +35,6 @@ class Redis
               end
             EndMethods
           end
-
-          
-          
         end
 
         # Obtain a lock, and execute the block synchronously.  Any other code

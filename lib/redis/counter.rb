@@ -11,10 +11,10 @@ class Redis
     include Redis::Helpers::CoreCommands
 
     attr_reader :key, :options, :redis
-    def initialize(key, redis=$redis, options={})
+    def initialize(key, *args)
       @key = key
-      @redis = redis
-      @options = options
+      @options = args.last.is_a?(Hash) ? args.pop : {}
+      @redis = args.first || $redis
       @options[:start] ||= 0
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
@@ -25,6 +25,7 @@ class Redis
     # disconnecting all players).
     def reset(to=options[:start])
       redis.set key, to.to_i
+      true  # hack for redis-rb regression
     end
 
     # Returns the current value of the counter.  Normally just calling the
@@ -42,7 +43,7 @@ class Redis
     # counter will automatically be decremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
-      val = redis.incr(key, by).to_i
+      val = redis.incrby(key, by).to_i
       block_given? ? rewindable_block(:decrement, val, &block) : val
     end
     alias_method :incr, :increment
@@ -53,7 +54,7 @@ class Redis
     # counter will automatically be incremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def decrement(by=1, &block)
-      val = redis.decr(key, by).to_i
+      val = redis.decrby(key, by).to_i
       block_given? ? rewindable_block(:increment, val, &block) : val
     end
     alias_method :decr, :decrement

@@ -15,7 +15,7 @@ class Redis
       def type
         redis.type key
       end
-      
+
       def rename(name, setkey=true)
         dest = name.is_a?(self.class) ? name.key : name
         ret  = redis.rename key, dest
@@ -41,6 +41,14 @@ class Redis
       def move(dbindex)
         redis.move key, dbindex
       end
+      
+      # See the documentation for SORT: http://code.google.com/p/redis/wiki/SortCommand
+      # TODO
+      # def sort(options)
+      #   args = []
+      #   args += ['sort']
+      #   from_redis redis.sort key
+      # end
     end
   end
 end
