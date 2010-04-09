@@ -440,6 +440,8 @@ describe Redis::SortedSet do
     @set.should be_empty
     @set['a'] = 11
     @set['a'] = 21
+    @set.add('a', 5)
+    @set.score('a').should == 5
     @set['a'] = 3
     @set['b'] = 5
     @set['c'] = 4
