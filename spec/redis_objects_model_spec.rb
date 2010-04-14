@@ -10,9 +10,9 @@ class Roster
   counter :pitchers, :limit => :max_pitchers
   counter :basic
   lock :resort, :timeout => 2
-  value :starting_pitcher
-  list :player_stats
-  set :outfielders
+  value :starting_pitcher, :marshal => true
+  list :player_stats, :marshal => true
+  set :outfielders, :marshal => true
 
   # global class counters
   counter :total_players_online, :global => true

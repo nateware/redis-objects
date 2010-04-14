@@ -27,15 +27,24 @@ describe Redis::Value do
   end
 
   it "should handle complex marshaled values" do
+    @value.options[:marshal] = true
     @value.should == nil
     @value.value = {:json => 'data'}
     @value.should == {:json => 'data'}
-    @value.get.should == {:json => 'data'}
+    
+    # no marshaling
+    @value.options[:marshal] = false
+    v = {:json => 'data'}
+    @value.value = v
+    @value.should == v.to_s
+
+    @value.options[:marshal] = true
     @value.value = [[1,2], {:t3 => 4}]
     @value.should == [[1,2], {:t3 => 4}]
     @value.get.should == [[1,2], {:t3 => 4}]
     @value.del.should be_true
     @value.should be_nil
+    @value.options[:marshal] = false
   end
 
   it "should support renaming values" do
@@ -138,13 +147,17 @@ describe Redis::List do
   end
 
   it "should handle lists of complex data types" do
-    @list << {:json => 'data'}
-    @list << {:json2 => 'data2'}
-    @list.first.should == {:json => 'data'}
-    @list.last.should == {:json2 => 'data2'}
+    @list.options[:marshal] = true
+    v1 = {:json => 'data'}
+    v2 = {:json2 => 'data2'}
+    @list << v1
+    @list << v2
+    @list.first.should == v1
+    @list.last.should == v2
     @list << [1,2,3,[4,5]]
     @list.last.should == [1,2,3,[4,5]]
     @list.shift.should == {:json => 'data'}
+    @list.options[:marshal] = false
   end
   
   it "should support renaming lists" do

@@ -4,6 +4,7 @@ class Redis
       include Marshal
 
       def to_redis(value)
+        return value unless options[:marshal]
         case value
         when String, Fixnum, Bignum, Float
           value
@@ -13,6 +14,7 @@ class Redis
       end
     
       def from_redis(value)
+        return value unless options[:marshal]
         case value
         when Array
           value.collect{|v| from_redis(v)}

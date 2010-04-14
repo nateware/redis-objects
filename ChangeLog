@@ -1,4 +1,14 @@
 
+*0.2.5 [Final] (9 April 2010)*
+
+* Due to Ruby 1.9 bugs and performance considerations, complex marshaling
+  is now optional and OFF by default.  You must say :marshal => true for
+  any objects that you want serialization enabled on.
+
+*0.2.4 [Final] (9 April 2010)*
+
+* Added sorted set support via Redis::SortedSet [Nate Wiger]
+
 *0.2.3 [Final] (18 February 2010)*
 
 * Added lock expiration to Redis::Lock [Ben VandenBos]

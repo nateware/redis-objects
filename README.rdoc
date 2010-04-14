@@ -12,7 +12,7 @@ to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several ad
 over the lower-level redis-rb API:
 
 1. Easy to integrate directly with existing ORMs - ActiveRecord, DataMapper, etc.  Add counters to your model!
-2. Complex data structures are automatically Marshaled
+2. Complex data structures are automatically Marshaled (if you set :marshal => true)
 3. Integers are returned as integers, rather than '17'
 4. Higher-level types are provided, such as Locks, that wrap multiple calls
 
@@ -171,10 +171,10 @@ Simple values are easy as well:
     @value.value = 'a'
     @value.delete
 
-Of course complex data is no problem:
+Complex data is no problem with :marshal => true:
 
     @account = Account.create!(params[:account])
-    @newest  = Redis::Value.new('newest_account')
+    @newest  = Redis::Value.new('newest_account', :marshal => true)
     @newest.value = @account.attributes
     puts @newest.value['username']
 
@@ -198,16 +198,15 @@ Lists work just like Ruby arrays:
     @list.clear
     # etc
 
-Complex data types are no problem:
+Complex data types are no problem with :marshal => true:
 
+    @list = Redis::List.new('list_name', :marshal => true)
     @list << {:name => "Nate", :city => "San Diego"}
     @list << {:name => "Peter", :city => "Oceanside"}
     @list.each do |el|
       puts "#{el[:name]} lives in #{el[:city]}"
     end
     
-This gem will automatically marshal complex data, similar to how session stores work.
-
 === Sets
 
 Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
@@ -248,8 +247,10 @@ Or store them in Redis:
     @set1.diffstore('diffname', @set2, @set3)
     members = @set1.redis.get('diffname')
 
-And use complex data types too:
+And use complex data types too, with :marshal => true:
 
+    @set1 = Redis::Set.new('set1', :marshal => true)
+    @set2 = Redis::Set.new('set2', :marshal => true)
     @set1 << {:name => "Nate", :city => "San Diego"}
     @set1 << {:name => "Peter", :city => "Oceanside"}
     @set2 << {:name => "Nate", :city => "San Diego"}
