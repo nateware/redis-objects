@@ -22,13 +22,15 @@ class Redis
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
     #    num_posts['Peter'] = 163 
-    def []=(value, score)
-      add(score, value)
+    def []=(member, score)
+      add(member, score)
     end
 
-    # Add a value with an interface more similar to the Redis interface.
-    def add(score, value)
-      redis.zadd(key, score, to_redis(value))
+    # Add a member and its corresponding value to Redis.  Note that the
+    # arguments to this are flipped; the member comes first rather than
+    # the score, since the member is the unique item (not the score).
+    def add(member, score)
+      redis.zadd(key, score, to_redis(member))
     end
 
     # Same functionality as Ruby arrays.  If a single number is given, return
