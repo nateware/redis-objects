@@ -115,6 +115,7 @@ describe Redis::List do
     @list << 'j'
     @list.should == ['a','c','f','j']
     @list[0..2].should == ['a','c','f']
+    @list[0, 2].should == ['a','c','f']  # consistent with Redis, not Ruby
     @list[1, 3].should == ['c','f','j']
     @list.length.should == 4
     @list.size.should == 4
@@ -455,15 +456,20 @@ describe Redis::SortedSet do
     @set['a'] = 21
     @set.add('a', 5)
     @set.score('a').should == 5
+    @set['a'].should == 5
     @set['a'] = 3
     @set['b'] = 5
+    @set['b'].should == 5
     @set['c'] = 4
 
     @set[0,-1].should == ['a','c','b']
+    @set[0..2].should == ['a','c','b']
+    @set[0,2].should == ['a','c','b']   # consistent with Redis, not Ruby
+    @set.range(0,1,:withscores => true).should == [['a',3],['c',4]]
     @set.range(0,-1).should == ['a','c','b']
     @set.revrange(0,-1).should == ['b','c','a']
     @set[0..1].should == ['a','c']
-    @set[1].should == 'c'
+    @set[1].should == 0  # missing
     @set.at(1).should == 'c'
     @set.first.should == 'a'
     @set.last.should == 'b'

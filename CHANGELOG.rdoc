@@ -1,15 +1,19 @@
+= Changelog for Redis::Objects
 
-*0.2.5 [Final] (9 April 2010)*
+== 0.3.0 [Final] (14 April 2010)
 
-* Due to Ruby 1.9 bugs and performance considerations, complex marshaling
-  is now optional and OFF by default.  You must say :marshal => true for
-  any objects that you want serialization enabled on.
+* Due to Ruby 1.9 bugs and performance considerations, marshaling of
+data types is now OFF by default.  You must say :marshal => true for
+any objects that you want serialization enabled on. [Nate Wiger]
 
-*0.2.4 [Final] (9 April 2010)*
+* Sorted Set class changed slightly due to feedback. You can now get
+an individual element back via @set['item'] since it acts like a Hash.
+
+== 0.2.4 [Final] (9 April 2010)*
 
 * Added sorted set support via Redis::SortedSet [Nate Wiger]
 
-*0.2.3 [Final] (18 February 2010)*
+== 0.2.3 [Final] (18 February 2010)*
 
 * Added lock expiration to Redis::Lock [Ben VandenBos]
 
@@ -17,7 +21,7 @@
 
 * Added lock tests and test helpers [Ben VandenBos]
 
-*0.2.2 [Final] (14 December 2009)*
+== 0.2.2 [Final] (14 December 2009)*
 
 * Added @set.diff(@set2) with "^" and "-" synonyms (oversight). [Nate Wiger]
 
@@ -27,7 +31,7 @@
 
 * More spec coverage. [Nate Wiger]
 
-*0.2.1 [Final] (27 November 2009)*
+== 0.2.1 [Final] (27 November 2009)*
 
 * First worthwhile public release, with good spec coverage and functionality. [Nate Wiger]
 

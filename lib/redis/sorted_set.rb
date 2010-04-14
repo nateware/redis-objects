@@ -42,7 +42,7 @@ class Redis
       elsif length
         range(index, length)
       else
-        at(index)
+        score(index)
       end
     end
 
