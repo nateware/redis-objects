@@ -14,11 +14,11 @@ class Redis
         # Define a new list.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def sorted_set(name, options={})
-          @redis_objects[name] = options.merge(:type => :sorted_set)
+          @redis_objects[name.to_sym] = options.merge(:type => :sorted_set)
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::SortedSet.new(field_key(:#{name}, ''), redis, @redis_objects[:#{name}])
+                @#{name} ||= Redis::SortedSet.new(field_key(:#{name}), redis, @redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -33,7 +33,6 @@ class Redis
               end
             EndMethods
           end
-          
         end
       end
 

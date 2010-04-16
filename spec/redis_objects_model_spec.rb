@@ -19,9 +19,17 @@ class Roster
   list :all_player_stats, :global => true
   set :all_players_online, :global => true
   value :last_player, :global => true
+  
+  # custom keys
+  counter :player_totals, :key => 'players/#{username}/total'
+  list :all_player_stats, :key => 'players:all_stats'
+  set :total_wins, :key => 'players:#{id}:all_stats'
+  value :my_rank, :key => 'players:my_rank:#{username}'
+  value :weird_key, :key => 'players:weird_key:#{raise}', :global => true
 
   def initialize(id=1) @id = id end
   def id; @id; end
+  def username; "user#{id}"; end
   def max_pitchers; 3; end
 end
 
@@ -49,16 +57,37 @@ describe Redis::Objects do
     @roster.redis.del(UNIONSTORE_KEY)
     @roster.redis.del(INTERSTORE_KEY)
     @roster.redis.del(DIFFSTORE_KEY)
-    
+
     Roster.total_players_online.reset
     Roster.all_player_stats.clear
     Roster.all_players_online.clear
     Roster.last_player.delete
+    Roster.weird_key.clear
+    
+    @roster.player_totals.clear
+    @roster.all_player_stats.clear
+    @roster.total_wins.clear
+    @roster.my_rank.clear
   end
 
   it "should provide a connection method" do
     Roster.redis.should == Redis::Objects.redis
     # Roster.redis.should be_kind_of(Redis)
+  end
+  
+  it "should support custom key names" do
+    @roster.player_totals.incr
+    @roster.redis.get('players/user1/total').should == '1'
+    @roster.redis.get('players/#{username}/total').should be_nil
+    @roster.all_player_stats << 'a'
+    @roster.redis.lindex('players:all_stats', 0).should == 'a'
+    @roster.total_wins << 'a'
+    @roster.redis.smembers('players:1:all_stats').should == ['a']
+    @roster.redis.smembers('players:#{id}:all_stats').should == []
+    @roster.my_rank = 'a'
+    @roster.redis.get('players:my_rank:user1').should == 'a'
+    Roster.weird_key = 'tuka'
+    Roster.redis.get('players:weird_key:#{raise}').should == 'tuka'
   end
 
   it "should create counter accessors" do
@@ -648,5 +677,4 @@ describe Redis::Objects do
     error.should_not be_nil
     error.should be_kind_of(Redis::Lock::LockTimeout)
   end
-
 end

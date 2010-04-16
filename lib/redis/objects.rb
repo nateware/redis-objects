@@ -13,7 +13,7 @@ class Redis
   #     include Redis::Objects
   #
   #     counter :joined_players
-  #     counter :active_players
+  #     counter :active_players, :key => 'game:#{id}:act_plyr'
   #     lock :archive_game
   #     set :player_ids
   #   end
@@ -83,18 +83,24 @@ class Redis
           gsub(/([a-z\d])([A-Z])/,'\1_\2').
           downcase
       end
-      
-      def field_key(name, id) #:nodoc:
-        "#{prefix}:#{id}:#{name}"
-      end
 
+      def field_key(name, id='') #:nodoc:
+        # This can never ever ever ever change or upgrades will corrupt all data
+        @redis_objects[name.to_sym][:key] || "#{prefix}:#{id}:#{name}"
+      end
     end
 
     # Instance methods that appear in your class when you include Redis::Objects.
     module InstanceMethods
       def redis() self.class.redis end
       def field_key(name) #:nodoc:
-        self.class.field_key(name, id)
+        # This can never ever ever ever change or upgrades will corrupt all data
+        if key = self.class.redis_objects[name.to_sym][:key]
+          eval "%(#{key})"
+        else
+          # don't try to refactor into class field_key because fucks up eval context
+          "#{self.class.prefix}:#{id}:#{name}"
+        end
       end
     end
   end

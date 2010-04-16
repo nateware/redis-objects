@@ -22,11 +22,11 @@ class Redis
         def counter(name, options={})
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
-          @redis_objects[name] = options.merge(:type => :counter)
+          @redis_objects[name.to_sym] = options.merge(:type => :counter)
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Counter.new(field_key(:#{name}, ''), redis, @redis_objects[:#{name}])
+                @#{name} ||= Redis::Counter.new(field_key(:#{name}), redis, @redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods

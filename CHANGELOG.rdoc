@@ -2,12 +2,9 @@
 
 == 0.3.0 [Final] (14 April 2010)
 
-* Due to Ruby 1.9 bugs and performance considerations, marshaling of
-data types is now OFF by default.  You must say :marshal => true for
-any objects that you want serialization enabled on. [Nate Wiger]
+* Due to Ruby 1.9 bugs and performance considerations, marshaling of data types is now OFF by default.  You must say :marshal => true for any objects that you want serialization enabled on. [Nate Wiger]
 
-* Sorted Set class changed slightly due to feedback. You can now get
-an individual element back via @set['item'] since it acts like a Hash.
+* Sorted Set class changed slightly due to feedback. You can now get an individual element back via @set['item'] since it acts like a Hash.
 
 == 0.2.4 [Final] (9 April 2010)*
 

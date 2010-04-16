@@ -14,7 +14,7 @@ class Redis
     
     # Create a new SortedSet.
     def initialize(key, *args)
-      @key = key
+      @key = key.is_a?(Array) ? key.flatten.join(':') : key
       @options = args.last.is_a?(Hash) ? args.pop : {}
       @redis = args.first || $redis
     end
