@@ -42,12 +42,23 @@ class Redis
       redis.sismember(key, to_redis(value))
     end
     alias_method :include?, :member?
-
+    
     # Delete the value from the set.  Redis: SREM
     def delete(value)
       redis.srem(key, to_redis(value))
     end
-
+    
+    # Delete if matches block
+    def delete_if(&blk)
+      res = false
+      redis.smembers(key).each do |m|
+        if blk.call(from_redis(m))
+          res = redis.srem(key, m)
+        end
+      end
+      res
+    end
+    
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
     # so you can also use familiar methods like +collect+, +detect+, and so forth.
     def each(&block)
@@ -131,6 +142,7 @@ class Redis
       redis.scard(key)
     end
     alias_method :size, :length
+    alias_method :count, :length
 
     # Returns true if the set has no members. Redis: SCARD == 0
     def empty?
