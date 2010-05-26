@@ -45,7 +45,7 @@ class Redis
 
     # Delete the value from the set.  Redis: SREM
     def delete(value)
-      redis.srem(key, value)
+      redis.srem(key, to_redis(value))
     end
 
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
