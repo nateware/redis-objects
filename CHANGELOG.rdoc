@@ -1,5 +1,9 @@
 = Changelog for Redis::Objects
 
+== 0.3.1 [Final] (1 June 2010)
+
+* Integrated fixes for sorted_set deletions from capotej (Julio Capote)
+
 == 0.3.0 [Final] (14 April 2010)
 
 * Due to Ruby 1.9 bugs and performance considerations, marshaling of data types is now OFF by default.  You must say :marshal => true for any objects that you want serialization enabled on. [Nate Wiger]

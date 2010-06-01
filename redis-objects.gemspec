@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
   s.name = 'redis-objects'
-  s.version = '0.3.0'
+  s.version = '0.3.1'
   s.summary = "Maps Redis types to Ruby objects"
   s.description = %{Map Redis types directly to Ruby objects. Works with any class or ORM.}
   s.files = Dir['lib/**/*.rb'] + Dir['spec/**/*.rb']
