@@ -494,8 +494,8 @@ describe Redis::SortedSet do
     @set.score('a').should == 5
     @set['a'].should == 5
     @set['a'] = 3
-    @set['b'] = 5
-    @set['b'].should == 5
+    @set['b'] = 5.6
+    @set['b'].should == 5.6
     @set['c'] = 4
 
     @set[0,-1].should == ['a','c','b']
@@ -511,7 +511,7 @@ describe Redis::SortedSet do
     @set.last.should == 'b'
 
     @set.members.should == ['a','c','b']
-    @set.members(:withscores => true).should == [['a',3],['c',4],['b',5]]
+    @set.members(:withscores => true).should == [['a',3],['c',4],['b',5.6]]
 
     @set['b'] = 5
     @set['b'] = 6

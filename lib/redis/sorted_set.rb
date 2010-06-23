@@ -50,7 +50,7 @@ class Redis
     # specified element does not exist in the sorted set, or the key does not exist
     # at all, nil is returned. Redis: ZSCORE.
     def score(member)
-      redis.zscore(key, to_redis(member)).to_i
+      redis.zscore(key, to_redis(member)).to_f
     end
 
     # Return the rank of the member in the sorted set, with scores ordered from
@@ -78,7 +78,7 @@ class Redis
         val = from_redis redis.zrange(key, start_index, end_index, 'withscores')
         ret = []
         while k = val.shift and v = val.shift
-          ret << [k, v.to_i]
+          ret << [k, v.to_f]
         end
         ret
       else
@@ -92,7 +92,7 @@ class Redis
         val = from_redis redis.zrevrange(key, start_index, end_index, 'withscores')
         ret = []
         while k = val.shift and v = val.shift
-          ret << [k, v.to_i]
+          ret << [k, v.to_f]
         end
         ret
       else
