@@ -76,7 +76,7 @@ class Redis
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
       if options[:withscores]
-        val = from_redis redis.zrange(key, start_index, end_index, 'withscores')
+        val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
           ret << [k, v.to_f]
@@ -90,7 +90,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
       if options[:withscores]
-        val = from_redis redis.zrevrange(key, start_index, end_index, 'withscores')
+        val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
           ret << [k, v.to_f]
@@ -107,20 +107,20 @@ class Redis
     #     :withscores     - if true, scores are returned as well
     # Redis: ZRANGEBYSCORE
     def rangebyscore(min, max, options={})
-      args = []
-      args += ['limit', options[:offset] || 0, options[:limit] || options[:count]] if
+      args = {}
+      args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args += ['withscores'] if options[:withscores]
-      from_redis redis.zrangebyscore(key, min, max, *args)
+      args[:with_scores] = true if options[:withscores]
+      from_redis redis.zrangebyscore(key, min, max, args)
     end
 
     # Forwards compat (not yet implemented in Redis)
     def revrangebyscore(min, max, options={})
-      args = []
-      args += ['limit', options[:offset] || 0, options[:limit] || options[:count]] if
+      args = {}
+      args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args += ['withscores'] if options[:withscores]
-      from_redis redis.zrevrangebyscore(key, min, max, *args)
+      args[:with_scores] = true if options[:withscores]
+      from_redis redis.zrevrangebyscore(key, min, max, args)
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
