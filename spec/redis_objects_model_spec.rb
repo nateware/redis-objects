@@ -81,7 +81,7 @@ describe Redis::Objects do
     @roster.redis.lindex('players:all_stats', 0).should == 'a'
     @roster.total_wins << 'a'
     @roster.redis.smembers('players:1:all_stats').should == ['a']
-    @roster.redis.smembers('players:#{id}:all_stats').should == []
+    @roster.redis.smembers('players:#{id}:all_stats').should be_nil
     @roster.my_rank = 'a'
     @roster.redis.get('players:my_rank:user1').should == 'a'
     Roster.weird_key = 'tuka'
