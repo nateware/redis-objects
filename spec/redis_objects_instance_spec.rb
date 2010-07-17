@@ -67,126 +67,162 @@ end
 
 
 describe Redis::List do
-  before :all do
-    @list = Redis::List.new('spec/list')
-  end
+  describe "as a bounded list" do
+    before :each do
+      @list = Redis::List.new('spec/bounded_list',
+                              $redis,
+                              :max_size => 10)
+      1.upto(10) do |i|
+        @list << i
+      end
 
-  before :each do
-    @list.clear
-  end
-
-  it "should handle lists of simple values" do
-    @list.should be_empty
-    @list << 'a'
-    @list.should == ['a']
-    @list.get.should == ['a']
-    @list.unshift 'b'
-    @list.to_s.should == 'b, a'
-    @list.should == ['b','a']
-    @list.get.should == ['b','a']
-    @list.push 'c'
-    @list.should == ['b','a','c']
-    @list.get.should == ['b','a','c']
-    @list.first.should == 'b'
-    @list.last.should == 'c'
-    @list << 'd'
-    @list.should == ['b','a','c','d']
-    @list[1].should == 'a'
-    @list[0].should == 'b'
-    @list[2].should == 'c'
-    @list[3].should == 'd'
-    @list.include?('c').should be_true
-    @list.include?('no').should be_false
-    @list.pop.should == 'd'
-    @list[0].should == @list.at(0)
-    @list[1].should == @list.at(1)
-    @list[2].should == @list.at(2)
-    @list.should == ['b','a','c']
-    @list.get.should == ['b','a','c']
-    @list.shift.should == 'b'
-    @list.should == ['a','c']
-    @list.get.should == ['a','c']
-    @list << 'e' << 'f' << 'e'
-    @list.should == ['a','c','e','f','e']
-    @list.get.should == ['a','c','e','f','e']
-    @list.delete('e').should == 2
-    @list.should == ['a','c','f']
-    @list.get.should == ['a','c','f']
-    @list << 'j'
-    @list.should == ['a','c','f','j']
-    @list[0..2].should == ['a','c','f']
-    @list[0, 2].should == ['a','c','f']  # consistent with Redis, not Ruby
-    @list[1, 3].should == ['c','f','j']
-    @list.length.should == 4
-    @list.size.should == 4
-    @list.should == ['a','c','f','j']
-    @list.get.should == ['a','c','f','j']
-
-    i = -1
-    @list.each do |st|
-      st.should == @list[i += 1]
+      # Make sure that adding < max_size doesn't mess up.
+      1.upto(10) do |i|
+        @list.at(i - 1).should == i.to_s
+      end
     end
-    @list.should == ['a','c','f','j']
-    @list.get.should == ['a','c','f','j']
 
-    @list.each_with_index do |st,i|
-      st.should == @list[i]
+    it "should push the first element out of the list" do
+      @list << '11'
+      @list.last.should == '11'
+      @list.first.should == '2'
+      @list.should have(10).things
     end
-    @list.should == ['a','c','f','j']
-    @list.get.should == ['a','c','f','j']
 
-    coll = @list.collect{|st| st}
-    coll.should == ['a','c','f','j']
-    @list.should == ['a','c','f','j']
-    @list.get.should == ['a','c','f','j']
+    it "should push the last element out of the list for unshift" do
+      @list.unshift('0')
+      @list.last.should == '9'
+      @list.first.should == '0'
+      @list.should have(10).things
+    end
 
-    @list << 'a'
-    coll = @list.select{|st| st == 'a'}
-    coll.should == ['a','a']
-    @list.should == ['a','c','f','j','a']
-    @list.get.should == ['a','c','f','j','a']
+    after :each do
+      @list.clear
+    end
   end
 
-  it "should handle lists of complex data types" do
-    @list.options[:marshal] = true
-    v1 = {:json => 'data'}
-    v2 = {:json2 => 'data2'}
-    @list << v1
-    @list << v2
-    @list.first.should == v1
-    @list.last.should == v2
-    @list << [1,2,3,[4,5]]
-    @list.last.should == [1,2,3,[4,5]]
-    @list.shift.should == {:json => 'data'}
-    @list.options[:marshal] = false
-  end
-  
-  it "should support renaming lists" do
-    @list.should be_empty
-    @list << 'a' << 'b' << 'a' << 3
-    @list.should == ['a','b','a','3']
-    @list.key.should == 'spec/list'
-    @list.rename('spec/list3', false).should be_true
-    @list.key.should == 'spec/list'
-    @list.redis.del('spec/list3')
-    @list << 'a' << 'b' << 'a' << 3
-    @list.rename('spec/list2').should be_true
-    @list.key.should == 'spec/list2'
-    @list.redis.lrange(@list.key, 0, 3).should == ['a','b','a','3']
-    old = Redis::List.new('spec/list')
-    old.should be_empty
-    old << 'Tuff'
-    old.values.should == ['Tuff']
-    @list.renamenx('spec/list').should be_false
-    @list.renamenx(old).should be_false
-    @list.renamenx('spec/foo').should be_true
-    old.values.should == ['Tuff']
-    @list.clear
-    @list.redis.del('spec/list2')
-  end
+  describe "with basic operations" do
+    before :all do
+      @list = Redis::List.new('spec/list')
+    end
 
-  after :all do
-    @list.clear
+    before :each do
+      @list.clear
+    end
+
+    it "should handle lists of simple values" do
+      @list.should be_empty
+      @list << 'a'
+      @list.should == ['a']
+      @list.get.should == ['a']
+      @list.unshift 'b'
+      @list.to_s.should == 'b, a'
+      @list.should == ['b','a']
+      @list.get.should == ['b','a']
+      @list.push 'c'
+      @list.should == ['b','a','c']
+      @list.get.should == ['b','a','c']
+      @list.first.should == 'b'
+      @list.last.should == 'c'
+      @list << 'd'
+      @list.should == ['b','a','c','d']
+      @list[1].should == 'a'
+      @list[0].should == 'b'
+      @list[2].should == 'c'
+      @list[3].should == 'd'
+      @list.include?('c').should be_true
+      @list.include?('no').should be_false
+      @list.pop.should == 'd'
+      @list[0].should == @list.at(0)
+      @list[1].should == @list.at(1)
+      @list[2].should == @list.at(2)
+      @list.should == ['b','a','c']
+      @list.get.should == ['b','a','c']
+      @list.shift.should == 'b'
+      @list.should == ['a','c']
+      @list.get.should == ['a','c']
+      @list << 'e' << 'f' << 'e'
+      @list.should == ['a','c','e','f','e']
+      @list.get.should == ['a','c','e','f','e']
+      @list.delete('e').should == 2
+      @list.should == ['a','c','f']
+      @list.get.should == ['a','c','f']
+      @list << 'j'
+      @list.should == ['a','c','f','j']
+      @list[0..2].should == ['a','c','f']
+      @list[0, 2].should == ['a','c','f']  # consistent with Redis, not Ruby
+      @list[1, 3].should == ['c','f','j']
+      @list.length.should == 4
+      @list.size.should == 4
+      @list.should == ['a','c','f','j']
+      @list.get.should == ['a','c','f','j']
+
+      i = -1
+      @list.each do |st|
+        st.should == @list[i += 1]
+      end
+      @list.should == ['a','c','f','j']
+      @list.get.should == ['a','c','f','j']
+
+      @list.each_with_index do |st,i|
+        st.should == @list[i]
+      end
+      @list.should == ['a','c','f','j']
+      @list.get.should == ['a','c','f','j']
+
+      coll = @list.collect{|st| st}
+      coll.should == ['a','c','f','j']
+      @list.should == ['a','c','f','j']
+      @list.get.should == ['a','c','f','j']
+
+      @list << 'a'
+      coll = @list.select{|st| st == 'a'}
+      coll.should == ['a','a']
+      @list.should == ['a','c','f','j','a']
+      @list.get.should == ['a','c','f','j','a']
+    end
+
+    it "should handle lists of complex data types" do
+      @list.options[:marshal] = true
+      v1 = {:json => 'data'}
+      v2 = {:json2 => 'data2'}
+      @list << v1
+      @list << v2
+      @list.first.should == v1
+      @list.last.should == v2
+      @list << [1,2,3,[4,5]]
+      @list.last.should == [1,2,3,[4,5]]
+      @list.shift.should == {:json => 'data'}
+      @list.options[:marshal] = false
+    end
+    
+    it "should support renaming lists" do
+      @list.should be_empty
+      @list << 'a' << 'b' << 'a' << 3
+      @list.should == ['a','b','a','3']
+      @list.key.should == 'spec/list'
+      @list.rename('spec/list3', false).should be_true
+      @list.key.should == 'spec/list'
+      @list.redis.del('spec/list3')
+      @list << 'a' << 'b' << 'a' << 3
+      @list.rename('spec/list2').should be_true
+      @list.key.should == 'spec/list2'
+      @list.redis.lrange(@list.key, 0, 3).should == ['a','b','a','3']
+      old = Redis::List.new('spec/list')
+      old.should be_empty
+      old << 'Tuff'
+      old.values.should == ['Tuff']
+      @list.renamenx('spec/list').should be_false
+      @list.renamenx(old).should be_false
+      @list.renamenx('spec/foo').should be_true
+      old.values.should == ['Tuff']
+      @list.clear
+      @list.redis.del('spec/list2')
+    end
+
+    after :all do
+      @list.clear
+    end
   end
 end
 
