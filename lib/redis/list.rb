@@ -27,7 +27,7 @@ class Redis
     # Add a member to the end of the list. Redis: RPUSH
     def push(value)
       redis.rpush(key, to_redis(value))
-      redis.ltrim(key, -options[:max_size], -1) if options[:max_size]
+      redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
     end
 
     # Remove a member from the end of the list. Redis: RPOP
@@ -38,7 +38,7 @@ class Redis
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(value)
       redis.lpush(key, to_redis(value))
-      redis.ltrim(key, 0, options[:max_size] - 1) if options[:max_size]
+      redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
     end
 
     # Remove a member from the start of the list. Redis: LPOP

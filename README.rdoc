@@ -200,8 +200,8 @@ Lists work just like Ruby arrays:
 
 You can bound the size of the list to only hold N elements like so:
 
-    # Only holds 10 elements, throws out old ones when you reach :max_size.
-    @list = Redis::List.new('list_name', redis_handle, :max_size => 10)
+    # Only holds 10 elements, throws out old ones when you reach :maxlength.
+    @list = Redis::List.new('list_name', redis_handle, :maxlength => 10)
 
 Complex data types are no problem with :marshal => true:
 

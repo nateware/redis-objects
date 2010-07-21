@@ -71,12 +71,12 @@ describe Redis::List do
     before :each do
       @list = Redis::List.new('spec/bounded_list',
                               $redis,
-                              :max_size => 10)
+                              :maxlength => 10)
       1.upto(10) do |i|
         @list << i
       end
 
-      # Make sure that adding < max_size doesn't mess up.
+      # Make sure that adding < maxlength doesn't mess up.
       1.upto(10) do |i|
         @list.at(i - 1).should == i.to_s
       end
