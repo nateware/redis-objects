@@ -1,8 +1,10 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a sorted set.
   #
-  class SortedSet
+  class SortedSet < BaseObject
     # require 'enumerator'
     # include Enumerable
     require 'redis/helpers/core_commands'
@@ -11,12 +13,11 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
-    
+
     # Create a new SortedSet.
     def initialize(key, *args)
+      super(key, *args)
       @key = key.is_a?(Array) ? key.flatten.join(':') : key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
     end
 
     # How to add values using a sorted set.  The key is the member, eg,

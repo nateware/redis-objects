@@ -1,3 +1,5 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a lock.  This functions like a proxy class, in
@@ -6,14 +8,12 @@ class Redis
   # directly, but it is better to use the lock :foo class method in your
   # class to define a lock.
   #
-  class Lock
+  class Lock < BaseObject
     class LockTimeout < StandardError; end #:nodoc:
 
     attr_reader :key, :options, :redis
     def initialize(key, *args)
-      @key = key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
+      super(key, *args)
       @options[:timeout] ||= 5
       @options[:init] = false if @options[:init].nil? # default :init to false
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false

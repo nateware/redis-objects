@@ -1,9 +1,11 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
-  # Class representing a Redis list.  Instances of Redis::List are designed to 
+  # Class representing a Redis list.  Instances of Redis::List are designed to
   # behave as much like Ruby arrays as possible.
   #
-  class List
+  class List < BaseObject
     require 'enumerator'
     include Enumerable
     require 'redis/helpers/core_commands'
@@ -13,9 +15,7 @@ class Redis
 
     attr_reader :key, :options, :redis
     def initialize(key, *args)
-      @key = key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
+      super(key, *args)
     end
 
     # Works like push.  Can chain together: list << 'a' << 'b'

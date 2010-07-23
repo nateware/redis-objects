@@ -1,3 +1,5 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a Redis counter.  This functions like a proxy class, in
@@ -6,15 +8,13 @@ class Redis
   # directly, or you can use the counter :foo class method in your
   # class to define a counter.
   #
-  class Counter
+  class Counter < BaseObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
     attr_reader :key, :options, :redis
     def initialize(key, *args)
-      @key = key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
+      super(key, *args)
       @options[:start] ||= 0
       @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end

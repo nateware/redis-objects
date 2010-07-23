@@ -1,8 +1,10 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a set.
   #
-  class Set
+  class Set < BaseObject
     require 'enumerator'
     include Enumerable
     require 'redis/helpers/core_commands'
@@ -11,12 +13,10 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
-    
+
     # Create a new Set.
     def initialize(key, *args)
-      @key = key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
+      super(key, *args)
     end
 
     # Works like add.  Can chain together: list << 'a' << 'b'
@@ -24,7 +24,7 @@ class Redis
       add(value)
       self  # for << 'a' << 'b'
     end
-    
+
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)

@@ -1,8 +1,10 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a simple value.  You can use standard Ruby operations on it.
   #
-  class Value
+  class Value < BaseObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
     require 'redis/helpers/serialize'
@@ -10,9 +12,7 @@ class Redis
 
     attr_reader :key, :options, :redis
     def initialize(key, *args)
-      @key = key
-      @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis = args.first || $redis
+      super(key, *args)
       @redis.setnx(key, @options[:default]) if @options[:default]
     end
 
