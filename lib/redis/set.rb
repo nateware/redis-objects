@@ -156,6 +156,10 @@ class Redis
     def to_s
       members.join(', ')
     end
+
+    def sort(options = {})
+      redis.sort(key, options)
+    end
     
     private
     
