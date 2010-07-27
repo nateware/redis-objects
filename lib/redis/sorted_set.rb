@@ -143,7 +143,19 @@ class Redis
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
-      redis.zrem(key, value)
+      redis.zrem(key, to_redis(value))
+    end
+
+    # Delete element if it matches block
+    def delete_if(&blocK)
+      raise ArgumentError, "Missing block to SortedSet#delete_if" unless block_given?
+      res = false
+      redis.zrevrange(key, 0, -1).each do |m|
+        if block.call(from_redis(m))
+          res = redis.zrem(key, m)
+        end
+      end
+      res
     end
 
     # Increment the rank of that member atomically and return the new value. This
