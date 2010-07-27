@@ -79,7 +79,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      if options[:withscores]
+      if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
@@ -93,7 +93,7 @@ class Redis
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      if options[:withscores]
+      if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
@@ -114,7 +114,7 @@ class Redis
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args[:with_scores] = true if options[:withscores]
+      args[:with_scores] = true if options[:withscores] || options[:with_scores]
       from_redis redis.zrangebyscore(key, min, max, args)
     end
 
@@ -123,7 +123,7 @@ class Redis
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args[:with_scores] = true if options[:withscores]
+      args[:with_scores] = true if options[:withscores] || options[:with_scores]
       from_redis redis.zrevrangebyscore(key, min, max, args)
     end
 
