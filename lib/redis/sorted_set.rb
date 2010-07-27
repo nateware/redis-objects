@@ -48,6 +48,7 @@ class Redis
         score(index)
       end
     end
+    alias_method :slice, :[]
 
     # Return the score of the specified element of the sorted set at key. If the
     # specified element does not exist in the sorted set, or the key does not exist

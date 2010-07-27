@@ -67,6 +67,7 @@ class Redis
         at(index)
       end
     end
+    alias_method :slice, :[]
 
     # Delete the element(s) from the list that match name. If count is specified,
     # only the first-N (if positive) or last-N (if negative) will be removed.
