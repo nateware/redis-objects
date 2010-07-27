@@ -48,7 +48,8 @@ class Redis
 
     # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      from_redis range(0, -1)
+      v = from_redis range(0, -1)
+      v.nil? ? [] : v
     end
     alias_method :get, :values
 
@@ -58,12 +59,15 @@ class Redis
     def [](index, length=nil)
       if index.is_a? Range
         range(index.first, index.last)
+      elsif length == 0
+        []
       elsif length
         range(index, length)
       else
         at(index)
       end
     end
+    alias_method :slice, :[]
 
     # Delete the element(s) from the list that match name. If count is specified,
     # only the first-N (if positive) or last-N (if negative) will be removed.

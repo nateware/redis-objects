@@ -40,12 +40,15 @@ class Redis
     def [](index, length=nil)
       if index.is_a? Range
         range(index.first, index.last)
+      elsif length == 0
+        []
       elsif length
         range(index, length)
       else
         score(index)
       end
     end
+    alias_method :slice, :[]
 
     # Return the score of the specified element of the sorted set at key. If the
     # specified element does not exist in the sorted set, or the key does not exist
@@ -69,13 +72,14 @@ class Redis
     # Return all members of the sorted set with their scores.  Extremely CPU-intensive.
     # Better to use a range instead.
     def members(options={})
-      range(0, -1, options)
+      v = from_redis range(0, -1, options)
+      v.nil? ? [] : v
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      if options[:withscores]
+      if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
@@ -89,7 +93,7 @@ class Redis
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      if options[:withscores]
+      if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
         ret = []
         while k = val.shift and v = val.shift
@@ -110,7 +114,7 @@ class Redis
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args[:with_scores] = true if options[:withscores]
+      args[:with_scores] = true if options[:withscores] || options[:with_scores]
       from_redis redis.zrangebyscore(key, min, max, args)
     end
 
@@ -119,7 +123,7 @@ class Redis
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
-      args[:with_scores] = true if options[:withscores]
+      args[:with_scores] = true if options[:withscores] || options[:with_scores]
       from_redis redis.zrevrangebyscore(key, min, max, args)
     end
 
@@ -140,7 +144,19 @@ class Redis
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
-      redis.zrem(key, value)
+      redis.zrem(key, to_redis(value))
+    end
+
+    # Delete element if it matches block
+    def delete_if(&blocK)
+      raise ArgumentError, "Missing block to SortedSet#delete_if" unless block_given?
+      res = false
+      redis.zrevrange(key, 0, -1).each do |m|
+        if block.call(from_redis(m))
+          res = redis.zrem(key, m)
+        end
+      end
+      res
     end
 
     # Increment the rank of that member atomically and return the new value. This

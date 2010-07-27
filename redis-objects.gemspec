@@ -13,7 +13,7 @@ spec = Gem::Specification.new do |s|
   s.author = "Nate Wiger"
   s.email = "nate@wiger.org"
   s.homepage = "http://github.com/nateware/redis-objects"
-  s.requirements << 'redis, v1.0.3 or greater'
-  s.add_dependency('redis', '>= 1.0.3')
+  s.requirements << 'redis, v2.0.1 or greater'
+  s.add_dependency('redis', '>= 2.0.1')
 end
 
