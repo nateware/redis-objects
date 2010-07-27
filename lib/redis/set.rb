@@ -33,7 +33,8 @@ class Redis
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
-      from_redis redis.smembers(key)
+      v = from_redis redis.smembers(key)
+      v.nil? ? [] : v
     end
     alias_method :get, :members
 

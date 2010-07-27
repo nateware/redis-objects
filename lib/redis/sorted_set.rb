@@ -40,6 +40,8 @@ class Redis
     def [](index, length=nil)
       if index.is_a? Range
         range(index.first, index.last)
+      elsif length == 0
+        []
       elsif length
         range(index, length)
       else
@@ -69,7 +71,8 @@ class Redis
     # Return all members of the sorted set with their scores.  Extremely CPU-intensive.
     # Better to use a range instead.
     def members(options={})
-      range(0, -1, options)
+      v = from_redis range(0, -1, options)
+      v.nil? ? [] : v
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
