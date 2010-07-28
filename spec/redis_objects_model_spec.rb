@@ -73,15 +73,16 @@ describe Redis::Objects do
     # Roster.redis.should.be.kind_of(Redis)
   end
   
-  it "should support custom key names" do
+  it "should support interpolation of key names" do
     @roster.player_totals.incr
     @roster.redis.get('players/user1/total').should == '1'
     @roster.redis.get('players/#{username}/total').should.be.nil
     @roster.all_player_stats << 'a'
     @roster.redis.lindex('players:all_stats', 0).should == 'a'
     @roster.total_wins << 'a'
+    # test for interpolation of key names
+    @roster.redis.smembers('players:#{id}:all_stats').should == []
     @roster.redis.smembers('players:1:all_stats').should == ['a']
-    @roster.redis.smembers('players:#{id}:all_stats').should.be.nil
     @roster.my_rank = 'a'
     @roster.redis.get('players:my_rank:user1').should == 'a'
     Roster.weird_key = 'tuka'

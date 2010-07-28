@@ -158,10 +158,6 @@ class Redis
       members.join(', ')
     end
 
-    def sort(options = {})
-      redis.sort(key, options)
-    end
-    
     private
     
     def keys_from_objects(sets)

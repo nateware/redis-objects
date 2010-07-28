@@ -1,8 +1,26 @@
 = Changelog for Redis::Objects
 
+== 0.4.0 
+
+* Now dependent on redis-rb client 2.0.4 or later.  Should still be backwards compatible with redis-server 1.x
+
+* Fixes to sets and sorted sets to bring them up to speed with redis-rb 2.0 from tomstuart [Tom Stuart]
+
+* Refactoring to make constructors common across all object types from dbalatero [David Balatero]
+
+* Renamed :withscores option to :with_scores for consistency with redis-rb 2.0, but kept backwards compat [Tom Stuart, Nate Wiger]
+
+== 0.3.2 [Final] (21 July 2010)
+
+* New "maxlength" option to Redis::List can create length-limited lists (eg, like a ring buffer) from dbalatero [David Balatero]
+
+* Fix score conversions in Redis::SortedSet (scores are floats, not ints) from tomstuart [Tom Stuart]
+
+* Switched from rspec to bacon for tests
+
 == 0.3.1 [Final] (1 June 2010)
 
-* Integrated fixes for sorted_set deletions from capotej (Julio Capote)
+* Integrated fixes for sorted_set deletions from capotej [Julio Capote]
 
 == 0.3.0 [Final] (14 April 2010)
 
