@@ -6,6 +6,8 @@
 
 * Fixes to sets and sorted sets to bring them up to speed with redis-rb 2.0 from tomstuart [Tom Stuart]
 
+* Incompatible change: Update list[x,y] and sorted_set[x,y] to work consistently with Ruby in all cases [Tom Stuart]
+
 * Refactoring to make constructors common across all object types from dbalatero [David Balatero]
 
 * Renamed :withscores option to :with_scores for consistency with redis-rb 2.0, but kept backwards compat [Tom Stuart, Nate Wiger]

@@ -59,10 +59,12 @@ class Redis
     def [](index, length=nil)
       if index.is_a? Range
         range(index.first, index.last)
-      elsif length == 0
-        []
       elsif length
-        range(index, length)
+        case length <=> 0
+        when 1  then range(index, index + length - 1)
+        when 0  then []
+        when -1 then nil  # Ruby does this (a bit weird)
+        end
       else
         at(index)
       end

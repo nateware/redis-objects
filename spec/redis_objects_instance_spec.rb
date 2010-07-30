@@ -143,17 +143,22 @@ describe Redis::List do
       @list.get.should == ['a','c','f']
       @list << 'j'
       @list.should == ['a','c','f','j']
-      @list[0..2].should == ['a','c','f']
-      @list.slice(0..2).should == ['a','c','f']
-      @list[0, 2].should == ['a','c','f']  # consistent with Redis, not Ruby
-      @list[1, 3].should == ['c','f','j']
-      @list.slice(1, 3).should == ['c','f','j']
+      # Test against similar Ruby functionality
+      a = @list.values
+      @list[0..2].should == a[0..2]
+      @list.slice(0..2).should == a.slice(0..2)
+      @list[0, 2].should == a[0, 2]
+      @list.range(0, 2).should == a[0..2]  # range for Redis works like .. in Ruby
+      @list[0, 1].should == a[0, 1]
+      @list.range(0, 1).should == a[0..1]  # range for Redis works like .. in Ruby
+      @list[1, 3].should == a[1, 3]
+      @list.slice(1, 3).should == a.slice(1, 3)
       @list[0, 0].should == []
-      @list[0, -1].should == ['a','c','f','j']
+      @list[0, -1].should == a[0, -1]
       @list.length.should == 4
       @list.size.should == 4
-      @list.should == ['a','c','f','j']
-      @list.get.should == ['a','c','f','j']
+      @list.should == a
+      @list.get.should == a
 
       i = -1
       @list.each do |st|
@@ -487,16 +492,18 @@ describe Redis::SortedSet do
     @set['b'].should == 5.6
     @set['c'] = 4
 
-    @set[0,-1].should == ['a','c','b']
-    @set[0..2].should == ['a','c','b']
-    @set.slice(0..2).should == ['a','c','b']
-    @set[0, 2].should == ['a','c','b']   # consistent with Redis, not Ruby
-    @set.slice(0, 2).should == ['a','c','b']   # consistent with Redis, not Ruby
+    a = @set.members
+    @set[0,-1].should == a[0,-1]
+    @set[0..2].should == a[0..2]
+    @set.slice(0..2).should == a.slice(0..2)
+    @set[0, 2].should == a[0,2]
+    @set.slice(0, 2).should == a.slice(0, 2)
+    @set.range(0, 2).should == a[0..2]
     @set[0, 0].should == []
     @set.range(0,1,:withscores => true).should == [['a',3],['c',4]]
-    @set.range(0,-1).should == ['a','c','b']
-    @set.revrange(0,-1).should == ['b','c','a']
-    @set[0..1].should == ['a','c']
+    @set.range(0,-1).should == a[0..-1]
+    @set.revrange(0,-1).should == a[0..-1].reverse
+    @set[0..1].should == a[0..1]
     @set[1].should == 0  # missing
     @set.at(1).should == 'c'
     @set.first.should == 'a'
