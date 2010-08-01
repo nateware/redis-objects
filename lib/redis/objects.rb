@@ -44,6 +44,7 @@ class Redis
     autoload :Sets, File.join(dir, 'sets')
     autoload :SortedSets, File.join(dir, 'sorted_sets')
     autoload :Values, File.join(dir, 'values')
+    autoload :Dicts, File.join(dir, 'dicts')
 
     class NotConnected  < StandardError; end
 
@@ -67,6 +68,7 @@ class Redis
         klass.send :include, Redis::Objects::Sets
         klass.send :include, Redis::Objects::SortedSets
         klass.send :include, Redis::Objects::Values
+        klass.send :include, Redis::Objects::Dicts
       end
     end
 

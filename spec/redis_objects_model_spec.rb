@@ -9,6 +9,7 @@ class Roster
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
+  dict :contact_information
   lock :resort, :timeout => 2
   value :starting_pitcher, :marshal => true
   list :player_stats, :marshal => true
@@ -49,6 +50,7 @@ describe Redis::Objects do
     @roster.starting_pitcher.delete
     @roster.player_stats.clear
     @roster.outfielders.clear
+    @roster.contact_information.clear
     @roster_1.outfielders.clear
     @roster_2.outfielders.clear
     @roster_3.outfielders.clear
@@ -88,6 +90,17 @@ describe Redis::Objects do
     Roster.weird_key = 'tuka'
     Roster.redis.get('players:weird_key:#{raise}').should == 'tuka'
   end
+
+  it "should be able to get/set contact info" do
+    @roster.contact_information['John_Phone'] = '123415352'
+    @roster.contact_information['John_Address'] = '123 LANE'
+    @roster.contact_information['John_Phone'].should == '123415352'
+    @roster.contact_information['John_Address'].should == '123 LANE'
+    @roster.contact_information['asdasd'].should.be.nil
+    @roster.contact_information.size.should == 2
+  end
+
+
 
   it "should create counter accessors" do
     [:available_slots, :pitchers, :basic].each do |m|
