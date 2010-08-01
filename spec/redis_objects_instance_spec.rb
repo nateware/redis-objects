@@ -7,6 +7,7 @@ require 'redis/value'
 require 'redis/lock'
 require 'redis/set'
 require 'redis/sorted_set'
+require 'redis/dict'
 
 describe Redis::Value do
   before do
@@ -352,6 +353,93 @@ describe Redis::Lock do
     # lock value should still be set since the lock was held for more than the expiry
     $redis.get("test_lock").should.not.be.nil
   end
+end
+
+
+describe Redis::Dict do
+  before do
+    @dict = Redis::Dict.new('test_dict')
+    @empty = Redis::Dict.new('test_empty_dict')
+    @dict.clear
+  end
+  
+  it "should get and set values" do
+    @dict['foo'] = 'bar'
+    @dict['foo'].should == 'bar'
+  end
+
+  it "should know what exists" do
+    @dict['foo'] = 'bar'
+    @dict.include?('foo').should == true
+  end
+
+  it "should delete values" do
+    @dict['abc'] = 'xyz'
+    @dict.delete('abc')
+    @dict['abc'].should == nil
+  end
+
+  it "should respond to each" do
+    @dict['foo'] = 'bar'
+    @dict.each do |key, val|
+      key.should == 'foo'
+      val.should == 'bar'
+    end
+  end
+  
+  it "should have 1 item" do
+    @dict['foo'] = 'bar'
+    @dict.size.should == 1
+  end
+
+  it "should respond to each_key" do
+    @dict['foo'] = 'bar'
+    @dict.each_key do |key|
+      key.should == 'foo'
+    end
+  end
+
+  it "should respond to each_value" do
+    @dict['foo'] = 'bar'
+    @dict.each_value do |val|
+      val.should == 'bar'
+    end
+  end
+
+  it "should respond to empty?" do
+    @empty.empty?.should == true
+  end
+
+  it "should be empty after a clear" do
+    @dict['foo'] = 'bar'
+    @dict.clear
+    @dict.empty?.should == true
+  end
+  
+  it "should respond to bulk_set" do
+    @dict.bulk_set({ 'abc' => 'xyz', 'bizz' => 'bazz'})
+    @dict['abc'].should == 'xyz'
+    @dict['bizz'].should == 'bazz'
+  end
+
+  it "should respond to bulk_get" do
+    @dict['foo'] = 'bar'
+    hsh = @dict.bulk_get('abc','foo')
+    hsh['abc'].should == nil
+    hsh['foo'].should == 'bar'
+  end
+
+  it "should increment field" do
+    @dict.incr('counter')
+    @dict.incr('counter')
+    @dict['counter'].should == 2
+  end
+  
+
+  after do
+    @dict.clear
+  end
+  
 end
 
 describe Redis::Set do
