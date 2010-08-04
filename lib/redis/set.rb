@@ -14,11 +14,6 @@ class Redis
 
     attr_reader :key, :options, :redis
 
-    # Create a new Set.
-    def initialize(key, *args)
-      super(key, *args)
-    end
-
     # Works like add.  Can chain together: list << 'a' << 'b'
     def <<(value)
       add(value)

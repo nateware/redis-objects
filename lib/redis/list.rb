@@ -14,9 +14,6 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
-    def initialize(key, *args)
-      super(key, *args)
-    end
 
     # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)

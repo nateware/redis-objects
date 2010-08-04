@@ -1,9 +1,9 @@
-# This is the class loader, for use as "include Redis::Objects::Dicts"
-# For the object itself, see "Redis::Dict"
+# This is the class loader, for use as "include Redis::Objects::Hashes"
+# For the object itself, see "Redis::Hash"
 require 'redis/dict'
 class Redis
   module Objects
-    module Dicts
+    module Hashes
       def self.included(klass)
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
@@ -18,7 +18,7 @@ class Redis
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Dict.new(field_key(:#{name}), redis, @redis_objects[:#{name}])
+                @#{name} ||= Redis::Hash.new(field_key(:#{name}), redis, @redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -29,7 +29,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Dict.new(field_key(:#{name}), redis, self.class.redis_objects[:#{name}])
+                @#{name} ||= Redis::Hash.new(field_key(:#{name}), redis, self.class.redis_objects[:#{name}])
               end
             EndMethods
           end

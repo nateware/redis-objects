@@ -1,22 +1,16 @@
 class Redis
   #
-  # Class representing a Dict (Redis Hash)
+  # Class representing a Hash (Redis Hash)
   #
-  class Dict
+  class Hash < BaseObject
     require 'enumerator'
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
-    
-    attr_reader :key, :redis
 
-    # Create a new Dict.
-    def initialize(key, *args)
-      @key = key.is_a?(Array) ? key.flatten.join(':') : key
-      @redis = args.first || $redis
-    end
+    attr_reader :key, :redis
 
     # Sets a field to value
     def []=(field, value)
@@ -51,19 +45,32 @@ class Redis
       redis.hdel(key, field)
     end
 
-    # Enumerate through all fields. Redis: HGETALL
-    def each
-      redis.hgetall(key)
-    end
-
-    # Enumerate through all keys. Redis: HKEYS
-    def each_key
+    # Return all the keys of the hash. Redis: HKEYS
+    def keys
       redis.hkeys(key)
     end
 
-    # Enumerate through all values. Redis: HVALS
-    def each_value
+    # Return all the values of the hash. Redis: HVALS
+    def values
       redis.hvals(key)
+    end
+    alias_method :vals, :values
+
+    # Enumerate through all fields. Redis: HGETALL
+    def each(&block)
+      puts 'getall ===>'
+      puts redis.hgetall(key)
+      redis.hgetall(key).each(&block)
+    end
+
+    # Enumerate through each keys. Redis: HKEYS
+    def each_key(&block)
+      keys.each(&block)
+    end
+
+    # Enumerate through all values. Redis: HVALS
+    def each_value(&block)
+      values(key).each(&block)
     end
 
     # Return the size of the dict. Redis: HLEN
@@ -99,9 +106,10 @@ class Redis
     end
     
     # Increment value by integer at field. Redis: HINCRBY
-    def incr(field, val = 1)
-      redis.hincrby(key, field, val)
+    def incrby(field, val = 1)
+      redis.hincrby(key, field, val).to_i
     end
+    alias_method :incr, :incrby 
 
   end
 end

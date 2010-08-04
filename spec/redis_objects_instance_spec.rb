@@ -7,7 +7,7 @@ require 'redis/value'
 require 'redis/lock'
 require 'redis/set'
 require 'redis/sorted_set'
-require 'redis/dict'
+require 'redis/hash'
 
 describe Redis::Value do
   before do
@@ -356,52 +356,52 @@ describe Redis::Lock do
 end
 
 
-describe Redis::Dict do
+describe Redis::Hash do
   before do
-    @dict = Redis::Dict.new('test_dict')
-    @empty = Redis::Dict.new('test_empty_dict')
-    @dict.clear
+    @hash  = Redis::Hash.new('test_hash')
+    @empty = Redis::Hash.new('test_empty_hash')
+    @hash.clear
   end
   
   it "should get and set values" do
-    @dict['foo'] = 'bar'
-    @dict['foo'].should == 'bar'
+    @hash['foo'] = 'bar'
+    @hash['foo'].should == 'bar'
   end
 
   it "should know what exists" do
-    @dict['foo'] = 'bar'
-    @dict.include?('foo').should == true
+    @hash['foo'] = 'bar'
+    @hash.include?('foo').should == true
   end
 
   it "should delete values" do
-    @dict['abc'] = 'xyz'
-    @dict.delete('abc')
-    @dict['abc'].should == nil
+    @hash['abc'] = 'xyz'
+    @hash.delete('abc')
+    @hash['abc'].should == nil
   end
 
   it "should respond to each" do
-    @dict['foo'] = 'bar'
-    @dict.each do |key, val|
+    @hash['foo'] = 'bar'
+    @hash.each do |key, val|
       key.should == 'foo'
       val.should == 'bar'
     end
   end
   
   it "should have 1 item" do
-    @dict['foo'] = 'bar'
-    @dict.size.should == 1
+    @hash['foo'] = 'bar'
+    @hash.size.should == 1
   end
 
   it "should respond to each_key" do
-    @dict['foo'] = 'bar'
-    @dict.each_key do |key|
+    @hash['foo'] = 'bar'
+    @hash.each_key do |key|
       key.should == 'foo'
     end
   end
 
   it "should respond to each_value" do
-    @dict['foo'] = 'bar'
-    @dict.each_value do |val|
+    @hash['foo'] = 'bar'
+    @hash.each_value do |val|
       val.should == 'bar'
     end
   end
@@ -411,33 +411,33 @@ describe Redis::Dict do
   end
 
   it "should be empty after a clear" do
-    @dict['foo'] = 'bar'
-    @dict.clear
-    @dict.empty?.should == true
+    @hash['foo'] = 'bar'
+    @hash.clear
+    @hash.empty?.should == true
   end
   
   it "should respond to bulk_set" do
-    @dict.bulk_set({ 'abc' => 'xyz', 'bizz' => 'bazz'})
-    @dict['abc'].should == 'xyz'
-    @dict['bizz'].should == 'bazz'
+    @hash.bulk_set({ 'abc' => 'xyz', 'bizz' => 'bazz'})
+    @hash['abc'].should == 'xyz'
+    @hash['bizz'].should == 'bazz'
   end
 
   it "should respond to bulk_get" do
-    @dict['foo'] = 'bar'
-    hsh = @dict.bulk_get('abc','foo')
+    @hash['foo'] = 'bar'
+    hsh = @hash.bulk_get('abc','foo')
     hsh['abc'].should == nil
     hsh['foo'].should == 'bar'
   end
 
   it "should increment field" do
-    @dict.incr('counter')
-    @dict.incr('counter')
-    @dict['counter'].should == 2
+    @hash.incr('counter')
+    @hash.incr('counter')
+    @hash['counter'].should == 2
   end
   
 
   after do
-    @dict.clear
+    @hash.clear
   end
   
 end

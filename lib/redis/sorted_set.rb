@@ -14,12 +14,6 @@ class Redis
 
     attr_reader :key, :options, :redis
 
-    # Create a new SortedSet.
-    def initialize(key, *args)
-      super(key, *args)
-      @key = key.is_a?(Array) ? key.flatten.join(':') : key
-    end
-
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
     #    num_posts['Peter'] = 163 
