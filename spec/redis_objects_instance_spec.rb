@@ -359,7 +359,6 @@ end
 describe Redis::Hash do
   before do
     @hash  = Redis::Hash.new('test_hash')
-    @empty = Redis::Hash.new('test_empty_hash')
     @hash.clear
   end
   
@@ -407,19 +406,29 @@ describe Redis::Hash do
   end
 
   it "should respond to empty?" do
-    @empty.empty?.should == true
+    @empty = Redis::Hash.new('test_empty_hash')
+    @empty.respond_to?(:empty?).should == true
   end
 
   it "should be empty after a clear" do
     @hash['foo'] = 'bar'
+    @hash.all.should == {'foo' => 'bar'}
     @hash.clear
-    @hash.empty?.should == true
+    @hash.should.be.empty
   end
   
   it "should respond to bulk_set" do
-    @hash.bulk_set({ 'abc' => 'xyz', 'bizz' => 'bazz'})
+    @hash.bulk_set({'abc' => 'xyz', 'bizz' => 'bazz'})
     @hash['abc'].should == 'xyz'
     @hash['bizz'].should == 'bazz'
+
+    @hash.bulk_set('abc' => '123', 'bang' => 'michael')
+    @hash['abc'].should == '123'
+    @hash['bang'].should == 'michael'
+
+    @hash.bulk_set(:sym1 => 'val1', :sym2 => 'val2')
+    @hash['sym1'].should == 'val1'
+    @hash['sym2'].should == 'val2'
   end
 
   it "should respond to bulk_get" do
@@ -432,7 +441,7 @@ describe Redis::Hash do
   it "should increment field" do
     @hash.incr('counter')
     @hash.incr('counter')
-    @hash['counter'].should == 2
+    @hash['counter'].to_i.should == 2
   end
   
 

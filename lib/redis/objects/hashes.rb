@@ -1,6 +1,6 @@
 # This is the class loader, for use as "include Redis::Objects::Hashes"
 # For the object itself, see "Redis::Hash"
-require 'redis/dict'
+require 'redis/hash'
 class Redis
   module Objects
     module Hashes
@@ -11,9 +11,9 @@ class Redis
 
       # Class methods that appear in your class when you include Redis::Objects.
       module ClassMethods
-        # Define a new dict.  It will function like a regular instance
+        # Define a new hash key.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
-        def dict(name, options={})
+        def hash_key(name, options={})
           @redis_objects[name.to_sym] = options.merge(:type => :dict)
           if options[:global]
             instance_eval <<-EndMethods

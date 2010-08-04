@@ -1,6 +1,6 @@
 class Redis
   #
-  # Class representing a Hash (Redis Hash)
+  # Class representing a Redis hash.
   #
   class Hash < BaseObject
     require 'enumerator'
@@ -11,6 +11,11 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :redis
+    
+    # Needed since Redis::Hash masks bare Hash in redis.rb
+    def self.[](*args)
+      ::Hash[*args]
+    end
 
     # Sets a field to value
     def []=(field, value)
@@ -56,13 +61,17 @@ class Redis
     end
     alias_method :vals, :values
 
+    # Retrieve the entire hash.  Redis: HGETALL
+    def all
+      redis.hgetall(key)
+    end
+    alias_method :clone, :all
+
     # Enumerate through all fields. Redis: HGETALL
     def each(&block)
-      puts 'getall ===>'
-      puts redis.hgetall(key)
-      redis.hgetall(key).each(&block)
+      all.each(&block)
     end
-
+    
     # Enumerate through each keys. Redis: HKEYS
     def each_key(&block)
       keys.each(&block)
@@ -70,7 +79,7 @@ class Redis
 
     # Enumerate through all values. Redis: HVALS
     def each_value(&block)
-      values(key).each(&block)
+      values.each(&block)
     end
 
     # Return the size of the dict. Redis: HLEN
@@ -91,14 +100,15 @@ class Redis
     end
 
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
-    def bulk_set(hsh)
-      redis.hmset(key, *hsh)
+    def bulk_set(*args)
+      raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
+      redis.hmset(key, *args.last.flatten)
     end
     
-    # Get keys in bulk, takes fields as arguments. Redis: HMGET
+    # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
     def bulk_get(*fields)
       hsh = {}
-      res = redis.hmget(key, *fields)
+      res = redis.hmget(key, *fields.flatten)
       fields.each do |k|
         hsh[k] = res.shift
       end

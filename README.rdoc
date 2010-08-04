@@ -65,6 +65,8 @@ You can include Redis::Objects in any type of class:
       list :on_base
       set :outfielders
       value :at_bat
+      sorted_set :rank, :global => true
+      hash_key :pitchers_faced  # "hash" is taken by Ruby
     end
 
 Familiar Ruby array operations Just Work (TM):
@@ -211,7 +213,31 @@ Complex data types are no problem with :marshal => true:
     @list.each do |el|
       puts "#{el[:name]} lives in #{el[:city]}"
     end
-    
+
+=== Hashes
+
+Hashes work like a Ruby {Hash}[http://ruby-doc.org/core/classes/Hash.html], with
+a few Redis-specific additions.
+
+    require 'redis/hash'
+    @hash = Redis::Hash.new('hash_name')
+    @hash['a'] = 1
+    @hash['b'] = 2
+    @hash.each do |k,v|
+      puts "#{k} = #{v}"
+    end
+    @hash['c'] = 3
+    puts @hash.all  # {"a"=>"1","b"=>"2","c"=>"3"}
+    @hash.clear
+
+Redis also adds incrementing and bulk operations:
+
+    @hash.incr('c', 6)  # 9
+    @hash.bulk_set('d' => 5, 'e' => 6)
+    @hash.bulk_get('d','e')  # "5", "6"
+
+Remember that numbers become strings in Redis.  Unlike with other Redis data types, redis-objects can't guess at your data type in this situation.
+
 === Sets
 
 Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:

@@ -9,11 +9,12 @@ class Roster
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
-  dict :contact_information
+  hash_key :contact_information
   lock :resort, :timeout => 2
   value :starting_pitcher, :marshal => true
   list :player_stats, :marshal => true
   set :outfielders, :marshal => true
+  sorted_set :rank
 
   # global class counters
   counter :total_players_online, :global => true
