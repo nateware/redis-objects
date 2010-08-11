@@ -472,6 +472,7 @@ describe Redis::Set do
     @set.to_s.should == 'a, b'
     @set.should == ['a','b']
     @set.members.should == ['a','b']
+    @set.members.reverse.should == ['b','a']  # common question
     @set.get.should == ['a','b']
     @set << 'c'
     @set.sort.should == ['a','b','c']
@@ -607,7 +608,10 @@ describe Redis::SortedSet do
     @set.last.should == 'b'
 
     @set.members.should == ['a','c','b']
+    @set.members.reverse.should == ['b','c','a']
     @set.members(:withscores => true).should == [['a',3],['c',4],['b',5.6]]
+    @set.members(:with_scores => true).should == [['a',3],['c',4],['b',5.6]]
+    @set.members(:withscores => true).reverse.should == [['b',5.6],['c',4],['a',3]]
 
     @set['b'] = 5
     @set['b'] = 6

@@ -247,8 +247,9 @@ Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
     @set << 'a'
     @set << 'b'
     @set << 'a'  # dup ignored
-    @set.member? 'c'   # false
-    @set.members  # ['a','b']
+    @set.member? 'c'      # false
+    @set.members          # ['a','b']
+    @set.members.reverse  # ['b','a']
     @set.each do |member|
       puts member
     end
@@ -319,6 +320,7 @@ a Hash and an Array.  You assign like a Hash, but retrieve like an Array:
 
     @sorted_set['Newbie'] = 1
     @sorted_set.members         # => ["Newbie", "Nate", "Jeff", "Peter"]
+    @sorted_set.members.reverse # => ["Peter", "Jeff", "Nate", "Newbie"]
 
     @sorted_set.rangebyscore(10, 100, :limit => 2)   # => ["Nate", "Jeff"]
     @sorted_set.members(:with_scores => true)        # => [["Newbie", 1], ["Nate", 16], ["Jeff", 28], ["Peter", 76]]
