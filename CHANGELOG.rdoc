@@ -1,6 +1,8 @@
 = Changelog for Redis::Objects
 
-== 0.4.0 
+== 0.4.0 [Final] (11 August 2010)
+
+* Full support for redis hashes via new Redis::Hash class [Julio Capote, Nate Wiger]
 
 * Now dependent on redis-rb client 2.0.4 or later.  Should still be backwards compatible with redis-server 1.x
 
