@@ -11,7 +11,7 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :redis
-    
+
     # Needed since Redis::Hash masks bare Hash in redis.rb
     def self.[](*args)
       ::Hash[*args]
@@ -71,7 +71,7 @@ class Redis
     def each(&block)
       all.each(&block)
     end
-    
+
     # Enumerate through each keys. Redis: HKEYS
     def each_key(&block)
       keys.each(&block)
@@ -102,9 +102,9 @@ class Redis
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
-      redis.hmset(key, *args.last.flatten)
+      redis.hmset(key, *args.last.inject([]){ |arr,kv| arr + kv })
     end
-    
+
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
     def bulk_get(*fields)
       hsh = {}
@@ -114,12 +114,12 @@ class Redis
       end
       hsh
     end
-    
+
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, val = 1)
       redis.hincrby(key, field, val).to_i
     end
-    alias_method :incr, :incrby 
+    alias_method :incr, :incrby
 
   end
 end
