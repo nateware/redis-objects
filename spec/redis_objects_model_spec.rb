@@ -35,6 +35,18 @@ class Roster
   def max_pitchers; 3; end
 end
 
+class VanillaRoster < Roster
+  # No explicit Redis::Objects
+end
+
+class CustomRoster < Roster
+  include Redis::Objects
+
+  counter :basic # Override
+  counter :special # New
+end
+
+
 describe Redis::Objects do
   before do
     @roster  = Roster.new
@@ -43,6 +55,9 @@ describe Redis::Objects do
     @roster_1 = Roster.new(1)
     @roster_2 = Roster.new(2)
     @roster_3 = Roster.new(3)
+
+    @vanilla_roster = VanillaRoster.new
+    @custom_roster  = CustomRoster.new
 
     @roster.available_slots.reset
     @roster.pitchers.reset
@@ -69,6 +84,9 @@ describe Redis::Objects do
     @roster.all_player_stats.clear
     @roster.total_wins.clear
     @roster.my_rank.clear
+
+    @custom_roster.basic.reset
+    @custom_roster.special.reset
   end
 
   it "should provide a connection method" do
@@ -689,5 +707,45 @@ describe Redis::Objects do
     end
     error.should.not.be.nil
     error.should.be.kind_of(Redis::Lock::LockTimeout)
+  end
+
+  it "should pick up objects from superclass automatically" do
+    @vanilla_roster.available_slots.should.be.kind_of(Redis::Counter)
+    @vanilla_roster.pitchers.should.be.kind_of(Redis::Counter)
+    @vanilla_roster.basic.should.be.kind_of(Redis::Counter)
+    @vanilla_roster.resort_lock.should.be.kind_of(Redis::Lock)
+    @vanilla_roster.starting_pitcher.should.be.kind_of(Redis::Value)
+    @vanilla_roster.player_stats.should.be.kind_of(Redis::List)
+    @vanilla_roster.outfielders.should.be.kind_of(Redis::Set)
+    @vanilla_roster.rank.should.be.kind_of(Redis::SortedSet)
+
+    # custom keys
+    @vanilla_roster.player_totals.should.be.kind_of(Redis::Counter)
+    @vanilla_roster.all_player_stats.should.be.kind_of(Redis::List)
+    @vanilla_roster.total_wins.should.be.kind_of(Redis::Set)
+    @vanilla_roster.my_rank.should.be.kind_of(Redis::Value)
+    @vanilla_roster.weird_key.should.be.kind_of(Redis::Value)
+
+    # globals via class
+    @vanilla_roster.total_players_online.should.be.kind_of(Redis::Counter)
+    @vanilla_roster.all_player_stats.should.be.kind_of(Redis::List)
+    @vanilla_roster.all_players_online.should.be.kind_of(Redis::Set)
+    @vanilla_roster.last_player.should.be.kind_of(Redis::Value)
+
+    VanillaRoster.total_players_online.should.be.kind_of(Redis::Counter)
+    VanillaRoster.all_player_stats.should.be.kind_of(Redis::List)
+    VanillaRoster.all_players_online.should.be.kind_of(Redis::Set)
+    VanillaRoster.last_player.should.be.kind_of(Redis::Value)
+  end
+
+  it "should allow subclass overrides of the same redis object" do
+    @roster.basic.should == 0
+    @custom_roster.basic.increment.should == 1
+    @roster2.basic.should == 0
+    CustomRoster.new.basic.should == 1
+  end
+
+  it "should handle new subclass objects" do
+    @custom_roster.special.increment.should == 1
   end
 end

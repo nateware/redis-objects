@@ -78,8 +78,8 @@ class Redis
 
       # Set the Redis prefix to use. Defaults to model_name
       def prefix=(prefix) @prefix = prefix end
-      def prefix #:nodoc:
-        @prefix ||= self.name.to_s.
+      def prefix(klass = self) #:nodoc:
+        @prefix ||= klass.name.to_s.
           sub(%r{(.*::)}, '').
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
           gsub(/([a-z\d])([A-Z])/,'\1_\2').
@@ -87,8 +87,17 @@ class Redis
       end
 
       def field_key(name, id='') #:nodoc:
+        klass = first_ancestor_with(name)
         # This can never ever ever ever change or upgrades will corrupt all data
-        @redis_objects[name.to_sym][:key] || "#{prefix}:#{id}:#{name}"
+        klass.redis_objects[name.to_sym][:key] || "#{prefix(klass)}:#{id}:#{name}"
+      end
+
+      def first_ancestor_with(name)
+        if redis_objects && redis_objects.key?(name.to_sym)
+          self
+        elsif superclass && superclass.respond_to?(:redis_objects)
+          superclass.first_ancestor_with(name)
+        end
       end
     end
 
@@ -96,12 +105,12 @@ class Redis
     module InstanceMethods
       def redis() self.class.redis end
       def field_key(name) #:nodoc:
-        # This can never ever ever ever change or upgrades will corrupt all data
-        if key = self.class.redis_objects[name.to_sym][:key]
+        klass = self.class.first_ancestor_with(name)
+        if key = klass.redis_objects[name.to_sym][:key]
           eval "%(#{key})"
         else
           # don't try to refactor into class field_key because fucks up eval context
-          "#{self.class.prefix}:#{id}:#{name}"
+          "#{klass.prefix}:#{id}:#{name}"
         end
       end
     end

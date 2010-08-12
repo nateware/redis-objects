@@ -18,10 +18,11 @@ class Redis
           options[:timeout] ||= 5  # seconds
           lock_name = "#{name}_lock"
           @redis_objects[lock_name.to_sym] = options.merge(:type => :lock)
+          klass_name = self.name
           if options[:global]
             instance_eval <<-EndMethods
               def #{lock_name}(&block)
-                @#{lock_name} ||= Redis::Lock.new(field_key(:#{lock_name}), redis, @redis_objects[:#{lock_name}])
+                @#{lock_name} ||= Redis::Lock.new(field_key(:#{lock_name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{lock_name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -32,7 +33,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{lock_name}(&block)
-                @#{lock_name} ||= Redis::Lock.new(field_key(:#{lock_name}), redis, self.class.redis_objects[:#{lock_name}])
+                @#{lock_name} ||= Redis::Lock.new(field_key(:#{lock_name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{lock_name}])
               end
             EndMethods
           end

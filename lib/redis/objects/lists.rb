@@ -15,10 +15,11 @@ class Redis
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def list(name, options={})
           @redis_objects[name.to_sym] = options.merge(:type => :list)
+          klass_name = self.name
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::List.new(field_key(:#{name}), redis, @redis_objects[:#{name}])
+                @#{name} ||= Redis::List.new(field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -29,7 +30,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::List.new(field_key(:#{name}), redis, self.class.redis_objects[:#{name}])
+                @#{name} ||= Redis::List.new(field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
           end
