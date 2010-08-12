@@ -1,7 +1,8 @@
+require 'rubygems'  # poor people still on 1.8
+
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'redis'
 
-require 'rubygems'  # poor people still on 1.8
 require 'bacon'
 Bacon.summary_at_exit
 
