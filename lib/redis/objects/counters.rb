@@ -23,7 +23,7 @@ class Redis
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
           @redis_objects[name.to_sym] = options.merge(:type => :counter)
-          klass_name = self.name
+          klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}

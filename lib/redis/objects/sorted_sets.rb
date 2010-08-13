@@ -15,7 +15,7 @@ class Redis
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def sorted_set(name, options={})
           @redis_objects[name.to_sym] = options.merge(:type => :sorted_set)
-          klass_name = self.name
+          klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}

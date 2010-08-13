@@ -15,7 +15,7 @@ class Redis
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def hash_key(name, options={})
           @redis_objects[name.to_sym] = options.merge(:type => :dict)
-          klass_name = self.name
+          klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
