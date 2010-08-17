@@ -27,7 +27,7 @@ class Redis
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Counter.new(field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::Counter.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -38,7 +38,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Counter.new(field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::Counter.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
           end
@@ -49,7 +49,7 @@ class Redis
         def get_counter(name, id=nil)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
-          redis.get(field_key(name, id)).to_i
+          redis.get(redis_field_key(name, id)).to_i
         end
 
         # Increment a counter with the specified name and id.  Accepts a block
@@ -57,7 +57,7 @@ class Redis
         def increment_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
-          value = redis.incrby(field_key(name, id), by).to_i
+          value = redis.incrby(redis_field_key(name, id), by).to_i
           block_given? ? rewindable_block(:decrement_counter, name, id, value, &block) : value
         end
 
@@ -66,7 +66,7 @@ class Redis
         def decrement_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
-          value = redis.decrby(field_key(name, id), by).to_i
+          value = redis.decrby(redis_field_key(name, id), by).to_i
           block_given? ? rewindable_block(:increment_counter, name, id, value, &block) : value
         end
 
@@ -74,7 +74,7 @@ class Redis
         def reset_counter(name, id=nil, to=nil)
           verify_counter_defined!(name, id)
           to = @redis_objects[name][:start] if to.nil?
-          redis.set(field_key(name, id), to.to_i)
+          redis.set(redis_field_key(name, id), to.to_i)
           true
         end
         
@@ -88,7 +88,7 @@ class Redis
         end
         
         def initialize_counter!(name, id) #:nodoc:
-          key = field_key(name, id)
+          key = redis_field_key(name, id)
           unless @initialized_counters[key]
             redis.setnx(key, @redis_objects[name][:start])
           end

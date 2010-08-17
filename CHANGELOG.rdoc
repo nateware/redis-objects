@@ -1,5 +1,13 @@
 = Changelog for Redis::Objects
 
+== 0.4.1
+
+* Fixes for Ruby 1.8 failures due to missing flatten() [Gabe da Silveira]
+
+* Enable subclasses of classes mixing in Redis::Objects to automatically pick up objects from their superclasses [Gabe da Silveira]
+
+* Renamed prefix() and field_key() to redis_prefix() and redis_field_key() to prevent gem conflicts [Jason Meinzer]
+
 == 0.4.0 [Final] (11 August 2010)
 
 * Full support for redis hashes via new Redis::Hash class [Julio Capote, Nate Wiger]
