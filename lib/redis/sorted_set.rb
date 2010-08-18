@@ -144,7 +144,7 @@ class Redis
     end
 
     # Delete element if it matches block
-    def delete_if(&blocK)
+    def delete_if(&block)
       raise ArgumentError, "Missing block to SortedSet#delete_if" unless block_given?
       res = false
       redis.zrevrange(key, 0, -1).each do |m|
