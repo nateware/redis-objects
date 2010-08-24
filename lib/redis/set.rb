@@ -45,10 +45,10 @@ class Redis
     end
     
     # Delete if matches block
-    def delete_if(&blk)
+    def delete_if(&block)
       res = false
       redis.smembers(key).each do |m|
-        if blk.call(from_redis(m))
+        if block.call(from_redis(m))
           res = redis.srem(key, m)
         end
       end

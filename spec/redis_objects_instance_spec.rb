@@ -501,6 +501,8 @@ describe Redis::Set do
     coll = @set.select{|st| st == 'c'}
     coll.should == ['c']
     @set.sort.should == ['a','b','c']
+    @set.delete_if{|m| m == 'c'}
+    @set.sort.should == ['a','b']
   end
   
   it "should handle set intersections, unions, and diffs" do
@@ -654,60 +656,10 @@ describe Redis::SortedSet do
     @set.delete('c')
     @set.length.should == 4
     @set.size.should == 4
+    
+    @set.delete_if{|m| m == 'b'}
+    @set.size.should == 3
   end
-
-=begin
-
-  # Not until Redis 1.3.5 with hashes
-  it "Redis 1.3.5: should handle set intersections, unions, and diffs" do
-    @set_1['a'] = 5
-    @set_2['b'] = 18
-    @set_2['c'] = 12
-
-    @set_2['a'] = 10
-    @set_2['b'] = 15
-    @set_2['c'] = 15
-
-    (@set_1 & @set_2).sort.should == ['c','d','e']
-
-    @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
-    @set_2 << 'c' << 'd' << 'e' << 'f' << 'g'
-    @set_3 << 'a' << 'd' << 'g' << 'l' << 'm'
-    @set_1.sort.should == %w(a b c d e)
-    @set_2.sort.should == %w(c d e f g)
-    @set_3.sort.should == %w(a d g l m)
-    (@set_1 & @set_2).sort.should == ['c','d','e']
-    @set_1.intersection(@set_2).sort.should == ['c','d','e']
-    @set_1.intersection(@set_2, @set_3).sort.should == ['d']
-    @set_1.intersect(@set_2).sort.should == ['c','d','e']
-    @set_1.inter(@set_2, @set_3).sort.should == ['d']
-    @set_1.interstore(INTERSTORE_KEY, @set_2).should == 3
-    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
-    @set_1.interstore(INTERSTORE_KEY, @set_2, @set_3).should == 1
-    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
-
-    (@set_1 | @set_2).sort.should == ['a','b','c','d','e','f','g']
-    (@set_1 + @set_2).sort.should == ['a','b','c','d','e','f','g']
-    @set_1.union(@set_2).sort.should == ['a','b','c','d','e','f','g']
-    @set_1.union(@set_2, @set_3).sort.should == ['a','b','c','d','e','f','g','l','m']
-    @set_1.unionstore(UNIONSTORE_KEY, @set_2).should == 7
-    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
-    @set_1.unionstore(UNIONSTORE_KEY, @set_2, @set_3).should == 9
-    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
-
-    (@set_1 ^ @set_2).sort.should == ["a", "b"]
-    (@set_1 - @set_2).sort.should == ["a", "b"]
-    (@set_2 - @set_1).sort.should == ["f", "g"]
-    @set_1.difference(@set_2).sort.should == ["a", "b"]
-    @set_1.diff(@set_2).sort.should == ["a", "b"]
-    @set_1.difference(@set_2, @set_3).sort.should == ['b']
-    @set_1.diffstore(DIFFSTORE_KEY, @set_2).should == 2
-    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
-    @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
-    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['b']
-  end
-
-=end
 
   it "should support renaming sets" do
     @set.should.be.empty

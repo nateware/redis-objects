@@ -147,7 +147,7 @@ class Redis
     def delete_if(&block)
       raise ArgumentError, "Missing block to SortedSet#delete_if" unless block_given?
       res = false
-      redis.zrevrange(key, 0, -1).each do |m|
+      redis.zrange(key, 0, -1).each do |m|
         if block.call(from_redis(m))
           res = redis.zrem(key, m)
         end
