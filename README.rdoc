@@ -45,7 +45,7 @@ config/initializers/redis.rb is a good place for this.)
 
     require 'redis'
     require 'redis/objects'
-    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+    Redis::Objects.redis = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
 on Rails.  Standalone, Sinatra, Resque - no problem.
