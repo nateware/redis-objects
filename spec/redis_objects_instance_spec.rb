@@ -197,6 +197,9 @@ describe Redis::List do
       @list << [1,2,3,[4,5]]
       @list.last.should == [1,2,3,[4,5]]
       @list.shift.should == {:json => 'data'}
+      @list.size.should == 2
+      @list.delete(v2)
+      @list.size.should == 1
       @list.options[:marshal] = false
     end
     
