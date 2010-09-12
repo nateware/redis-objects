@@ -9,7 +9,7 @@ class Roster
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
-  hash_key :contact_information
+  hash_key :contact_information, :marshal_keys=>{'updated_at'=>true}
   lock :resort, :timeout => 2
   value :starting_pitcher, :marshal => true
   list :player_stats, :marshal => true
@@ -143,6 +143,10 @@ describe Redis::Objects do
     @roster.contact_information.size.should == 2
   end
 
+  it "should be marshalling hash keys" do
+    @roster.contact_information['updated_at'] = Time.now
+    @roster.contact_information['updated_at'].class.should == Time
+  end
 
 
   it "should create counter accessors" do

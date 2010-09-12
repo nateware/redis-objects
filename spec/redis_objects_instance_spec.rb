@@ -360,6 +360,39 @@ end
 
 
 describe Redis::HashKey do
+  describe "With Marshal" do
+    before do
+      @hash = Redis::Hash.new('test_hash', $redis,
+                              {:marshal_keys=>{'created_at'=>true}})
+      @hash.clear
+    end
+
+    it "should marshal specified keys" do
+      @hash['created_at'] = Time.now
+      @hash['created_at'].class.should == Time
+    end
+
+    it "should not marshal unless required" do
+      @hash['updated_at'] = Time.now
+      @hash['updated_at'].class.should == String
+    end
+
+    it "should marshall appropriate key with bulk set and get" do
+      @hash.bulk_set({'created_at'=>Time.now, 'updated_at'=>Time.now})
+
+      @hash['created_at'].class.should == Time
+      @hash['updated_at'].class.should == String
+
+      h = @hash.bulk_get('created_at', 'updated_at')
+      h['created_at'].class.should == Time
+      h['updated_at'].class.should == String
+
+      h = @hash.all
+      h['created_at'].class.should == Time
+      h['updated_at'].class.should == String
+    end
+  end
+
   before do
     @hash  = Redis::HashKey.new('test_hash')
     @hash.clear

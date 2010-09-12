@@ -3,8 +3,8 @@ class Redis
     module Serialize
       include Marshal
 
-      def to_redis(value)
-        return value unless options[:marshal]
+      def to_redis(value, marshal=false)
+        return value unless options[:marshal] || marshal
         case value
         when String, Fixnum, Bignum, Float
           value
@@ -13,8 +13,8 @@ class Redis
         end
       end
     
-      def from_redis(value)
-        return value unless options[:marshal]
+      def from_redis(value, marshal=false)
+        return value unless options[:marshal] || marshal
         case value
         when Array
           value.collect{|v| from_redis(v)}

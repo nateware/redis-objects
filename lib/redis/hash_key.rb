@@ -12,6 +12,16 @@ class Redis
 
     attr_reader :key, :options, :redis
 
+    def initialize(key, *args)
+      super
+      @options[:marshal_keys] ||= {} 
+    end
+
+    # Needed since Redis::Hash masks bare Hash in redis.rb
+    def self.[](*args)
+      ::Hash[*args]
+    end
+
     # Sets a field to value
     def []=(field, value)
       store(field, to_redis(value))
@@ -24,12 +34,12 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, to_redis(value))
+      redis.hset(key, field, to_redis(value, options[:marshal_keys][field]))
     end
 
     # Redis: HGET
     def fetch(field)
-      from_redis redis.hget(key, field)
+      from_redis redis.hget(key, field), options[:marshal_keys][field]
     end
 
     # Verify that a field exists. Redis: HEXISTS
@@ -58,7 +68,9 @@ class Redis
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
-      from_redis redis.hgetall(key)
+      h = redis.hgetall(key)
+      h.each { |k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
+      h
     end
     alias_method :clone, :all
 
@@ -97,7 +109,9 @@ class Redis
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
-      redis.hmset(key, *args.last.inject([]){ |arr,kv| arr + [kv[0], to_redis(kv[1])] })
+      redis.hmset(key, *args.last.inject([]){ |arr,kv|
+        arr + [kv[0], to_redis(kv[1], options[:marshal_keys][kv[0]])]
+      })
     end
 
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
@@ -105,7 +119,7 @@ class Redis
       hsh = {}
       res = redis.hmget(key, *fields.flatten)
       fields.each do |k|
-        hsh[k] = from_redis(res.shift)
+        hsh[k] = from_redis(res.shift, options[:marshal_keys][k])
       end
       hsh
     end
