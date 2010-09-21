@@ -6,7 +6,7 @@ class Redis
       end
 
       def from_redis(value)
-        Yajl::Parser.parse(value)
+        Yajl::Parser.parse(value, :symbolize_keys => true)
       end
     end
   end
