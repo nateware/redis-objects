@@ -45,7 +45,7 @@ class Redis
 
     # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      v = from_redis range(0, -1)
+      v = from_redis_list range(0, -1)
       v.nil? ? [] : v
     end
     alias_method :get, :values
@@ -85,7 +85,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: LRANGE
     def range(start_index, end_index)
-      from_redis redis.lrange(key, start_index, end_index)
+      from_redis_list redis.lrange(key, start_index, end_index)
     end
 
     # Return the value at the given index. Can also use familiar list[index] syntax.
