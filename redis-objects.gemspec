@@ -64,13 +64,16 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<bacon>, [">= 0"])
       s.add_runtime_dependency(%q<redis>, [">= 2.0.4"])
+      s.add_runtime_dependency(%q<yajl-ruby>, [">= 0.7.7"])
     else
       s.add_dependency(%q<bacon>, [">= 0"])
       s.add_dependency(%q<redis>, [">= 2.0.4"])
+      s.add_dependency(%q<yajl-ruby>, [">= 0.7.7"])
     end
   else
     s.add_dependency(%q<bacon>, [">= 0"])
     s.add_dependency(%q<redis>, [">= 2.0.4"])
+    s.add_dependency(%q<yajl-ruby>, [">= 0.7.7"])
   end
 end
 

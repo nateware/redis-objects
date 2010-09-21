@@ -1,6 +1,8 @@
 # Redis::Objects - Lightweight object layer around redis-rb
 # See README.rdoc for usage and approach.
 require 'redis'
+require 'yajl'
+
 class Redis
   #
   # Redis::Objects enables high-performance atomic operations in your app
