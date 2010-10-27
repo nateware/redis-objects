@@ -54,20 +54,20 @@ class Redis
 
         # Increment a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
-        def increment_counter(name, id=nil, by=1, &block)
+        def increment_redis_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.incrby(redis_field_key(name, id), by).to_i
-          block_given? ? rewindable_block(:decrement_counter, name, id, value, &block) : value
+          block_given? ? rewindable_block(:decrement_redis_counter, name, id, value, &block) : value
         end
 
         # Decrement a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
-        def decrement_counter(name, id=nil, by=1, &block)
+        def decrement_redis_counter(name, id=nil, by=1, &block)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.decrby(redis_field_key(name, id), by).to_i
-          block_given? ? rewindable_block(:increment_counter, name, id, value, &block) : value
+          block_given? ? rewindable_block(:increment_redis_counter, name, id, value, &block) : value
         end
 
         # Reset a counter to its starting value.

@@ -160,10 +160,10 @@ describe Redis::Objects do
   
   it "should support class-level increment/decrement of counters" do
     Roster.get_counter(:available_slots, @roster.id).should == 10
-    Roster.increment_counter(:available_slots, @roster.id).should == 11
-    Roster.increment_counter(:available_slots, @roster.id, 3).should == 14
-    Roster.decrement_counter(:available_slots, @roster.id, 2).should == 12
-    Roster.decrement_counter(:available_slots, @roster.id).should == 11
+    Roster.increment_redis_counter(:available_slots, @roster.id).should == 11
+    Roster.increment_redis_counter(:available_slots, @roster.id, 3).should == 14
+    Roster.decrement_redis_counter(:available_slots, @roster.id, 2).should == 12
+    Roster.decrement_redis_counter(:available_slots, @roster.id).should == 11
     Roster.reset_counter(:available_slots, @roster.id).should == true
     Roster.get_counter(:available_slots, @roster.id).should == 10
   end
@@ -178,10 +178,10 @@ describe Redis::Objects do
     Roster.total_players_online.should == 0
     
     Roster.get_counter(:total_players_online).should == 0
-    Roster.increment_counter(:total_players_online).should == 1
-    Roster.increment_counter(:total_players_online, nil, 3).should == 4
-    Roster.decrement_counter(:total_players_online, nil, 2).should == 2
-    Roster.decrement_counter(:total_players_online).should == 1
+    Roster.increment_redis_counter(:total_players_online).should == 1
+    Roster.increment_redis_counter(:total_players_online, nil, 3).should == 4
+    Roster.decrement_redis_counter(:total_players_online, nil, 2).should == 2
+    Roster.decrement_redis_counter(:total_players_online).should == 1
     Roster.reset_counter(:total_players_online).should == true
     Roster.get_counter(:total_players_online).should == 0
   end
@@ -249,7 +249,7 @@ describe Redis::Objects do
   it "should take an atomic block for increment/decrement class methods" do
     a = false
     Roster.get_counter(:available_slots, @roster.id).should == 10
-    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+    Roster.decrement_redis_counter(:available_slots, @roster.id) do |cnt|
       if cnt >= 0
         a = true
       end
@@ -258,21 +258,21 @@ describe Redis::Objects do
     a.should.be.true
 
     Roster.get_counter(:available_slots, @roster.id).should == 9
-    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+    Roster.decrement_redis_counter(:available_slots, @roster.id) do |cnt|
       Roster.get_counter(:available_slots, @roster.id).should == 8
       false
     end
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
-    Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+    Roster.decrement_redis_counter(:available_slots, @roster.id) do |cnt|
       Roster.get_counter(:available_slots, @roster.id).should == 7
       nil  # should rewind
     end
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
-    Roster.increment_counter(:available_slots, @roster.id) do |cnt|
+    Roster.increment_redis_counter(:available_slots, @roster.id) do |cnt|
       if 1 == 2  # should rewind
         true
       end
@@ -280,7 +280,7 @@ describe Redis::Objects do
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
-    Roster.increment_counter(:available_slots, @roster.id) do |cnt|
+    Roster.increment_redis_counter(:available_slots, @roster.id) do |cnt|
       Roster.get_counter(:available_slots, @roster.id).should == 9
       []
     end
@@ -288,7 +288,7 @@ describe Redis::Objects do
 
     Roster.get_counter(:available_slots, @roster.id).should == 9
     begin
-      Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+      Roster.decrement_redis_counter(:available_slots, @roster.id) do |cnt|
         Roster.get_counter(:available_slots, @roster.id).should == 8
         raise 'oops'
       end
@@ -298,7 +298,7 @@ describe Redis::Objects do
 
     # check return value from the block
     value =
-      Roster.decrement_counter(:available_slots, @roster.id) do |cnt|
+      Roster.decrement_redis_counter(:available_slots, @roster.id) do |cnt|
         Roster.get_counter(:available_slots, @roster.id).should == 8
         42
       end
@@ -309,7 +309,7 @@ describe Redis::Objects do
   it "should properly throw errors on bad counters" do
     error = nil
     begin
-      Roster.increment_counter(:badness, 2)
+      Roster.increment_redis_counter(:badness, 2)
     rescue => error
     end
     error.should.be.kind_of(Redis::Objects::UndefinedCounter)
