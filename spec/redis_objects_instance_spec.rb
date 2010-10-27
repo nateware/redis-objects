@@ -20,7 +20,7 @@ describe Redis::Value do
     @value.value = 'Trevor Hoffman'
     @value.should == 'Trevor Hoffman'
     @value.get.should == 'Trevor Hoffman'
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
   end
 
@@ -40,7 +40,7 @@ describe Redis::Value do
     @value.value = [[1,2], {:t3 => 4}]
     @value.should == [[1,2], {:t3 => 4}]
     @value.get.should == [[1,2], {:t3 => 4}]
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
     @value.options[:marshal] = false
   end

@@ -363,7 +363,7 @@ describe Redis::Objects do
     @roster.starting_pitcher.get.should == 'Trevor Hoffman'
     @roster.starting_pitcher = 'Tom Selleck'
     @roster.starting_pitcher.should == 'Tom Selleck'
-    @roster.starting_pitcher.del.should.be.true
+    @roster.starting_pitcher.del.should == 1
     @roster.starting_pitcher.should.be.nil
   end
 
@@ -372,7 +372,7 @@ describe Redis::Objects do
     @roster.starting_pitcher = {:json => 'data'}
     @roster.starting_pitcher.should == {:json => 'data'}
     @roster.starting_pitcher.get.should == {:json => 'data'}
-    @roster.starting_pitcher.del.should.be.true
+    @roster.starting_pitcher.del.should == 1
     @roster.starting_pitcher.should.be.nil
   end
 
@@ -630,7 +630,7 @@ describe Redis::Objects do
     Roster.last_player.get.should == 'Trevor Hoffman'
     Roster.last_player = 'Tom Selleck'
     Roster.last_player.should == 'Tom Selleck'
-    Roster.last_player.del.should.be.true
+    Roster.last_player.del.should == 1
     Roster.last_player.should.be.nil
   end
 
@@ -664,7 +664,7 @@ describe Redis::Objects do
     @roster2.last_player.get.should == 'Trevor Hoffman'
     @roster2.last_player = 'Tom Selleck'
     @roster.last_player.should == 'Tom Selleck'
-    @roster.last_player.del.should.be.true
+    @roster.last_player.del.should == 1
     @roster.last_player.should.be.nil
     @roster2.last_player.should.be.nil
   end
