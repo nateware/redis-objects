@@ -217,9 +217,10 @@ Complex data types are no problem with :marshal => true:
 === Hashes
 
 Hashes work like a Ruby {Hash}[http://ruby-doc.org/core/classes/Hash.html], with
-a few Redis-specific additions.  *Note the class is "HashKey" not just "Hash"*
+a few Redis-specific additions.  (The class name is "HashKey" not just "Hash", due to
+conflicts with the Ruby core Hash class in other gems.)
 
-    require 'redis/hash'
+    require 'redis/hash_key'
     @hash = Redis::HashKey.new('hash_name')
     @hash['a'] = 1
     @hash['b'] = 2
