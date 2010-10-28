@@ -4,7 +4,9 @@
 
 * Incompatible change: Had to rename Redis::Hash to Redis::HashKey due to internal conflicts with Redis lib and Ruby [Nate Wiger]
 
+* Fixed delete problem with Redis::List and complex values [Esdras Mayrink]
 
+* Updated Redis DEL semantics per API change [Gabe da Silveira]
 
 == 0.4.1 [Final] (23 August 2010)
 
