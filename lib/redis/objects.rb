@@ -114,6 +114,8 @@ class Redis
         if key = klass.redis_objects[name.to_sym][:key]
           if key.respond_to?(:call)
             key.call self
+          else
+            eval "%(#{key})"
           end
         else
           # don't try to refactor into class redis_field_key because fucks up eval context
