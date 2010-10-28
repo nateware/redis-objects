@@ -1,5 +1,11 @@
 = Changelog for Redis::Objects
 
+== 0.4.2 [In-Progress]
+
+* Incompatible change: Had to rename Redis::Hash to Redis::HashKey due to internal conflicts with Redis lib and Ruby [Nate Wiger]
+
+
+
 == 0.4.1 [Final] (23 August 2010)
 
 * Fixes for Ruby 1.8 failures due to missing flatten() [Gabe da Silveira]

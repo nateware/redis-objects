@@ -2,7 +2,7 @@ class Redis
   #
   # Class representing a Redis hash.
   #
-  class Hash < BaseObject
+  class HashKey < BaseObject
     require 'enumerator'
     include Enumerable
     require 'redis/helpers/core_commands'
@@ -11,11 +11,6 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :redis
-
-    # Needed since Redis::Hash masks bare Hash in redis.rb
-    def self.[](*args)
-      ::Hash[*args]
-    end
 
     # Sets a field to value
     def []=(field, value)

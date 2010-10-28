@@ -7,7 +7,7 @@ require 'redis/value'
 require 'redis/lock'
 require 'redis/set'
 require 'redis/sorted_set'
-require 'redis/hash'
+require 'redis/hash_key'
 
 describe Redis::Value do
   before do
@@ -356,9 +356,9 @@ describe Redis::Lock do
 end
 
 
-describe Redis::Hash do
+describe Redis::HashKey do
   before do
-    @hash  = Redis::Hash.new('test_hash')
+    @hash  = Redis::HashKey.new('test_hash')
     @hash.clear
   end
   
@@ -406,7 +406,7 @@ describe Redis::Hash do
   end
 
   it "should respond to empty?" do
-    @empty = Redis::Hash.new('test_empty_hash')
+    @empty = Redis::HashKey.new('test_empty_hash')
     @empty.respond_to?(:empty?).should == true
   end
 
