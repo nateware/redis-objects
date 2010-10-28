@@ -29,6 +29,9 @@ class Roster
   value :my_rank, :key => 'players:my_rank:#{username}'
   value :weird_key, :key => 'players:weird_key:#{raise}', :global => true
 
+  #callable as key
+  counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -85,6 +88,8 @@ describe Redis::Objects do
     @roster.total_wins.clear
     @roster.my_rank.clear
 
+    @roster.daily.clear
+
     @custom_roster.basic.reset
     @custom_roster.special.reset
   end
@@ -93,7 +98,7 @@ describe Redis::Objects do
     Roster.redis.should == Redis::Objects.redis
     # Roster.redis.should.be.kind_of(Redis)
   end
-  
+
   it "should support interpolation of key names" do
     @roster.player_totals.incr
     @roster.redis.get('players/user1/total').should == '1'
@@ -108,6 +113,10 @@ describe Redis::Objects do
     @roster.redis.get('players:my_rank:user1').should == 'a'
     Roster.weird_key = 'tuka'
     Roster.redis.get('players:weird_key:#{raise}').should == 'tuka'
+
+    k = "Roster:#{Time.now.strftime('%Y-%m-%dT%H')}:daily"
+    @roster.daily.incr
+    @roster.redis.get(k).should == '1'
   end
 
   it "should be able to get/set contact info" do
