@@ -20,7 +20,7 @@ describe Redis::Value do
     @value.value = 'Trevor Hoffman'
     @value.should == 'Trevor Hoffman'
     @value.get.should == 'Trevor Hoffman'
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
   end
 
@@ -40,7 +40,7 @@ describe Redis::Value do
     @value.value = [[1,2], {:t3 => 4}]
     @value.should == [[1,2], {:t3 => 4}]
     @value.get.should == [[1,2], {:t3 => 4}]
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
     @value.options[:marshal] = false
   end
@@ -197,6 +197,9 @@ describe Redis::List do
       @list << [1,2,3,[4,5]]
       @list.last.should == [1,2,3,[4,5]]
       @list.shift.should == {:json => 'data'}
+      @list.size.should == 2
+      @list.delete(v2)
+      @list.size.should == 1
       @list.options[:marshal] = false
     end
     
