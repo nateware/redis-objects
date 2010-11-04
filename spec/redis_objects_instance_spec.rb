@@ -365,6 +365,38 @@ describe Redis::HashKey do
     @hash.clear
   end
   
+  it "should handle complex marshaled values" do
+    @hash.options[:marshal] = true
+    @hash['abc'].should == nil
+    @hash['abc'] = {:json => 'data'}
+    @hash['abc'].should == {:json => 'data'}
+    
+    # no marshaling
+    @hash.options[:marshal] = false
+    v = {:json => 'data'}
+    @hash['abc'] = v
+    @hash['abc'].should == v.to_s
+
+    @hash.options[:marshal] = true
+    @hash['abc'] = [[1,2], {:t3 => 4}]
+    @hash['abc'].should == [[1,2], {:t3 => 4}]
+    @hash.fetch('abc').should == [[1,2], {:t3 => 4}]
+    @hash.delete('abc').should == 1
+    @hash.fetch('abc').should.be.nil
+    
+    @hash.options[:marshal] = true
+    @hash.bulk_set('abc' => [[1,2], {:t3 => 4}], 'def' => [[6,8], {:t4 => 8}])
+    hsh = @hash.bulk_get('abc', 'def', 'foo')
+    hsh['abc'].should == [[1,2], {:t3 => 4}]
+    hsh['def'].should == [[6,8], {:t4 => 8}]
+    hsh['foo'].should.be.nil
+    
+    @hash.delete('def').should == 1
+    @hash.delete('abc').should == 1
+    
+    @hash.options[:marshal] = false
+  end
+  
   it "should get and set values" do
     @hash['foo'] = 'bar'
     @hash['foo'].should == 'bar'
