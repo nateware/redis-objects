@@ -18,6 +18,8 @@ class Redis
         case value
         when Array
           value.collect{|v| from_redis(v)}
+        when Hash
+          value.inject({}) { |h, (k, v)| h[k] = from_redis(v); h }
         else
           restore(value) rescue value
         end

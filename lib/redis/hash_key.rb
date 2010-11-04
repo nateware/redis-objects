@@ -52,13 +52,13 @@ class Redis
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      redis.hvals(key)
+      from_redis redis.hvals(key)
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
-      redis.hgetall(key)
+      from_redis redis.hgetall(key)
     end
     alias_method :clone, :all
 

@@ -391,6 +391,12 @@ describe Redis::HashKey do
     hsh['def'].should == [[6,8], {:t4 => 8}]
     hsh['foo'].should.be.nil
     
+    hsh = @hash.all
+    hsh['abc'].should == [[1,2], {:t3 => 4}]
+    hsh['def'].should == [[6,8], {:t4 => 8}]
+    
+    @hash.values.should == [[[1,2], {:t3 => 4}], [[6,8], {:t4 => 8}]]
+    
     @hash.delete('def').should == 1
     @hash.delete('abc').should == 1
     
