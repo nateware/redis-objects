@@ -14,7 +14,7 @@ class Redis
 
     # Sets a field to value
     def []=(field, value)
-      store(field, to_redis(value))
+      store(field, value)
     end
 
     # Gets the value of a field
