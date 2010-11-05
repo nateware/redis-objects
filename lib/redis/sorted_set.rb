@@ -16,7 +16,7 @@ class Redis
 
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
-    #    num_posts['Peter'] = 163 
+    #    num_posts['Peter'] = 163
     def []=(member, score)
       add(member, score)
     end
@@ -77,11 +77,7 @@ class Redis
     def range(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
-        ret = []
-        while k = val.shift and v = val.shift
-          ret << [k, v.to_f]
-        end
-        ret
+        group_set_with_scores(val)
       else
         from_redis redis.zrange(key, start_index, end_index)
       end
@@ -91,11 +87,7 @@ class Redis
     def revrange(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
         val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
-        ret = []
-        while k = val.shift and v = val.shift
-          ret << [k, v.to_f]
-        end
-        ret
+        group_set_with_scores(val)
       else
         from_redis redis.zrevrange(key, start_index, end_index)
       end
@@ -111,7 +103,13 @@ class Redis
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
-      from_redis redis.zrangebyscore(key, min, max, args)
+
+      if args[:with_scores]
+        val = from_redis redis.zrangebyscore(key, min, max, args)
+        group_set_with_scores(val)
+      else
+        from_redis redis.zrangebyscore(key, min, max, args)
+      end
     end
 
     # Forwards compat (not yet implemented in Redis)
@@ -120,13 +118,19 @@ class Redis
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
-      from_redis redis.zrevrangebyscore(key, min, max, args)
+
+      if args[:with_scores]
+        val = from_redis redis.zrevrangebyscore(key, min, max, args)
+        group_set_with_scores(val)
+      else
+        from_redis redis.zrevrangebyscore(key, min, max, args)
+      end
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
     # 0-based with rank 0 being the element with the lowest score. Both start and end can be negative
     # numbers, where they indicate offsets starting at the element with the highest rank. For example:
-    # -1 is the element with the highest score, -2 the element with the second highest score and so forth. 
+    # -1 is the element with the highest score, -2 the element with the second highest score and so forth.
     # Redis: ZREMRANGEBYRANK
     def remrangebyrank(min, max)
       redis.zremrangebyrank(key, min, max)
@@ -163,7 +167,7 @@ class Redis
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
-    # Convenience to calling increment() with a negative number. 
+    # Convenience to calling increment() with a negative number.
     def decrement(by=1)
       redis.zincrby(key, -by).to_i
     end
@@ -187,7 +191,7 @@ class Redis
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
     alias_method :&, :intersection
-    
+
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
@@ -250,7 +254,7 @@ class Redis
     def ==(x)
       members == x
     end
-    
+
     def to_s
       members.join(', ')
     end
@@ -270,7 +274,7 @@ class Redis
     def last
       at(-1)
     end
-    
+
     # The number of members in the set. Aliased as size. Redis: ZCARD
     def length
       redis.zcard(key)
@@ -278,11 +282,18 @@ class Redis
     alias_method :size, :length
 
     private
-    
+
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
     end
-    
+
+    def group_set_with_scores(set_with_scores)
+      ret = []
+      while k = set_with_scores.shift and v = set_with_scores.shift
+        ret << [k, v.to_f]
+      end
+      ret
+    end
   end
 end
