@@ -46,21 +46,6 @@ class CustomRoster < Roster
   counter :special # New
 end
 
-class MethodRoster
-  def increment(attribute, by=1)
-    42
-  end
-  
-  def initialize(id=1) @id = id end
-  def id; @id; end
-end
-
-class CustomMethodRoster < MethodRoster
-  include Redis::Objects
-  
-  attr_accessor :counter
-  counter :basic
-end
 
 describe Redis::Objects do
   before do
@@ -762,15 +747,5 @@ describe Redis::Objects do
 
   it "should handle new subclass objects" do
     @custom_roster.special.increment.should == 1
-  end
-  
-  it "should allow passing of increment/decrement to super class" do
-    @custom_method_roster = CustomMethodRoster.new
-    @custom_method_roster.counter.should.be.nil
-    
-    @custom_method_roster.increment(:counter).should == 42
-    
-    @custom_method_roster.increment(:basic).should == 1
-    @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
   end
 end
