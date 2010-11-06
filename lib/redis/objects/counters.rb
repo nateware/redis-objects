@@ -81,10 +81,14 @@ class Redis
         private
         
         def verify_counter_defined!(name, id) #:nodoc:
-          raise Redis::Objects::UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless @redis_objects.has_key?(name)
+          raise Redis::Objects::UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless counter_defined?(name)
           if id.nil? and !@redis_objects[name][:global]
             raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
           end
+        end
+        
+        def counter_defined?(name) #:nodoc:
+          @redis_objects && @redis_objects.has_key?(name)
         end
         
         def initialize_counter!(name, id) #:nodoc:
@@ -117,14 +121,22 @@ class Redis
         # It is more efficient to use increment_[counter_name] directly.
         # This is mainly just for completeness to override ActiveRecord.
         def increment(name, by=1)
-          send(name).increment(by)
+          if self.class.send("counter_defined?", name)
+            send(name).increment(by)
+          else
+            super
+          end
         end
 
         # Decrement a counter.
         # It is more efficient to use increment_[counter_name] directly.
         # This is mainly just for completeness to override ActiveRecord.
         def decrement(name, by=1)
-          send(name).decrement(by)
+          if self.class.send("counter_defined?", name)
+            send(name).decrement(by)
+          else
+            super
+          end
         end
       end
     end
