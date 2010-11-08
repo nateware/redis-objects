@@ -11,8 +11,8 @@ begin
     gem.homepage = "http://github.com/nateware/redis-objects"
     gem.authors = ["Nate Wiger"]
     gem.add_development_dependency "bacon", ">= 0"
-    gem.requirements << 'redis, v2.0.4 or greater'
-    gem.add_dependency('redis', '>= 2.0.4')
+    gem.requirements << 'redis, v2.1.1 or greater'
+    gem.add_dependency('redis', '>= 2.1.1')
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
