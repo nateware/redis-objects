@@ -27,8 +27,6 @@ class Redis
     alias_method :get, :value
 
     def to_s;  value.to_s; end
-    alias_method :to_str, :to_s
-
     def ==(x); value == x; end
     def nil?;  value.nil?; end
   end
