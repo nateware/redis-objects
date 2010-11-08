@@ -1,10 +1,16 @@
 = Changelog for Redis::Objects
 
-== 0.4.2 [In-Progress]
+== 0.5.0 [Final] (8 November 2010)
 
 * Incompatible change: Had to rename Redis::Hash to Redis::HashKey due to internal conflicts with Redis lib and Ruby [Nate Wiger]
 
+* Fixed AR counter override so that Redis::Objects doesn't hide AR counters [Mattias Pfeiffer]
+
 * Fixed delete problem with Redis::List and complex values [Esdras Mayrink]
+
+* Fix Redis::HashKey to support complex (marshaled) types [Mattias Pfeiffer]
+
+* Group results of SortedSet#rangebyscore and #revrangebyscore if :withscores option is passed [Szymon Nowak]
 
 * Updated Redis DEL semantics per API change [Gabe da Silveira]
 
