@@ -2,7 +2,7 @@ class Redis
   #
   # Class representing a Redis hash.
   #
-  class Hash < BaseObject
+  class HashKey < BaseObject
     require 'enumerator'
     include Enumerable
     require 'redis/helpers/core_commands'
@@ -10,16 +10,11 @@ class Redis
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
 
-    attr_reader :key, :redis
-
-    # Needed since Redis::Hash masks bare Hash in redis.rb
-    def self.[](*args)
-      ::Hash[*args]
-    end
+    attr_reader :key, :options, :redis
 
     # Sets a field to value
     def []=(field, value)
-      store(field, value)
+      store(field, to_redis(value))
     end
 
     # Gets the value of a field
@@ -29,12 +24,12 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, value)
+      redis.hset(key, field, to_redis(value))
     end
 
     # Redis: HGET
     def fetch(field)
-      redis.hget(key, field)
+      from_redis redis.hget(key, field)
     end
 
     # Verify that a field exists. Redis: HEXISTS
@@ -57,13 +52,13 @@ class Redis
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      redis.hvals(key)
+      from_redis redis.hvals(key)
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
-      redis.hgetall(key)
+      from_redis redis.hgetall(key)
     end
     alias_method :clone, :all
 
@@ -102,7 +97,7 @@ class Redis
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
-      redis.hmset(key, *args.last.inject([]){ |arr,kv| arr + kv })
+      redis.hmset(key, *args.last.inject([]){ |arr,kv| arr + [kv[0], to_redis(kv[1])] })
     end
 
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
@@ -110,7 +105,7 @@ class Redis
       hsh = {}
       res = redis.hmget(key, *fields.flatten)
       fields.each do |k|
-        hsh[k] = res.shift
+        hsh[k] = from_redis(res.shift)
       end
       hsh
     end

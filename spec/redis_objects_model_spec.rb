@@ -29,6 +29,9 @@ class Roster
   value :my_rank, :key => 'players:my_rank:#{username}'
   value :weird_key, :key => 'players:weird_key:#{raise}', :global => true
 
+  #callable as key
+  counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -46,6 +49,21 @@ class CustomRoster < Roster
   counter :special # New
 end
 
+class MethodRoster
+  def increment(attribute, by=1)
+    42
+  end
+  
+  def initialize(id=1) @id = id end
+  def id; @id; end
+end
+
+class CustomMethodRoster < MethodRoster
+  include Redis::Objects
+  
+  attr_accessor :counter
+  counter :basic
+end
 
 describe Redis::Objects do
   before do
@@ -85,6 +103,8 @@ describe Redis::Objects do
     @roster.total_wins.clear
     @roster.my_rank.clear
 
+    @roster.daily.clear
+
     @custom_roster.basic.reset
     @custom_roster.special.reset
   end
@@ -93,7 +113,7 @@ describe Redis::Objects do
     Roster.redis.should == Redis::Objects.redis
     # Roster.redis.should.be.kind_of(Redis)
   end
-  
+
   it "should support interpolation of key names" do
     @roster.player_totals.incr
     @roster.redis.get('players/user1/total').should == '1'
@@ -108,6 +128,10 @@ describe Redis::Objects do
     @roster.redis.get('players:my_rank:user1').should == 'a'
     Roster.weird_key = 'tuka'
     Roster.redis.get('players:weird_key:#{raise}').should == 'tuka'
+
+    k = "Roster:#{Time.now.strftime('%Y-%m-%dT%H')}:daily"
+    @roster.daily.incr
+    @roster.redis.get(k).should == '1'
   end
 
   it "should be able to get/set contact info" do
@@ -363,7 +387,7 @@ describe Redis::Objects do
     @roster.starting_pitcher.get.should == 'Trevor Hoffman'
     @roster.starting_pitcher = 'Tom Selleck'
     @roster.starting_pitcher.should == 'Tom Selleck'
-    @roster.starting_pitcher.del.should.be.true
+    @roster.starting_pitcher.del.should == 1
     @roster.starting_pitcher.should.be.nil
   end
 
@@ -372,7 +396,7 @@ describe Redis::Objects do
     @roster.starting_pitcher = {:json => 'data'}
     @roster.starting_pitcher.should == {:json => 'data'}
     @roster.starting_pitcher.get.should == {:json => 'data'}
-    @roster.starting_pitcher.del.should.be.true
+    @roster.starting_pitcher.del.should == 1
     @roster.starting_pitcher.should.be.nil
   end
 
@@ -630,7 +654,7 @@ describe Redis::Objects do
     Roster.last_player.get.should == 'Trevor Hoffman'
     Roster.last_player = 'Tom Selleck'
     Roster.last_player.should == 'Tom Selleck'
-    Roster.last_player.del.should.be.true
+    Roster.last_player.del.should == 1
     Roster.last_player.should.be.nil
   end
 
@@ -664,7 +688,7 @@ describe Redis::Objects do
     @roster2.last_player.get.should == 'Trevor Hoffman'
     @roster2.last_player = 'Tom Selleck'
     @roster.last_player.should == 'Tom Selleck'
-    @roster.last_player.del.should.be.true
+    @roster.last_player.del.should == 1
     @roster.last_player.should.be.nil
     @roster2.last_player.should.be.nil
   end
@@ -747,5 +771,15 @@ describe Redis::Objects do
 
   it "should handle new subclass objects" do
     @custom_roster.special.increment.should == 1
+  end
+  
+  it "should allow passing of increment/decrement to super class" do
+    @custom_method_roster = CustomMethodRoster.new
+    @custom_method_roster.counter.should.be.nil
+    
+    @custom_method_roster.increment(:counter).should == 42
+    
+    @custom_method_roster.increment(:basic).should == 1
+    @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
   end
 end

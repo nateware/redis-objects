@@ -91,7 +91,12 @@ class Redis
       def redis_field_key(name, id='') #:nodoc:
         klass = first_ancestor_with(name)
         # This can never ever ever ever change or upgrades will corrupt all data
-        klass.redis_objects[name.to_sym][:key] || "#{redis_prefix(klass)}:#{id}:#{name}"
+        # to comment above: I don't think people where using Proc as keys before (that would create a weird key). Should be ok
+        key = klass.redis_objects[name.to_sym][:key]
+        if key && key.respond_to?(:call)
+          key = key.call self
+        end
+        key || "#{redis_prefix(klass)}:#{id}:#{name}"
       end
 
       def first_ancestor_with(name)
@@ -109,7 +114,11 @@ class Redis
       def redis_field_key(name) #:nodoc:
         klass = self.class.first_ancestor_with(name)
         if key = klass.redis_objects[name.to_sym][:key]
-          eval "%(#{key})"
+          if key.respond_to?(:call)
+            key.call self
+          else
+            eval "%(#{key})"
+          end
         else
           # don't try to refactor into class redis_field_key because fucks up eval context
           "#{klass.redis_prefix}:#{id}:#{name}"

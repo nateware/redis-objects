@@ -7,7 +7,7 @@ require 'redis/value'
 require 'redis/lock'
 require 'redis/set'
 require 'redis/sorted_set'
-require 'redis/hash'
+require 'redis/hash_key'
 
 describe Redis::Value do
   before do
@@ -20,7 +20,7 @@ describe Redis::Value do
     @value.value = 'Trevor Hoffman'
     @value.should == 'Trevor Hoffman'
     @value.get.should == 'Trevor Hoffman'
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
   end
 
@@ -40,7 +40,7 @@ describe Redis::Value do
     @value.value = [[1,2], {:t3 => 4}]
     @value.should == [[1,2], {:t3 => 4}]
     @value.get.should == [[1,2], {:t3 => 4}]
-    @value.del.should.be.true
+    @value.del.should == 1
     @value.should.be.nil
     @value.options[:marshal] = false
   end
@@ -197,6 +197,9 @@ describe Redis::List do
       @list << [1,2,3,[4,5]]
       @list.last.should == [1,2,3,[4,5]]
       @list.shift.should == {:json => 'data'}
+      @list.size.should == 2
+      @list.delete(v2)
+      @list.size.should == 1
       @list.options[:marshal] = false
     end
     
@@ -356,10 +359,48 @@ describe Redis::Lock do
 end
 
 
-describe Redis::Hash do
+describe Redis::HashKey do
   before do
-    @hash  = Redis::Hash.new('test_hash')
+    @hash  = Redis::HashKey.new('test_hash')
     @hash.clear
+  end
+  
+  it "should handle complex marshaled values" do
+    @hash.options[:marshal] = true
+    @hash['abc'].should == nil
+    @hash['abc'] = {:json => 'data'}
+    @hash['abc'].should == {:json => 'data'}
+    
+    # no marshaling
+    @hash.options[:marshal] = false
+    v = {:json => 'data'}
+    @hash['abc'] = v
+    @hash['abc'].should == v.to_s
+
+    @hash.options[:marshal] = true
+    @hash['abc'] = [[1,2], {:t3 => 4}]
+    @hash['abc'].should == [[1,2], {:t3 => 4}]
+    @hash.fetch('abc').should == [[1,2], {:t3 => 4}]
+    @hash.delete('abc').should == 1
+    @hash.fetch('abc').should.be.nil
+    
+    @hash.options[:marshal] = true
+    @hash.bulk_set('abc' => [[1,2], {:t3 => 4}], 'def' => [[6,8], {:t4 => 8}])
+    hsh = @hash.bulk_get('abc', 'def', 'foo')
+    hsh['abc'].should == [[1,2], {:t3 => 4}]
+    hsh['def'].should == [[6,8], {:t4 => 8}]
+    hsh['foo'].should.be.nil
+    
+    hsh = @hash.all
+    hsh['abc'].should == [[1,2], {:t3 => 4}]
+    hsh['def'].should == [[6,8], {:t4 => 8}]
+    
+    @hash.values.should == [[[1,2], {:t3 => 4}], [[6,8], {:t4 => 8}]]
+    
+    @hash.delete('def').should == 1
+    @hash.delete('abc').should == 1
+    
+    @hash.options[:marshal] = false
   end
   
   it "should get and set values" do
@@ -406,7 +447,7 @@ describe Redis::Hash do
   end
 
   it "should respond to empty?" do
-    @empty = Redis::Hash.new('test_empty_hash')
+    @empty = Redis::HashKey.new('test_empty_hash')
     @empty.respond_to?(:empty?).should == true
   end
 

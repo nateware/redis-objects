@@ -45,7 +45,7 @@ config/initializers/redis.rb is a good place for this.)
 
     require 'redis'
     require 'redis/objects'
-    Redis::Objects.redis = Redis.new(:host => 127.0.0.1, :port => 6379)
+    Redis::Objects.redis = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
 on Rails.  Standalone, Sinatra, Resque - no problem.
@@ -217,10 +217,11 @@ Complex data types are no problem with :marshal => true:
 === Hashes
 
 Hashes work like a Ruby {Hash}[http://ruby-doc.org/core/classes/Hash.html], with
-a few Redis-specific additions.
+a few Redis-specific additions.  (The class name is "HashKey" not just "Hash", due to
+conflicts with the Ruby core Hash class in other gems.)
 
-    require 'redis/hash'
-    @hash = Redis::Hash.new('hash_name')
+    require 'redis/hash_key'
+    @hash = Redis::HashKey.new('hash_name')
     @hash['a'] = 1
     @hash['b'] = 2
     @hash.each do |k,v|

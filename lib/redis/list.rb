@@ -73,7 +73,7 @@ class Redis
     # Use .del to completely delete the entire key.
     # Redis: LREM
     def delete(name, count=0)
-      redis.lrem(key, count, name)  # weird api
+      redis.lrem(key, count, to_redis(name))  # weird api
     end
 
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,

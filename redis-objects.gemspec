@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{redis-objects}
-  s.version = "0.4.1"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Nate Wiger"]
-  s.date = %q{2010-08-23}
+  s.date = %q{2010-11-08}
   s.description = %q{Map Redis types directly to Ruby objects. Works with any class or ORM.}
   s.email = %q{nate@wiger.org}
   s.extra_rdoc_files = [
@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
      "VERSION",
      "lib/redis/base_object.rb",
      "lib/redis/counter.rb",
-     "lib/redis/hash.rb",
+     "lib/redis/hash_key.rb",
      "lib/redis/helpers/core_commands.rb",
      "lib/redis/helpers/serialize.rb",
      "lib/redis/list.rb",
@@ -41,6 +41,7 @@ Gem::Specification.new do |s|
      "lib/redis/sorted_set.rb",
      "lib/redis/value.rb",
      "redis-objects.gemspec",
+     "spec/redis_namespace_compat_spec.rb",
      "spec/redis_objects_instance_spec.rb",
      "spec/redis_objects_model_spec.rb",
      "spec/spec_helper.rb"
@@ -48,11 +49,12 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/nateware/redis-objects}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.requirements = ["redis, v2.0.4 or greater"]
+  s.requirements = ["redis, v2.1.1 or greater"]
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{Map Redis types directly to Ruby objects}
   s.test_files = [
-    "spec/redis_objects_instance_spec.rb",
+    "spec/redis_namespace_compat_spec.rb",
+     "spec/redis_objects_instance_spec.rb",
      "spec/redis_objects_model_spec.rb",
      "spec/spec_helper.rb"
   ]
@@ -63,17 +65,15 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<bacon>, [">= 0"])
-      s.add_runtime_dependency(%q<redis>, [">= 2.0.4"])
-      s.add_runtime_dependency(%q<yajl-ruby>, [">= 0.7.7"])
+      s.add_runtime_dependency(%q<redis>, [">= 2.1.1"])
     else
       s.add_dependency(%q<bacon>, [">= 0"])
-      s.add_dependency(%q<redis>, [">= 2.0.4"])
-      s.add_dependency(%q<yajl-ruby>, [">= 0.7.7"])
+      s.add_dependency(%q<redis>, [">= 2.1.1"])
     end
+    s.add_dependency(%q<yajl-ruby>, [">= 0.7.7"])
   else
     s.add_dependency(%q<bacon>, [">= 0"])
-    s.add_dependency(%q<redis>, [">= 2.0.4"])
-    s.add_dependency(%q<yajl-ruby>, [">= 0.7.7"])
+    s.add_dependency(%q<redis>, [">= 2.1.1"])
   end
 end
 

@@ -1,6 +1,6 @@
 # This is the class loader, for use as "include Redis::Objects::Hashes"
 # For the object itself, see "Redis::Hash"
-require 'redis/hash'
+require 'redis/hash_key'
 class Redis
   module Objects
     module Hashes
@@ -19,7 +19,7 @@ class Redis
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Hash.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::HashKey.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -30,7 +30,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::Hash.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::HashKey.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
               end
             EndMethods
           end
