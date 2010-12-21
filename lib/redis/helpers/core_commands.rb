@@ -41,14 +41,12 @@ class Redis
       def move(dbindex)
         redis.move key, dbindex
       end
-      
-      # See the documentation for SORT: http://code.google.com/p/redis/wiki/SortCommand
-      # TODO
-      # def sort(options)
-      #   args = []
-      #   args += ['sort']
-      #   from_redis redis.sort key
-      # end
+
+      def sort(options={})
+        options[:order] ||= "asc alpha"
+        redis.sort(key, options)
+      end
     end
+
   end
 end

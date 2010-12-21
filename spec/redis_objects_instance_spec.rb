@@ -634,11 +634,40 @@ describe Redis::Set do
     @set.redis.del('spec/set2')
   end
 
+  it "should support sorting" do
+    @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
+    @set_2 << 1 << 2 << 3 << 4 << 5
+    @set_3 << 'm_1' << 'm_2'
+    @set_1.sort.should == %w(a b c d e)
+    @set_2.sort.should == %w(1 2 3 4 5)
+
+    @set_1.sort(SORT_ORDER).should == %w(e d c b a)
+    @set_3.sort(SORT_BY).should == %w(m_1 m_2)        
+    @set_2.sort(SORT_LIMIT).should == %w(3 4)
+
+    val1 = Redis::Value.new('spec/3/sorted')
+    val2 = Redis::Value.new('spec/4/sorted')
+
+    val1.set('val3')
+    val2.set('val4')
+ 
+    @set_2.sort(SORT_GET).should == ['val3', 'val4']
+    @set_2.sort(SORT_STORE).should == 2
+    @set_2.redis.type(SORT_STORE[:store]).should == 'list'
+    @set_2.redis.lrange(SORT_STORE[:store], 0, -1).should == ['val3', 'val4']
+
+    @set_1.redis.del val1.key
+    @set_1.redis.del val2.key
+    @set_1.redis.del SORT_STORE[:store]
+
+  end
+
   after do
     @set.clear
     @set_1.clear
     @set_2.clear
     @set_3.clear
+
   end
 end
 

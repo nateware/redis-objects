@@ -6,7 +6,7 @@ class Redis
       @options = args.last.is_a?(Hash) ? args.pop : {}
       @redis   = args.first || $redis
     end
-    
+
     alias :inspect :to_s  # Ruby 1.9.2
   end
 end

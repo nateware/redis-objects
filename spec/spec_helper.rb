@@ -12,3 +12,11 @@ UNIONSTORE_KEY = 'test:unionstore'
 INTERSTORE_KEY = 'test:interstore'
 DIFFSTORE_KEY  = 'test:diffstore'
 
+
+SORT_ORDER = {:order => 'desc alpha'}
+SORT_LIMIT = {:limit => [2, 2]}
+SORT_BY = {:by => 'm_*'}
+SORT_GET = {:get => 'spec/*/sorted'}.merge!(SORT_LIMIT)
+SORT_STORE = {:store => "spec/aftersort"}.merge!(SORT_GET)
+
+
