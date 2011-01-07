@@ -1,6 +1,7 @@
 # Redis::Objects - Lightweight object layer around redis-rb
 # See README.rdoc for usage and approach.
 require 'redis'
+
 class Redis
   #
   # Redis::Objects enables high-performance atomic operations in your app
@@ -51,7 +52,7 @@ class Redis
     class << self
       def redis=(conn) @redis = conn end
       def redis
-        @redis ||= $redis || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
+        @redis ||= $redis || Redis.current || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
       def included(klass)
@@ -75,7 +76,11 @@ class Redis
     # Class methods that appear in your class when you include Redis::Objects.
     module ClassMethods
       attr_accessor :redis, :redis_objects
-
+      
+      def redis
+        @redis ||= Objects.redis
+      end
+      
       # Set the Redis redis_prefix to use. Defaults to model_name
       def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
       def redis_prefix(klass = self) #:nodoc:
@@ -108,7 +113,10 @@ class Redis
 
     # Instance methods that appear in your class when you include Redis::Objects.
     module InstanceMethods
-      def redis() self.class.redis end
+      def redis
+        self.class.redis
+      end
+      
       def redis_field_key(name) #:nodoc:
         klass = self.class.first_ancestor_with(name)
         if key = klass.redis_objects[name.to_sym][:key]

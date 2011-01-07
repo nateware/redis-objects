@@ -2,7 +2,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/objects'
-Redis::Objects.redis = $redis
 
 class Roster
   include Redis::Objects

@@ -4,7 +4,7 @@ class Redis
     def initialize(key, *args)
       @key     = key.is_a?(Array) ? key.flatten.join(':') : key
       @options = args.last.is_a?(Hash) ? args.pop : {}
-      @redis   = args.first || $redis
+      @redis   = args.first || $redis || Redis.current
     end
     
     alias :inspect :to_s  # Ruby 1.9.2
