@@ -280,6 +280,11 @@ class Redis
       redis.zcard(key)
     end
     alias_method :size, :length
+    
+    # The number of members within a range of scores. Redis: ZCOUNT
+    def range_size(min, max)
+      redis.zcount(key, min, max)
+    end
 
     private
 

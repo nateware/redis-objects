@@ -731,6 +731,10 @@ describe Redis::SortedSet do
     @set.length.should == 4
     @set.size.should == 4
     
+    @set.range_size(100, 120).should == 0
+    @set.range_size(0, 100).should == 2
+    @set.range_size('-inf', 'inf').should == 4
+    
     @set.delete_if{|m| m == 'b'}
     @set.size.should == 3
   end
