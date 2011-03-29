@@ -27,6 +27,7 @@ end
 #   spec.verbose = true
 # end
 
+desc "run all the specs"
 task :test do
   sh "bacon spec/*_spec.rb"
 end
