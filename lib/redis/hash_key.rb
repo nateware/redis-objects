@@ -126,7 +126,12 @@ class Redis
 
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, val = 1)
-      redis.hincrby(key, field, val).to_i
+      ret = redis.hincrby(key, field, val)
+      unless ret.is_a? Array
+        ret.to_i
+      else
+        nil
+      end
     end
     alias_method :incr, :incrby
 
