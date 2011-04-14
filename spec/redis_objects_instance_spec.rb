@@ -362,8 +362,8 @@ end
 describe Redis::HashKey do
   describe "With Marshal" do
     before do
-      @hash = Redis::Hash.new('test_hash', $redis,
-                              {:marshal_keys=>{'created_at'=>true}})
+      @hash = Redis::HashKey.new('test_hash', $redis,
+                                {:marshal_keys=>{'created_at'=>true}})
       @hash.clear
     end
 

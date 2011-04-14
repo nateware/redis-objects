@@ -51,7 +51,7 @@ class Redis
     class << self
       def redis=(conn) @redis = conn end
       def redis
-        @redis ||= $redis || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
+        @redis ||= $redis || Redis.current || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
       def included(klass)
@@ -74,7 +74,9 @@ class Redis
 
     # Class methods that appear in your class when you include Redis::Objects.
     module ClassMethods
-      attr_accessor :redis, :redis_objects
+      attr_writer   :redis
+      attr_accessor :redis_objects
+      def redis() @redis ||= Objects.redis end
 
       # Set the Redis redis_prefix to use. Defaults to model_name
       def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
