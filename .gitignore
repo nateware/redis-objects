@@ -1,3 +1,4 @@
 *.gemspec
 nbproject
 pkg/
+spec/*.sqlite3

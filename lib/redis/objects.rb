@@ -46,7 +46,8 @@ class Redis
     autoload :Values, File.join(dir, 'values')
     autoload :Hashes, File.join(dir, 'hashes')
 
-    class NotConnected  < StandardError; end
+    class NotConnected < StandardError; end
+    class NilObjectId  < StandardError; end
 
     class << self
       def redis=(conn) @redis = conn end
@@ -88,13 +89,17 @@ class Redis
           downcase
       end
 
-      def redis_field_key(name, id='') #:nodoc:
+      def redis_field_key(name, id=nil) #:nodoc:
         klass = first_ancestor_with(name)
         # This can never ever ever ever change or upgrades will corrupt all data
         # to comment above: I don't think people where using Proc as keys before (that would create a weird key). Should be ok
         key = klass.redis_objects[name.to_sym][:key]
         if key && key.respond_to?(:call)
           key = key.call self
+        end
+        if id.nil?
+          raise NilObjectId,
+            "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
         end
         key || "#{redis_prefix(klass)}:#{id}:#{name}"
       end
@@ -120,6 +125,10 @@ class Redis
             eval "%(#{key})"
           end
         else
+          if id.nil?
+            raise NilObjectId,
+              "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
+          end
           # don't try to refactor into class redis_field_key because fucks up eval context
           "#{klass.redis_prefix}:#{id}:#{name}"
         end

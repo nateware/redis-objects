@@ -17,5 +17,8 @@ begin
       ns.instance_eval { rem_namespace({"resque:x" => nil}) }.should == {"x"=>nil}
     end
   end
+
 rescue LoadError
+  # Redis::Namespace not installed
+  puts "Skipping Redis::Namespace tests as redis-namespace is not installed"
 end

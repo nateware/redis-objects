@@ -771,6 +771,7 @@ describe Redis::Objects do
     @custom_roster.basic.increment.should == 1
     @roster2.basic.should == 0
     CustomRoster.new.basic.should == 1
+    @custom_roster.basic.decrement.should == 0
   end
 
   it "should handle new subclass objects" do
@@ -780,10 +781,15 @@ describe Redis::Objects do
   it "should allow passing of increment/decrement to super class" do
     @custom_method_roster = CustomMethodRoster.new
     @custom_method_roster.counter.should.be.nil
-    
+
     @custom_method_roster.increment(:counter).should == 42
-    
+
     @custom_method_roster.increment(:basic).should == 1
+    @custom_method_roster.basic.increment.should == 2
+    @custom_method_roster.decrement(:basic).should == 1
+    @custom_method_roster.basic.decrement.should == 0
+    @custom_method_roster.basic.reset.should.be.true
+    @custom_method_roster.basic.should == 0
     @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
   end
 end
