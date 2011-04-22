@@ -11,6 +11,25 @@ begin
     :database => File.expand_path(File.dirname(__FILE__) + '/redis_objects_test.sqlite3')
   )
 
+  class CreateBlogs < ActiveRecord::Migration
+    def self.up
+      create_table :blogs do |t|
+        t.string :name
+        t.integer :posts_count
+        t.timestamps
+      end
+    end
+
+    def self.down
+      drop_table :blogs
+    end
+  end
+
+  class Blog < ActiveRecord::Base
+    include Redis::Objects
+    has_many :posts
+  end
+
   class CreatePosts < ActiveRecord::Migration
     def self.up
       create_table :posts do |t|
@@ -26,15 +45,23 @@ begin
     end
   end
 
-  CreatePosts.up
-
   class Post < ActiveRecord::Base
     include Redis::Objects
     counter :total
+    belongs_to :blog, :counter_cache => true
   end
 
 
   describe Redis::Objects do
+    before(:all) do
+      CreatePosts.up
+      CreateBlogs.up
+    end
+    after(:all) do
+      CreatePosts.down
+      CreateBlogs.down
+    end
+
     it "exercises ActiveRecord in more detail" do
       @ar = Post.new
       @ar.save!
@@ -55,10 +82,13 @@ begin
       @ar2.total.should == 0
       @ar2.destroy
     end
+
+    it "falls back to ActiveRecord if redis counter is not defined" do
+      blog = Blog.create
+      post = Post.create :blog => blog
+      blog.posts_count.should == 1
+    end
   end
-
-
-  CreatePosts.down
 
 
 rescue LoadError
