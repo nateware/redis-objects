@@ -15,7 +15,7 @@ begin
     def self.up
       create_table :blogs do |t|
         t.string :name
-        t.integer :posts_count
+        t.integer :posts_count, :default => 0
         t.timestamps
       end
     end
@@ -29,8 +29,8 @@ begin
     include Redis::Objects
     has_many :posts
     def before_create
-      self.posts_count ||= 0
-      self.posts_count += 1
+      #self.posts_count ||= 0 
+      #self.posts_count += 1
     end
   end
 
@@ -40,6 +40,7 @@ begin
         t.string :title
         t.string :description, :length => 200
         t.integer :total
+        t.integer :blog_id
         t.timestamps
       end
     end
@@ -89,8 +90,14 @@ begin
 
     it "falls back to ActiveRecord if redis counter is not defined" do
       blog = Blog.create
+      blog.reload.posts_count.should == 0
       post = Post.create :blog => blog
-      blog.posts_count.should == 1
+      blog.reload.posts_count.should == 1
+      blog2 = Blog.create
+      Post.create :blog => blog2
+      Post.create :blog => blog2
+      blog.reload.posts_count.should == 1
+      blog2.reload.posts_count.should == 2
     end
   end
 
