@@ -1,3 +1,5 @@
+require File.dirname(__FILE__) + '/base_object'
+
 class Redis
   #
   # Class representing a Redis hash.
