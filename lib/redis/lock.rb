@@ -41,7 +41,7 @@ class Redis
 
         # Lock is being held.  Now check to see if it's expired (if we're using
         # lock expiration).
-        # See "Handling Deadlocks" section on http://code.google.com/p/redis/wiki/SetnxCommand
+        # See "Handling Deadlocks" section on http://redis.io/commands/setnx
         if !@options[:expiration].nil?
           old_expiration = redis.get(key).to_f
 
