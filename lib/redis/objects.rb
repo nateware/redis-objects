@@ -97,7 +97,7 @@ class Redis
         if key && key.respond_to?(:call)
           key = key.call self
         end
-        if id.nil?
+        if id.nil? and !klass.redis_objects[name.to_sym][:global]
           raise NilObjectId,
             "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
         end
@@ -125,7 +125,7 @@ class Redis
             eval "%(#{key})"
           end
         else
-          if id.nil?
+          if id.nil? and !klass.redis_objects[name.to_sym][:global]
             raise NilObjectId,
               "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
           end
