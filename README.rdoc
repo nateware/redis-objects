@@ -7,7 +7,7 @@ on _individual_ data structures, like counters, lists, and sets.  The *atomic* p
 Using an ORM wrapper that retrieves a "record", updates values, then sends those values back,
 _removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
 
-This gem provides a Rubyish interface to Redis, by mapping {Redis types}[http://code.google.com/p/redis/wiki/CommandReference]
+This gem provides a Rubyish interface to Redis, by mapping {Redis types}[http://redis.io/commands]
 to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several advantages
 over the lower-level redis-rb API:
 
@@ -111,12 +111,12 @@ Finally, for free, you get a +redis+ method that points directly to a Redis conn
     @team.redis.get('somekey')
     @team.redis.smembers('someset')
 
-You can use the +redis+ handle to directly call any {Redis API command}[http://code.google.com/p/redis/wiki/CommandReference].
+You can use the +redis+ handle to directly call any {Redis API command}[http://redis.io/commands].
 
 == Example 2: Standalone Usage
 
 There is a Ruby class that maps to each Redis type, with methods for each
-{Redis API command}[http://code.google.com/p/redis/wiki/CommandReference].
+{Redis API command}[http://redis.io/commands].
 Note that calling +new+ does not imply it's actually a "new" value - it just
 creates a mapping between that object and the corresponding Redis data structure,
 which may already exist on the redis-server.
@@ -154,7 +154,7 @@ See the section on "Atomicity" for cool uses of atomic counter blocks.
 
 === Locks
 
-A convenience class that wraps the pattern of {using +setnx+ to perform locking}[http://code.google.com/p/redis/wiki/SetnxCommand].
+A convenience class that wraps the pattern of {using +setnx+ to perform locking}[http://redis.io/commands/setnx].
 
     require 'redis/lock'
     @lock = Redis::Lock.new('image_resizing', :expiration => 15, :timeout => 0.1)
@@ -331,7 +331,7 @@ a Hash and an Array.  You assign like a Hash, but retrieve like an Array:
     @sorted_set.incr('Peter')   # shorthand
     @sorted_set.incr('Jeff', 4)
 
-The other Redis Sorted Set commands are supported as well; see {Sorted Sets API}[http://code.google.com/p/redis/wiki/SortedSets].
+The other Redis Sorted Set commands are supported as well; see {Sorted Sets API}[http://redis.io/commands#sorted_set].
 
 == Atomic Counters and Locks
 
