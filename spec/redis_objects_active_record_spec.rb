@@ -28,10 +28,6 @@ begin
   class Blog < ActiveRecord::Base
     include Redis::Objects
     has_many :posts
-    def before_create
-      self.posts_count ||= 0 
-      self.posts_count += 1
-    end
   end
 
   class CreatePosts < ActiveRecord::Migration
