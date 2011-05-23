@@ -18,13 +18,12 @@ class Roster
 
   # global class counters
   counter :total_players_online, :global => true
-  list :all_player_stats, :global => true
   set :all_players_online, :global => true
   value :last_player, :global => true
   
   # custom keys
   counter :player_totals, :key => 'players/#{username}/total'
-  list :all_player_stats, :key => 'players:all_stats'
+  list :all_player_stats, :key => 'players:all_stats', :global => true
   set :total_wins, :key => 'players:#{id}:all_stats'
   value :my_rank, :key => 'players:my_rank:#{username}'
   value :weird_key, :key => 'players:weird_key:#{raise}', :global => true
@@ -340,7 +339,7 @@ describe Redis::Objects do
       Roster.increment_counter(:badness, 2)
     rescue => error
     end
-    error.should.be.kind_of(Redis::Objects::UndefinedCounter)
+    error.should.be.kind_of(NoMethodError)
 
     error = nil
     begin

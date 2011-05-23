@@ -29,8 +29,8 @@ begin
     include Redis::Objects
     has_many :posts
     def before_create
-      #self.posts_count ||= 0 
-      #self.posts_count += 1
+      self.posts_count ||= 0 
+      self.posts_count += 1
     end
   end
 
@@ -98,6 +98,7 @@ begin
       Post.create :blog => blog2
       blog.reload.posts_count.should == 1
       blog2.reload.posts_count.should == 2
+      blog.posts_count.should == 1
     end
   end
 

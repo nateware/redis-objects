@@ -83,7 +83,7 @@ class Redis
         private
         
         def verify_counter_defined!(name, id) #:nodoc:
-          raise Redis::Objects::UndefinedCounter, "Undefined counter :#{name} for class #{self.name}" unless counter_defined?(name)
+          raise NoMethodError, "Undefined counter :#{name} for class #{self.name}" unless counter_defined?(name)
           if id.nil? and !@redis_objects[name][:global]
             raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
           end

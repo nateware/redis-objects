@@ -91,15 +91,15 @@ class Redis
 
       def redis_field_key(name, id=nil) #:nodoc:
         klass = first_ancestor_with(name)
-        # This can never ever ever ever change or upgrades will corrupt all data
-        # to comment above: I don't think people where using Proc as keys before (that would create a weird key). Should be ok
+        # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
+        # I don't think people were using Proc as keys before (that would create a weird key). Should be ok
         key = klass.redis_objects[name.to_sym][:key]
         if key && key.respond_to?(:call)
           key = key.call self
         end
         if id.nil? and !klass.redis_objects[name.to_sym][:global]
           raise NilObjectId,
-            "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
+            "[#{klass.redis_objects[name.to_sym]}] Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
         end
         key || "#{redis_prefix(klass)}:#{id}:#{name}"
       end
