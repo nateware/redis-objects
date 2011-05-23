@@ -1,5 +1,15 @@
 = Changelog for Redis::Objects
 
+== 0.5.1 [Final] (23 May 2011)
+
+* Fixed super class delegation conflicts with Redis Counters vs ActiveRecord [Tim Aßmann]
+
+* Added zcount method to SortedSet [dunedain289]
+
+* Updated redis-objects to look for Redis.current and prefer it over global $redis variable [Jean Boussier] 
+
+* Updated URLs to reflect new redis.io website [Jérémy Lecour]
+
 == 0.5.0 [Final] (8 November 2010)
 
 * Incompatible change: Had to rename Redis::Hash to Redis::HashKey due to internal conflicts with Redis lib and Ruby [Nate Wiger]
