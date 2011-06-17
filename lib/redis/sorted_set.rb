@@ -168,8 +168,8 @@ class Redis
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
-    def decrement(by=1)
-      redis.zincrby(key, -by).to_i
+    def decrement(member, by=1)
+      redis.zincrby(key, -by, member).to_i
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
