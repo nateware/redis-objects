@@ -286,6 +286,11 @@ class Redis
       redis.zcount(key, min, max)
     end
 
+    # Return a boolean indicating whether +value+ is a member.
+    def member?(value)
+      !redis.zscore(key, to_redis(value)).nil?
+    end
+
     private
 
     def keys_from_objects(sets)

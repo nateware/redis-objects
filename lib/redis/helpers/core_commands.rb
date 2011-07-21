@@ -37,7 +37,11 @@ class Redis
       def expireat(unixtime)
         redis.expire key, unixtime
       end
-    
+
+      def ttl
+        redis.ttl(@key).seconds
+      end
+
       def move(dbindex)
         redis.move key, dbindex
       end

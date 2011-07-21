@@ -1,5 +1,11 @@
 = Changelog for Redis::Objects
 
+== 0.5.2 [Development]
+
+* Added Redis::SortedSet#member? method [Karl Varga]
+
+* Added +ttl+ method to CoreCommands [Karl Varga]
+
 == 0.5.1 [Final] (23 May 2011)
 
 * Fixed super class delegation conflicts with Redis Counters vs ActiveRecord [Tim Aßmann]
