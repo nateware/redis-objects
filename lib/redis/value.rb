@@ -36,6 +36,7 @@ class Redis
 
     def ==(other); value == other end
     def nil?; value.nil? end
+    def to_json; value.to_json end
 
     def method_missing(*args)
       self.value.send *args
