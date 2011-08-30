@@ -17,7 +17,11 @@ class Redis
     end
 
     def value=(val)
-      redis.set key, to_redis(val)
+      if val.nil?
+        delete
+      else
+        redis.set key, to_redis(val)
+      end
     end
     alias_method :set, :value=
 

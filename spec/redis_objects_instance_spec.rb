@@ -80,6 +80,11 @@ describe Redis::Value do
     @value.nil?.should == true
   end
 
+  it 'should equate setting the value to nil to deletion' do
+    @value.value = nil
+    @value.nil?.should == true
+  end
+
   after do
     @value.delete
   end
