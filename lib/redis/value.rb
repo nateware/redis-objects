@@ -30,6 +30,9 @@ class Redis
       "#<Redis::Value #{value.inspect}>"
     end
 
+    def ==(other); value == other end
+    def nil?; value.nil? end
+
     def method_missing(*args)
       self.value.send *args
     end

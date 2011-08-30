@@ -59,17 +59,25 @@ describe Redis::Value do
   end
 
   it "should provide a readable inspect" do
-    @value.options[:marshal] = true
     @value.value = 'monkey'
-    @value.value.inspect.should == '#<Redis::Value "monkey">'
+    @value.inspect.should == '#<Redis::Value "monkey">'
     @value.value = 1234
-    @value.value.inspect.should == '#<Redis::Value 1234>'
-    @value.options[:marshal] = false
+    @value.inspect.should == '#<Redis::Value "1234">'
   end
 
   it 'should delegate unrecognized methods to the value' do
     @value.value = 'monkey'
     @value.to_sym.should == :monkey
+  end
+
+  it 'should properly pass equality operations on to the value' do
+    @value.value = 'monkey'
+    @value.should == 'monkey'
+  end
+
+  it 'should properly pass nil? on to the value' do
+    @value.delete
+    @value.nil?.should == true
   end
 
   after do
