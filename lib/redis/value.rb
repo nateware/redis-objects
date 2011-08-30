@@ -26,8 +26,12 @@ class Redis
     end
     alias_method :get, :value
 
-    def to_s;  value.to_s; end
-    def ==(x); value == x; end
-    def nil?;  value.nil?; end
+    def inspect
+      "#<Redis::Value #{value.inspect}>"
+    end
+
+    def method_missing(*args)
+      self.value.send *args
+    end
   end
 end
