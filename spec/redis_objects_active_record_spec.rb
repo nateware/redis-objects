@@ -81,6 +81,10 @@ begin
       @ar2.total.decrement.should == 1
       @ar2.total.reset
       @ar2.total.should == 0
+      @ar2.total.reset(55)
+      @ar2.total.should == 55
+      @ar2.total.getset(12).should == 55
+      @ar2.total.should == 12
       @ar2.destroy
     end
 

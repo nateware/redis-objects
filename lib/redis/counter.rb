@@ -28,6 +28,14 @@ class Redis
       true  # hack for redis-rb regression
     end
 
+    # Reset the counter to its starting value, and return previous value.
+    # Use this to "reap" the counter and save it somewhere else. This is
+    # atomic in that no increments or decrements are lost if you process
+    # the returned value.
+    def getset(to=options[:start])
+      redis.getset(key, to.to_i).to_i
+    end
+
     # Returns the current value of the counter.  Normally just calling the
     # counter will lazily fetch the value, and only update it if increment
     # or decrement is called.  This forces a network call to redis-server

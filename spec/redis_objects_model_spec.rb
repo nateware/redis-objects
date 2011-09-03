@@ -193,6 +193,8 @@ describe Redis::Objects do
     Roster.decrement_counter(:available_slots, @roster.id).should == 11
     Roster.reset_counter(:available_slots, @roster.id).should == true
     Roster.get_counter(:available_slots, @roster.id).should == 10
+    Roster.getset_counter(:available_slots, @roster.id, 555).should == 10
+    Roster.get_counter(:available_slots, @roster.id).should == 555
   end
 
   it "should support class-level increment/decrement of global counters" do
@@ -211,6 +213,8 @@ describe Redis::Objects do
     Roster.decrement_counter(:total_players_online).should == 1
     Roster.reset_counter(:total_players_online).should == true
     Roster.get_counter(:total_players_online).should == 0
+    Roster.getset_counter(:total_players_online, nil, 111).should == 0
+    Roster.get_counter(:total_players_online).should == 111
   end
 
   it "should take an atomic block for increment/decrement" do
