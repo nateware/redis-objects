@@ -79,6 +79,13 @@ class Redis
           redis.set(redis_field_key(name, id), to.to_i)
           true
         end
+
+        # Set a counter to its starting value and return the old value.
+        def getset_counter(name, id=nil, to=nil)
+          verify_counter_defined!(name, id)
+          to = @redis_objects[name][:start] if to.nil?
+          redis.getset(redis_field_key(name, id), to.to_i).to_i
+        end
         
         private
         

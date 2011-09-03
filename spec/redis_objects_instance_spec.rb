@@ -266,6 +266,8 @@ describe Redis::Counter do
     @counter.should == 0
     @counter.reset(15).should.be.true
     @counter.should == 15
+    @counter.getset(111).should == 15
+    @counter.should == 111
   end
 
   after do
