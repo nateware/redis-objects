@@ -147,6 +147,7 @@ describe Redis::List do
       # Test against similar Ruby functionality
       a = @list.values
       @list[0..2].should == a[0..2]
+      @list[0...2].should == a[0...2]
       @list.slice(0..2).should == a.slice(0..2)
       @list[0, 2].should == a[0, 2]
       @list.range(0, 2).should == a[0..2]  # range for Redis works like .. in Ruby
