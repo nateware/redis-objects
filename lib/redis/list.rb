@@ -55,7 +55,8 @@ class Redis
     # a range of values using Redis: LRANGE.
     def [](index, length=nil)
       if index.is_a? Range
-        range(index.first, index.last)
+        last = index.exclude_end? ? (index.last - 1) : index.last
+        range(index.first, last)
       elsif length
         case length <=> 0
         when 1  then range(index, index + length - 1)
