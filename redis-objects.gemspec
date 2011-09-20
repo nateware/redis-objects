@@ -4,14 +4,14 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{redis-objects}
-  s.version = "0.5.1"
+  s.name = "redis-objects"
+  s.version = "0.5.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Nate Wiger"]
-  s.date = %q{2011-05-23}
-  s.description = %q{Map Redis types directly to Ruby objects. Works with any class or ORM.}
-  s.email = %q{nate@wiger.org}
+  s.date = "2011-09-20"
+  s.description = "Map Redis types directly to Ruby objects. Works with any class or ORM."
+  s.email = "nate@wiger.org"
   s.extra_rdoc_files = [
     "README.rdoc"
   ]
@@ -46,24 +46,27 @@ Gem::Specification.new do |s|
     "spec/redis_objects_model_spec.rb",
     "spec/spec_helper.rb"
   ]
-  s.homepage = %q{http://github.com/nateware/redis-objects}
+  s.homepage = "http://github.com/nateware/redis-objects"
   s.require_paths = ["lib"]
   s.requirements = ["redis, v2.1.1 or greater"]
-  s.rubygems_version = %q{1.7.2}
-  s.summary = %q{Map Redis types directly to Ruby objects}
+  s.rubygems_version = "1.8.10"
+  s.summary = "Map Redis types directly to Ruby objects"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<bacon>, [">= 0"])
+      s.add_development_dependency(%q<redis-namespace>, [">= 0"])
       s.add_runtime_dependency(%q<redis>, [">= 2.1.1"])
     else
       s.add_dependency(%q<bacon>, [">= 0"])
+      s.add_dependency(%q<redis-namespace>, [">= 0"])
       s.add_dependency(%q<redis>, [">= 2.1.1"])
     end
   else
     s.add_dependency(%q<bacon>, [">= 0"])
+    s.add_dependency(%q<redis-namespace>, [">= 0"])
     s.add_dependency(%q<redis>, [">= 2.1.1"])
   end
 end
