@@ -58,11 +58,19 @@ class Redis
     # When the given member does not exist in the sorted set, nil is returned.
     # The returned rank (or index) of the member is 0-based for both commands
     def rank(member)
-      redis.zrank(key, to_redis(member)).to_i
+      if n = redis.zrank(key, to_redis(member))
+        n.to_i
+      else
+        nil
+      end
     end
 
     def revrank(member)
-      redis.zrevrank(key, to_redis(member)).to_i
+      if n = redis.zrevrank(key, to_redis(member))
+        n.to_i
+      else
+        nil
+      end
     end
 
     # Return all members of the sorted set with their scores.  Extremely CPU-intensive.

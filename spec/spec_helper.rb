@@ -5,6 +5,9 @@ require 'redis'
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'bacon'
 Bacon.summary_at_exit
+if $0 =~ /\brspec$/
+  raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
+end
 
 UNIONSTORE_KEY = 'test:unionstore'
 INTERSTORE_KEY = 'test:interstore'

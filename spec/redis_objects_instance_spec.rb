@@ -742,6 +742,14 @@ describe Redis::SortedSet do
     # @set.rank('b').should == 2
     # @set.revrank('b').should == 3
 
+    # shouldn't report a rank for a key that doesn't exist
+    @set.rank('foo').should.not == @set.rank(@set.first)
+    @set.rank('foo').should == nil
+
+    # shouldn't report a rank for a key that doesn't exist
+    @set.revrank('foo').should.not == @set.revrank(@set.first)
+    @set.revrank('foo').should == nil
+
     @set['f'] = 100
     @set['g'] = 110
     @set['h'] = 120

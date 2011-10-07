@@ -2,3 +2,7 @@
 nbproject
 pkg/
 spec/*.sqlite3
+Gemfile
+Gemfile.lock
+.rvmrc
+spec/redis.pid
