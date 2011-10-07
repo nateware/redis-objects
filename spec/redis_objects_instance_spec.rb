@@ -740,6 +740,12 @@ describe Redis::SortedSet do
     # @set.revrangebyscore(0,4).should == ['d','a']
     # @set.revrangebyscore(0,4, :count => 2).should == ['a','d']
     # @set.rank('b').should == 2
+
+    #shouldn't report a rank for a key that doesn't exist
+    @set.rank('foo').should_not == @set.rank(@set.first)
+    @set.rank('foo').should be_nil
+   
+
     # @set.revrank('b').should == 3
 
     @set['f'] = 100
