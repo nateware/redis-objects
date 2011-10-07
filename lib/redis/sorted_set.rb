@@ -57,8 +57,11 @@ class Redis
     # low to high. +revrank+ returns the rank with scores ordered from high to low.
     # When the given member does not exist in the sorted set, nil is returned.
     # The returned rank (or index) of the member is 0-based for both commands
+    # Returns nil when a key is not found
     def rank(member)
-      redis.zrank(key, to_redis(member)).to_i
+      if r = redis.zrank(key, to_redis(member))
+        r.to_i
+      end
     end
 
     def revrank(member)

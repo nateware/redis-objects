@@ -1,0 +1,21 @@
+PATH
+  remote: .
+  specs:
+    redis-objects (0.5.2)
+      redis (>= 2.1.1)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    bacon (1.1.0)
+    redis (2.2.2)
+    redis-namespace (1.1.0)
+      redis (< 3.0.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bacon
+  redis-namespace
+  redis-objects!
