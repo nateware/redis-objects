@@ -1,0 +1,1 @@
+rvm use 1.9.1-p378@redis-objects --create --install
