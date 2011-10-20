@@ -70,7 +70,7 @@ class Redis
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
-      h = redis.hgetall(key)
+      h = redis.hgetall(key) || {}
       h.each { |k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
       h
     end
