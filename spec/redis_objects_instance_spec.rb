@@ -559,7 +559,12 @@ describe Redis::Set do
     @set.get.sort.should == ['a','b']
     @set.length.should == 2
     @set.size.should == 2
+    @set.delete('a')
+    @set.pop.should == 'b'
     
+    @set.add('a')
+    @set.add('b')
+
     i = 0
     @set.each do |st|
       i += 1

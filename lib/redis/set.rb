@@ -26,6 +26,11 @@ class Redis
       redis.sadd(key, to_redis(value))
     end
 
+    # Remove and return a random member.  Redis:SPOP
+    def pop
+      from_redis redis.spop(key)
+    end
+
     # Return all members in the set.  Redis: SMEMBERS
     def members
       v = from_redis redis.smembers(key)
