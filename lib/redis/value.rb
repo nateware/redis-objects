@@ -17,7 +17,11 @@ class Redis
     end
 
     def value=(val)
-      redis.set key, to_redis(val)
+      if val.nil?
+        delete
+      else
+        redis.set key, to_redis(val)
+      end
     end
     alias_method :set, :value=
 
@@ -26,8 +30,17 @@ class Redis
     end
     alias_method :get, :value
 
-    def to_s;  value.to_s; end
-    def ==(x); value == x; end
-    def nil?;  value.nil?; end
+    def inspect
+      "#<Redis::Value #{value.inspect}>"
+    end
+
+    def ==(other); value == other end
+    def nil?; value.nil? end
+    def as_json(*args); value.as_json *args end
+    def to_json(*args); value.to_json *args end
+
+    def method_missing(*args)
+      self.value.send *args
+    end
   end
 end
