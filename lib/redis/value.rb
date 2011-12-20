@@ -13,7 +13,7 @@ class Redis
     attr_reader :key, :options, :redis
     def initialize(key, *args)
       super(key, *args)
-      @redis.setnx(key, @options[:default]) if @options[:default]
+      @redis.setnx(key, to_redis(@options[:default])) if @options[:default]
     end
 
     def value=(val)

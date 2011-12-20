@@ -14,6 +14,11 @@ describe Redis::Value do
     @value = Redis::Value.new('spec/value')
     @value.delete
   end
+  
+  it "should marshal default value" do
+    @value = Redis::Value.new('spec/value', :default => {:json => 'data'}, :marshal => true)
+    @value.value.should == {:json => 'data'}
+  end
 
   it "should handle simple values" do
     @value.should == nil
