@@ -38,6 +38,10 @@ class Redis
         redis.expire key, unixtime
       end
 
+      def persist
+        redis.persist key
+      end
+
       def ttl
         redis.ttl(@key)
       end
