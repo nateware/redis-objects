@@ -39,7 +39,7 @@ class Redis
       end
 
       def ttl
-        redis.ttl(@key).seconds
+        redis.ttl(@key)
       end
 
       def move(dbindex)
