@@ -115,6 +115,7 @@ class Redis
         arr + [kv[0], to_redis(kv[1], options[:marshal_keys][kv[0]])]
       })
     end
+    alias_method :update, :bulk_set
 
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
     def bulk_get(*fields)
