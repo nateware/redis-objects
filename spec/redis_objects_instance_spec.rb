@@ -552,6 +552,15 @@ describe Redis::HashKey do
     @hash.incr('counter')
     @hash['counter'].to_i.should == 2
   end
+
+  it "should respond to fill" do
+    @hash['foo'] = 'bar'
+    
+    @hash.fill('abc' => '123', 'bang' => 'michael')
+    @hash['foo'].should == 'bar'
+    @hash['abc'].should == '123'
+    @hash['bang'].should == 'michael'
+  end
   
 
   after do
