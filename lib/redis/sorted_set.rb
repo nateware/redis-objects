@@ -226,7 +226,7 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      redis.zunionstore(name, key, *keys_from_objects(sets))
+      redis.zunionstore(name, keys_from_objects([self] + sets))
     end
 
     # Return the difference vs another set.  Can pass it either another set
