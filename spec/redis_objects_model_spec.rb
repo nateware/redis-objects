@@ -142,6 +142,26 @@ describe Redis::Objects do
     @roster.contact_information.size.should == 2
   end
 
+  it 'should be able to expire keys and then persist them' do
+    # on a hash_key
+    @roster.contact_information['Jenny_Phone'] = '8675309'
+    @roster.contact_information.expire 30
+    @roster.contact_information.ttl.should > -1
+    @roster.contact_information.ttl.should <= 30
+    @roster.contact_information.persist
+    @roster.contact_information.ttl.should == -1
+    @roster.contact_information['Jenny_Phone'].should == '8675309'
+
+    # on a value
+    @roster.my_rank = 42
+    @roster.my_rank.expire 30
+    @roster.my_rank.ttl.should > -1
+    @roster.my_rank.ttl.should <= 30
+    @roster.my_rank.persist
+    @roster.my_rank.ttl.should == -1
+    @roster.my_rank.to_i.should == 42
+  end
+
   it "should be marshalling hash keys" do
     @roster.contact_information['updated_at'] = Time.now
     @roster.contact_information['updated_at'].class.should == Time
