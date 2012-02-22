@@ -45,7 +45,7 @@ config/initializers/redis.rb is a good place for this.)
 
     require 'redis'
     require 'redis/objects'
-    Redis::Objects.redis = Redis.new(:host => '127.0.0.1', :port => 6379)
+    Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
 on Rails.  Standalone, Sinatra, Resque - no problem.
@@ -124,15 +124,15 @@ which may already exist on the redis-server.
 === Initialization
 
 Redis::Objects needs a handle to the +redis+ server.  For standalone use, you
-can either set the $redis global variable:
+can either set Redis.current:
 
-    $redis = Redis.new(:host => 'localhost', :port => 6379)
-    @list  = Redis::List.new('mylist')
+    Redis.current = Redis.new(:host => 'localhost', :port => 6379)
+    @list = Redis::List.new('mylist')
 
 Or you can pass the Redis handle into the new method for each type:
 
-    redis  = Redis.new(:host => 'localhost', :port => 6379)
-    @list  = Redis::List.new('mylist', redis)
+    @redis = Redis.new(:host => 'localhost', :port => 6379)
+    @list = Redis::List.new('mylist', @redis)
 
 === Counters
 
