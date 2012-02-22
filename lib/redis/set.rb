@@ -158,6 +158,19 @@ class Redis
       members.join(', ')
     end
 
+    # Moves value from one set to another. Destination can be a String
+    # or Redis::Set.
+    #
+    #   object.move(value, "name_of_key_in_redis")
+    #   object.move(value, SetObject)
+    #
+    # Returns true if moved successfully.
+    #
+    # Redis: SMOVE
+    def move(value, destination)
+      redis.smove(key, destination.is_a?(Redis::Set) ? destination.key : destination.to_s, value)
+    end
+
     private
     
     def keys_from_objects(sets)
