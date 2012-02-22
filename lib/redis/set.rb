@@ -138,6 +138,19 @@ class Redis
       redis.sdiffstore(name, key, *keys_from_objects(sets))
     end
 
+    # Moves value from one set to another. Destination can be a String
+    # or Redis::Set.
+    #
+    #   set.move(value, "name_of_key_in_redis")
+    #   set.move(value, set2)
+    #
+    # Returns true if moved successfully.
+    #
+    # Redis: SMOVE
+    def move(value, destination)
+      redis.smove(key, destination.is_a?(Redis::Set) ? destination.key : destination.to_s, value)
+    end
+
     # The number of members in the set. Aliased as size. Redis: SCARD
     def length
       redis.scard(key)
