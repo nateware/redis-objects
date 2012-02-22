@@ -38,8 +38,12 @@ class Redis
         redis.expire key, unixtime
       end
 
+      def persist
+        redis.persist key
+      end
+
       def ttl
-        redis.ttl(@key).seconds
+        redis.ttl(@key)
       end
 
       def move(dbindex)
