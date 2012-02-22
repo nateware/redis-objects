@@ -115,6 +115,15 @@ class Redis
         arr + [kv[0], to_redis(kv[1], options[:marshal_keys][kv[0]])]
       })
     end
+    alias_method :update, :bulk_set
+
+    # Set keys in bulk if they do not exist. Takes a hash of field/values {'field1' => 'val1'}. Redis: HSETNX
+    def fill(pairs={})
+      raise ArgumentErorr, "Arugment to fill must be a hash of key/value pairs" unless pairs.is_a?(::Hash)
+      pairs.each do |field, value|
+        redis.hsetnx(key, field, to_redis(value, options[:marshal_keys][field]))
+      end
+    end
 
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
     def bulk_get(*fields)
