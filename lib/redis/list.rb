@@ -32,6 +32,18 @@ class Redis
       from_redis redis.rpop(key)
     end
 
+    # Atomically pops a value from one list, pushes to another and returns the
+    # value.  Destination can be a String or a Redis::List
+    #
+    #   list.rpoplpush(destination)
+    #
+    # Returns the popped/pushed value.
+    #
+    # Redis: RPOPLPUSH
+    def rpoplpush(destination)
+      from_redis redis.rpoplpush(key, destination.is_a?(Redis::List) ? destination.key : destination.to_s)
+    end
+
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(value)
       redis.lpush(key, to_redis(value))
