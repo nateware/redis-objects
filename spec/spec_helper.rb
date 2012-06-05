@@ -28,7 +28,8 @@ at_exit do
   puts "=> Killing #{REDIS_BIN} with pid #{pid}"
   Process.kill "TERM", pid
   Process.kill "KILL", pid
-  File.unlink REDIS_PID, REDIS_DUMP
+  File.unlink REDIS_PID
+  File.unlink REDIS_DUMP if File.exists? REDIS_DUMP
 end
 
 # Grab a global handle
