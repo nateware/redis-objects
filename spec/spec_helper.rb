@@ -1,5 +1,5 @@
 require 'rubygems'  # poor people still on 1.8
-gem 'redis', '>= 2.1.1'
+gem 'redis', '>= 3.0.0'
 require 'redis'
 
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
