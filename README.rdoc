@@ -353,8 +353,8 @@ Atomic counters are a good way to handle concurrency:
       @team.drafted_players.decrement
     end
 
-Atomic block - a cleaner way to do the above. Exceptions or return nil
-rewind counter back to previous state:
+Atomic block - a cleaner way to do the above. <b><em>Exceptions or returning nil
+rewind counter back to previous state</em></b>:
 
     @team.drafted_players.increment do |val|
       raise Team::TeamFullError if val > @team.max_players
