@@ -26,7 +26,9 @@ you want to create.
 
 == Installation
 
-    gem install redis-objects
+Add it to your Gemfile as:
+
+    gem 'redis-objects', :require => 'redis/objects'
 
 == Example 1: Model Class Usage
 
@@ -411,6 +413,6 @@ lock time.
 
 == Author
 
-Copyright (c) 2009-2010 {Nate Wiger}[http://nate.wiger.org].  All Rights Reserved.
+Copyright (c) 2009-2012 {Nate Wiger}[http://nateware.com].  All Rights Reserved.
 Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
 
