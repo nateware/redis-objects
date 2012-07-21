@@ -49,16 +49,37 @@ begin
   class Post < ActiveRecord::Base
     include Redis::Objects
     counter :total
+    counter :comments_count
     belongs_to :blog, :counter_cache => true
   end
 
+  class CreateComments < ActiveRecord::Migration
+    def self.up
+      create_table :comments do |t|
+        t.string :body
+        t.integer :post_id
+        t.timestamps
+      end
+    end
+
+    def self.down
+      drop_table :comments
+    end
+  end
+
+  class Comment < ActiveRecord::Base
+    include Redis::Objects
+    belongs_to :post, :counter_cache => true
+  end
 
   describe Redis::Objects do
     before do
+      CreateComments.up
       CreatePosts.up
       CreateBlogs.up
     end
     after do
+      CreateComments.down
       CreatePosts.down
       CreateBlogs.down
     end
@@ -86,6 +107,15 @@ begin
       @ar2.total.getset(12).should == 55
       @ar2.total.should == 12
       @ar2.destroy
+    end
+
+    it "uses the redis objects counter cache when present" do
+      post = Post.create
+      post.comments_count.should == 0
+      comment = Comment.create :post => post
+      post.reload.comments_count.should == 1
+      comment.destroy
+      post.reload.comments_count.should == 0
     end
 
     it "falls back to ActiveRecord if redis counter is not defined" do
