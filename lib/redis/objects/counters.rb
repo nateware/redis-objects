@@ -55,6 +55,7 @@ class Redis
         # Increment a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
         def increment_counter(name, id=nil, by=1, &block)
+          name = name.to_sym
           return super(name, id) unless counter_defined?(name)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
@@ -65,6 +66,7 @@ class Redis
         # Decrement a counter with the specified name and id.  Accepts a block
         # like the instance method.  See Redis::Objects::Counter for details.
         def decrement_counter(name, id=nil, by=1, &block)
+          name = name.to_sym
           return super(name, id) unless counter_defined?(name)
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
@@ -86,20 +88,20 @@ class Redis
           to = @redis_objects[name][:start] if to.nil?
           redis.getset(redis_field_key(name, id), to.to_i).to_i
         end
-        
+
         private
-        
+
         def verify_counter_defined!(name, id) #:nodoc:
           raise NoMethodError, "Undefined counter :#{name} for class #{self.name}" unless counter_defined?(name)
           if id.nil? and !@redis_objects[name][:global]
             raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
           end
         end
-        
+
         def counter_defined?(name) #:nodoc:
           @redis_objects && @redis_objects.has_key?(name)
         end
-        
+
         def initialize_counter!(name, id) #:nodoc:
           key = redis_field_key(name, id)
           unless @initialized_counters[key]
@@ -107,7 +109,7 @@ class Redis
           end
           @initialized_counters[key] = true
         end
-        
+
         # Implements increment/decrement blocks on a class level
         def rewindable_block(rewind, name, id, value, &block) #:nodoc:
           # Unfortunately this is almost exactly duplicated from Redis::Counter
