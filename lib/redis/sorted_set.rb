@@ -83,22 +83,14 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrange(key, start_index, end_index)
-      end
+      with_scores = options[:withscores] || options[:with_scores]
+      from_redis redis.zrange(key, start_index, end_index, :with_scores => with_scores)
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrevrange(key, start_index, end_index)
-      end
+      with_scores = options[:withscores] || options[:with_scores]
+      from_redis redis.zrevrange(key, start_index, end_index, :with_scores => with_scores)
     end
 
     # Return the all the elements in the sorted set at key with a score between min and max
@@ -112,12 +104,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      if args[:with_scores]
-        val = from_redis redis.zrangebyscore(key, min, max, args)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrangebyscore(key, min, max, args)
-      end
+      from_redis redis.zrangebyscore(key, min, max, args)
     end
 
     # Forwards compat (not yet implemented in Redis)
@@ -127,12 +114,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      if args[:with_scores]
-        val = from_redis redis.zrevrangebyscore(key, min, max, args)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrevrangebyscore(key, min, max, args)
-      end
+      from_redis redis.zrevrangebyscore(key, min, max, args)
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -288,7 +270,7 @@ class Redis
       redis.zcard(key)
     end
     alias_method :size, :length
-    
+
     # The number of members within a range of scores. Redis: ZCOUNT
     def range_size(min, max)
       redis.zcount(key, min, max)
@@ -304,14 +286,6 @@ class Redis
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
-    end
-
-    def group_set_with_scores(set_with_scores)
-      ret = []
-      while k = set_with_scores.shift and v = set_with_scores.shift
-        ret << [k, v.to_f]
-      end
-      ret
     end
   end
 end
