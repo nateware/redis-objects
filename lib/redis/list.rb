@@ -81,6 +81,11 @@ class Redis
     end
     alias_method :slice, :[]
 
+    # Same functionality as Ruby arrays.
+    def []=(index, value)
+      redis.lset(key, index, value)
+    end
+
     # Delete the element(s) from the list that match name. If count is specified,
     # only the first-N (if positive) or last-N (if negative) will be removed.
     # Use .del to completely delete the entire key.
