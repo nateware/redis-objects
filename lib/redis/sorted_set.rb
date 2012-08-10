@@ -191,7 +191,7 @@ class Redis
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
-      redis.zinterstore(name, key, *keys_from_objects(sets))
+      redis.zinterstore(name, keys_from_objects([self] + sets))
     end
 
     # Return the union with another set.  Can pass it either another set
@@ -214,7 +214,7 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      redis.zunionstore(name, key, *keys_from_objects(sets))
+      redis.zunionstore(name, keys_from_objects([self] + sets))
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -276,7 +276,7 @@ class Redis
       redis.zcard(key)
     end
     alias_method :size, :length
-    
+
     # The number of members within a range of scores. Redis: ZCOUNT
     def range_size(min, max)
       redis.zcount(key, min, max)
