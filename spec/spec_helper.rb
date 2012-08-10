@@ -1,5 +1,5 @@
 require 'rubygems'  # poor people still on 1.8
-gem 'redis', '>= 2.1.1'
+gem 'redis', '>= 3.0.0'
 require 'redis'
 
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
@@ -28,7 +28,8 @@ at_exit do
   puts "=> Killing #{REDIS_BIN} with pid #{pid}"
   Process.kill "TERM", pid
   Process.kill "KILL", pid
-  File.unlink REDIS_PID, REDIS_DUMP
+  File.unlink REDIS_PID
+  File.unlink REDIS_DUMP if File.exists? REDIS_DUMP
 end
 
 # Grab a global handle

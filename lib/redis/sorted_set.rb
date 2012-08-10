@@ -84,8 +84,7 @@ class Redis
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
-        val = from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
-        group_set_with_scores(val)
+        from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
       else
         from_redis redis.zrange(key, start_index, end_index)
       end
@@ -94,8 +93,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
-        val = from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
-        group_set_with_scores(val)
+        from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
       else
         from_redis redis.zrevrange(key, start_index, end_index)
       end
@@ -112,12 +110,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      if args[:with_scores]
-        val = from_redis redis.zrangebyscore(key, min, max, args)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrangebyscore(key, min, max, args)
-      end
+      from_redis redis.zrangebyscore(key, min, max, args)
     end
 
     # Forwards compat (not yet implemented in Redis)
@@ -127,12 +120,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      if args[:with_scores]
-        val = from_redis redis.zrevrangebyscore(key, min, max, args)
-        group_set_with_scores(val)
-      else
-        from_redis redis.zrevrangebyscore(key, min, max, args)
-      end
+      from_redis redis.zrevrangebyscore(key, min, max, args)
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -304,14 +292,6 @@ class Redis
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
-    end
-
-    def group_set_with_scores(set_with_scores)
-      ret = []
-      while k = set_with_scores.shift and v = set_with_scores.shift
-        ret << [k, v.to_f]
-      end
-      ret
     end
   end
 end
