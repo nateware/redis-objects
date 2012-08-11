@@ -781,6 +781,7 @@ describe Redis::SortedSet do
     @set['b'] = 5
     @set['b'] = 6
     @set.score('b').should == 6
+    @set.score('f').should == nil
     @set.delete('c')
     @set.to_s.should == 'a, b'
     @set.should == ['a','b']
