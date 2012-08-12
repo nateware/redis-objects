@@ -41,7 +41,7 @@ class Redis
         when -1 then nil  # Ruby does this (a bit weird)
         end
       else
-        score(index)
+        result = score(index) || 0 # handles a nil score
       end
     end
     alias_method :slice, :[]
@@ -50,7 +50,9 @@ class Redis
     # specified element does not exist in the sorted set, or the key does not exist
     # at all, nil is returned. Redis: ZSCORE.
     def score(member)
-      redis.zscore(key, to_redis(member)).to_f
+      result = redis.zscore(key, to_redis(member))
+
+      result.to_f unless result.nil?
     end
 
     # Return the rank of the member in the sorted set, with scores ordered from
