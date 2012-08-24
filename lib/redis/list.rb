@@ -23,7 +23,7 @@ class Redis
 	
 		# Add a member before or after pivot in the list. Redis: LINSERT
 		def insert(where,pivot,value)
-			redis.linsert(key,where,to_redis(pivot),to_redis(value)
+			redis.linsert(key,where,to_redis(pivot),to_redis(value))
 		end
 
     # Add a member to the end of the list. Redis: RPUSH
