@@ -230,6 +230,15 @@ describe Redis::List do
       list2.should == ["b"]
     end
 
+		it "should handle insert" do
+			@list << 'b' << 'd'
+			@list.insert(:before,'b','a')
+			@list.insert(:after,'b','c')
+			@list.insert("before",'a','z')
+			@list.insert("after",'d','e')
+			@list.should == ['z','a','b','c','d','e']
+		end
+
     it "should handle lists of complex data types" do
       @list.options[:marshal] = true
       v1 = {:json => 'data'}
