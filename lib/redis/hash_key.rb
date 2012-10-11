@@ -135,6 +135,13 @@ class Redis
       hsh
     end
 
+    # Get values in bulk, takes an array of keys as arguments.
+    # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
+    def bulk_values(*keys)
+      res = redis.hmget(key, *keys.flatten)
+      keys.inject([]){|collection, k| collection << from_redis(res.shift)}
+    end
+
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, val = 1)
       ret = redis.hincrby(key, field, val)
