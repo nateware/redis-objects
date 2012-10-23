@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+gem 'redis'
+gem 'redis-namespace'
+gem 'bacon'
+gem 'jeweler'
+gem 'activerecord'

@@ -21,7 +21,7 @@ rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
 end
 
-# require 'rake/testtask'
+# require 'rdoc/task'
 # Rake::TestTask.new(:spec) do |spec|
 #   spec.libs << 'lib' << 'spec'
 #   spec.pattern = 'spec/**/*_spec.rb'
@@ -30,7 +30,7 @@ end
 
 desc "run all the specs"
 task :test do
-  sh "bacon spec/*_spec.rb"
+  sh "bundle exec bacon spec/*_spec.rb"
 end
 
 
@@ -51,7 +51,7 @@ task :spec => :check_dependencies
 
 task :default => :spec
 
-require 'rake/rdoctask'
+require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
