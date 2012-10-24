@@ -694,6 +694,15 @@ describe Redis::Set do
     @set.redis.del('spec/set2')
   end
 
+  it "should handle variadic sadd operations" do
+     @set.should.be.empty
+     @set << 'a'
+     @set.merge('b', 'c')
+     @set.members.sort.should == ['a', 'b', 'c']
+     @set.merge(['d','c','e'])
+     @set.members.sort.should == ['a', 'b', 'c', 'd', 'e']
+  end
+
   it "should support sorting" do
     @set_1 << 'c' << 'b' << 'a' << 'e' << 'd'
     @set_1.sort.should == %w(a b c d e)
@@ -744,7 +753,7 @@ describe Redis::SortedSet do
     @set_3.clear
   end
 
-  it "should handle sets of simple values" do
+  it "should handle sorted sets of simple values" do
     @set.should.be.empty
     @set['a'] = 11
     @set['a'] = 21
@@ -838,7 +847,7 @@ describe Redis::SortedSet do
     @set.size.should == 3
   end
 
-  it "should support renaming sets" do
+  it "should support renaming sorted sets" do
     @set.should.be.empty
     @set['zynga'] = 151
     @set['playfish'] = 202

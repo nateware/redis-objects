@@ -26,9 +26,15 @@ class Redis
       redis.sadd(key, to_redis(value))
     end
 
-    # Remove and return a random member.  Redis:SPOP
+    # Remove and return a random member.  Redis: SPOP
     def pop
       from_redis redis.spop(key)
+    end
+
+    # Adds the specified values to the set. Only works on redis > 2.4
+    # Redis: SADD
+    def merge(*values)
+      redis.sadd(key, values.flatten.map{|v| to_redis(v)})
     end
 
     # Return all members in the set.  Redis: SMEMBERS
