@@ -1,5 +1,9 @@
 = Changelog for Redis::Objects
 
+== 0.6.1 (24 October 2012)
+
+* Fixed error that incorrectly specified activerecord as a gem dep [nateware]
+
 == 0.6.0 (24 October 2012)
 
 * Add +@set.merge()+ method to add multiple members at once [hfwang] 
