@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "redis-objects"
-  s.version = "0.6.0"
+  s.version = "0.6.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Nate Wiger"]
@@ -50,7 +50,6 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/nateware/redis-objects"
   s.require_paths = ["lib"]
-  s.requirements = ["redis, v3.0.2 or greater"]
   s.rubygems_version = "1.8.24"
   s.summary = "Map Redis types directly to Ruby objects"
 
@@ -59,32 +58,17 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<redis>, [">= 3.0.2"])
-      s.add_runtime_dependency(%q<redis-namespace>, [">= 0"])
-      s.add_runtime_dependency(%q<bacon>, [">= 0"])
-      s.add_runtime_dependency(%q<jeweler>, [">= 0"])
-      s.add_runtime_dependency(%q<activerecord>, [">= 0"])
       s.add_development_dependency(%q<bacon>, [">= 0"])
       s.add_development_dependency(%q<redis-namespace>, [">= 1.2.0"])
-      s.add_runtime_dependency(%q<redis>, [">= 3.0.2"])
     else
       s.add_dependency(%q<redis>, [">= 3.0.2"])
-      s.add_dependency(%q<redis-namespace>, [">= 0"])
-      s.add_dependency(%q<bacon>, [">= 0"])
-      s.add_dependency(%q<jeweler>, [">= 0"])
-      s.add_dependency(%q<activerecord>, [">= 0"])
       s.add_dependency(%q<bacon>, [">= 0"])
       s.add_dependency(%q<redis-namespace>, [">= 1.2.0"])
-      s.add_dependency(%q<redis>, [">= 3.0.2"])
     end
   else
     s.add_dependency(%q<redis>, [">= 3.0.2"])
-    s.add_dependency(%q<redis-namespace>, [">= 0"])
-    s.add_dependency(%q<bacon>, [">= 0"])
-    s.add_dependency(%q<jeweler>, [">= 0"])
-    s.add_dependency(%q<activerecord>, [">= 0"])
     s.add_dependency(%q<bacon>, [">= 0"])
     s.add_dependency(%q<redis-namespace>, [">= 1.2.0"])
-    s.add_dependency(%q<redis>, [">= 3.0.2"])
   end
 end
 
