@@ -596,18 +596,18 @@ describe Redis::Set do
     @set.should.be.empty
     @set << 'a' << 'a' << 'a'
     @set.should == ['a']
+    @set.to_s.should == 'a'
     @set.get.should == ['a']
     @set << 'b' << 'b'
-    @set.to_s.should == 'a, b'
-    @set.should == ['a','b']
-    @set.members.should == ['a','b']
-    @set.members.reverse.should == ['b','a']  # common question
-    @set.get.should == ['a','b']
+    @set.sort.should == ['a','b']
+    @set.members.sort.should == ['a','b']
+    @set.members.sort.reverse.should == ['b','a']  # common question
+    @set.get.sort.should == ['a','b']
     @set << 'c'
     @set.sort.should == ['a','b','c']
     @set.get.sort.should == ['a','b','c']
     @set.delete('c')
-    @set.should == ['a','b']
+    @set.sort.should == ['a','b']
     @set.get.sort.should == ['a','b']
     @set.length.should == 2
     @set.size.should == 2
@@ -623,10 +623,10 @@ describe Redis::Set do
     end
     i.should == @set.length
 
-    coll = @set.collect{|st| st}
+    coll = @set.sort.collect{|st| st}
     coll.should == ['a','b']
-    @set.should == ['a','b']
-    @set.get.should == ['a','b']
+    @set.sort.should == ['a','b']
+    @set.get.sort.should == ['a','b']
 
     @set << 'c'
     @set.member?('c').should.be.true
@@ -695,15 +695,16 @@ describe Redis::Set do
   end
 
   it "should support sorting" do
-    @set_1 << 'a' << 'b' << 'c' << 'd' << 'e'
-    @set_2 << 1 << 2 << 3 << 4 << 5
-    @set_3 << 'm_1' << 'm_2'
+    @set_1 << 'c' << 'b' << 'a' << 'e' << 'd'
     @set_1.sort.should == %w(a b c d e)
-    @set_2.sort.should == %w(1 2 3 4 5)
-
     @set_1.sort(SORT_ORDER).should == %w(e d c b a)
-    @set_3.sort(SORT_BY).should == %w(m_1 m_2)        
+
+    @set_2 << 2 << 4 << 3 << 1 << 5
+    @set_2.sort.should == %w(1 2 3 4 5)
     @set_2.sort(SORT_LIMIT).should == %w(3 4)
+
+    @set_3 << 'm_4' << 'm_5' << 'm_1' << 'm_3' << 'm_2'
+    @set_3.sort(:by => 'm_*').should == %w(m_1 m_2 m_3 m_4 m_5)        
 
     val1 = Redis::Value.new('spec/3/sorted')
     val2 = Redis::Value.new('spec/4/sorted')

@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-gem 'redis'
+gem 'redis', '>= 3.0.2'
 gem 'redis-namespace'
 gem 'bacon'
 gem 'jeweler'

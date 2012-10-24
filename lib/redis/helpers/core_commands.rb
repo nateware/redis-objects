@@ -51,7 +51,7 @@ class Redis
       end
 
       def sort(options={})
-        options[:order] ||= "asc alpha"
+        options[:order] = "asc alpha" if options.keys.count == 0  # compat with Ruby
         redis.sort(key, options)
       end
     end

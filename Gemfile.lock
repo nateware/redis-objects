@@ -39,5 +39,5 @@ DEPENDENCIES
   activerecord
   bacon
   jeweler
-  redis
+  redis (>= 3.0.2)
   redis-namespace

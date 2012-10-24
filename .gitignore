@@ -1,3 +1,4 @@
+.*.swp
 *.gemspec
 nbproject
 pkg/

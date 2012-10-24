@@ -48,7 +48,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/nateware/redis-objects"
   s.require_paths = ["lib"]
-  s.requirements = ["redis, v3.0.0 or greater"]
+  s.requirements = ["redis, v3.0.2 or greater"]
   s.rubygems_version = "1.8.10"
   s.summary = "Map Redis types directly to Ruby objects"
 
