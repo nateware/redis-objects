@@ -12,8 +12,8 @@ begin
     gem.authors = ["Nate Wiger"]
     gem.add_development_dependency "bacon", ">= 0"
     gem.add_development_dependency "redis-namespace", ">= 1.2.0"
-    gem.requirements << 'redis, v3.0.2 or greater'
-    gem.add_dependency('redis', '>= 3.0.2')  # ALSO: update spec/spec_helper.rb
+    #gem.requirements << 'redis, v3.0.2 or greater'
+    #gem.add_dependency('redis', '>= 3.0.2')  # ALSO: update spec/spec_helper.rb
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
