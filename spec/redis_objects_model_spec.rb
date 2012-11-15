@@ -31,6 +31,14 @@ class Roster
   #callable as key
   counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
 
+  # set default expiration
+  value :value_with_expiration, :expiration => 10
+  value :value_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  set :set_with_expiration, :expiration => 10
+  set :set_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  list :list_with_expiration, :expiration => 10
+  list :list_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -106,6 +114,8 @@ describe Redis::Objects do
 
     @custom_roster.basic.reset
     @custom_roster.special.reset
+
+    @roster.value_with_expiration.delete
   end
 
   it "should provide a connection method" do
@@ -813,5 +823,33 @@ describe Redis::Objects do
     @custom_method_roster.basic.reset.should.be.true
     @custom_method_roster.basic.should == 0
     @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
+  end
+
+  it "should set time to live in seconds when expiration option assigned" do
+    @roster.value_with_expiration.value = 'val'
+    @roster.value_with_expiration.ttl.should > 0
+    @roster.value_with_expiration.ttl.should <= 10
+
+    @roster.set_with_expiration << 'val'
+    @roster.set_with_expiration.ttl.should > 0
+    @roster.set_with_expiration.ttl.should <= 10
+
+    @roster.list_with_expiration << 'val'
+    @roster.list_with_expiration.ttl.should > 0
+    @roster.list_with_expiration.ttl.should <= 10
+  end
+
+  it "should set expiration when expireat option assigned" do
+    @roster.value_with_expireat.value = 'val'
+    @roster.value_with_expireat.ttl.should > 0
+    @roster.value_with_expireat.ttl.should <= 10
+
+    @roster.set_with_expireat << 'val'
+    @roster.set_with_expireat.ttl.should > 0
+    @roster.set_with_expireat.ttl.should <= 10
+
+    @roster.list_with_expireat << 'val'
+    @roster.list_with_expireat.ttl.should > 0
+    @roster.list_with_expireat.ttl.should <= 10
   end
 end

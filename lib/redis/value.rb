@@ -11,6 +11,7 @@ class Redis
     include Redis::Helpers::Serialize
 
     attr_reader :key, :options, :redis
+
     def initialize(key, *args)
       super(key, *args)
       @redis.setnx(key, to_redis(@options[:default])) if @options[:default]
@@ -42,5 +43,7 @@ class Redis
     def method_missing(*args)
       self.value.send *args
     end
+
+    expiration_filter :value=
   end
 end
