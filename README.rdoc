@@ -3,4 +3,4 @@
 Add :expiration and :expireat options to Redis::Value, Redis::List and Redis::Set to set default expiration.
 
     value :value_with_expiration, :expiration => 10
-    value :value_with_expireat, :expiration => (Time.now + 1.hour).to_i
+    value :value_with_expireat, :expireat => (Time.now + 1.hour).to_i
