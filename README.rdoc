@@ -1,4 +1,4 @@
-= fork from {https://github.com/nateware/redis-objects}[https://github.com/nateware/redis-objects]
+= forked from {https://github.com/nateware/redis-objects}[https://github.com/nateware/redis-objects]
 
 Add :expiration and :expireat options to Redis::Value, Redis::List and Redis::Set to set default expiration.
 
