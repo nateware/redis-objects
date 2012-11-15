@@ -1,0 +1,62 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activerecord (2.3.18)
+      activesupport (= 2.3.18)
+    activesupport (2.3.18)
+    addressable (2.3.5)
+    bacon (1.2.0)
+    builder (3.2.2)
+    faraday (0.8.8)
+      multipart-post (~> 1.2.0)
+    git (1.2.6)
+    github_api (0.10.1)
+      addressable
+      faraday (~> 0.8.1)
+      hashie (>= 1.2)
+      multi_json (~> 1.4)
+      nokogiri (~> 1.5.2)
+      oauth2
+    hashie (2.0.5)
+    highline (1.6.20)
+    httpauth (0.2.0)
+    jeweler (1.8.8)
+      builder
+      bundler (~> 1.0)
+      git (>= 1.2.5)
+      github_api (= 0.10.1)
+      highline (>= 1.6.15)
+      nokogiri (= 1.5.10)
+      rake
+      rdoc
+    json (1.8.1)
+    jwt (0.1.8)
+      multi_json (>= 1.5)
+    multi_json (1.8.2)
+    multi_xml (0.5.5)
+    multipart-post (1.2.0)
+    nokogiri (1.5.10)
+    oauth2 (0.9.2)
+      faraday (~> 0.8)
+      httpauth (~> 0.2)
+      jwt (~> 0.1.4)
+      multi_json (~> 1.0)
+      multi_xml (~> 0.5)
+      rack (~> 1.2)
+    rack (1.5.2)
+    rake (10.1.0)
+    rdoc (4.0.1)
+      json (~> 1.4)
+    redis (3.0.6)
+    redis-namespace (1.4.1)
+      redis (~> 3.0.4)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  activerecord
+  bacon
+  jeweler
+  redis (>= 3.0.2)
+  redis-namespace
