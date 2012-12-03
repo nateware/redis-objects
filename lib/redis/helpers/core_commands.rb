@@ -35,7 +35,7 @@ class Redis
       end
 
       def expireat(unixtime)
-        redis.expire key, unixtime
+        redis.expireat key, unixtime
       end
 
       def persist
