@@ -69,6 +69,7 @@ You can include Redis::Objects in any type of class:
       value :at_bat
       sorted_set :rank, :global => true
       hash_key :pitchers_faced  # "hash" is taken by Ruby
+      list :coaches, :marshal => true
     end
 
 Familiar Ruby array operations Just Work (TM):
