@@ -47,6 +47,7 @@ config/initializers/redis.rb is a good place for this.)
 
     require 'redis'
     require 'redis/objects'
+    # if you are also using a list or any other complex object, please make sure to "require 'redis/list'" respectively
     Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
@@ -69,6 +70,7 @@ You can include Redis::Objects in any type of class:
       value :at_bat
       sorted_set :rank, :global => true
       hash_key :pitchers_faced  # "hash" is taken by Ruby
+      list :coaches, :marshal => true
     end
 
 Familiar Ruby array operations Just Work (TM):
