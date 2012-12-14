@@ -52,7 +52,7 @@ class Redis
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
       val = redis.incrby(key, by).to_i
-      block_given? ? rewindable_block(:decrement, val, &block) : val
+      block_given? ? rewindable_block(:decrement, by, val, &block) : val
     end
     alias_method :incr, :increment
 
@@ -63,7 +63,7 @@ class Redis
     # method is aliased as incr() for brevity.
     def decrement(by=1, &block)
       val = redis.decrby(key, by).to_i
-      block_given? ? rewindable_block(:increment, val, &block) : val
+      block_given? ? rewindable_block(:increment, by, val, &block) : val
     end
     alias_method :decr, :decrement
 
@@ -85,16 +85,16 @@ class Redis
     private
 
     # Implements atomic increment/decrement blocks
-    def rewindable_block(rewind, value, &block)
+    def rewindable_block(rewind, by, value, &block)
       raise ArgumentError, "Missing block to rewindable_block somehow" unless block_given?
       ret = nil
       begin
         ret = yield value
       rescue
-        send(rewind)
+        send(rewind, by)
         raise
       end
-      send(rewind) if ret.nil?
+      send(rewind, by) if ret.nil?
       ret
     end
   end
