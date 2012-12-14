@@ -60,7 +60,7 @@ class Redis
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.incrby(redis_field_key(name, id), by).to_i
-          block_given? ? rewindable_block(:decrement_counter, name, id, value, &block) : value
+          block_given? ? rewindable_block(:decrement_counter, name, id, by, value, &block) : value
         end
 
         # Decrement a counter with the specified name and id.  Accepts a block
@@ -71,7 +71,7 @@ class Redis
           verify_counter_defined!(name, id)
           initialize_counter!(name, id)
           value = redis.decrby(redis_field_key(name, id), by).to_i
-          block_given? ? rewindable_block(:increment_counter, name, id, value, &block) : value
+          block_given? ? rewindable_block(:increment_counter, name, id, by, value, &block) : value
         end
 
         # Reset a counter to its starting value.
@@ -111,17 +111,17 @@ class Redis
         end
 
         # Implements increment/decrement blocks on a class level
-        def rewindable_block(rewind, name, id, value, &block) #:nodoc:
+        def rewindable_block(rewind, name, id, by, value, &block) #:nodoc:
           # Unfortunately this is almost exactly duplicated from Redis::Counter
           raise ArgumentError, "Missing block to rewindable_block somehow" unless block_given?
           ret = nil
           begin
             ret = yield value
           rescue
-            send(rewind, name, id)
+            send(rewind, name, id, by)
             raise
           end
-          send(rewind, name, id) if ret.nil?
+          send(rewind, name, id, by) if ret.nil?
           ret
         end
       end

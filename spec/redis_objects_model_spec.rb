@@ -261,9 +261,24 @@ describe Redis::Objects do
       nil  # should rewind
     end
     @roster.available_slots.should == 8
+
+    @roster.available_slots.should == 8
+    @roster.available_slots.decr(4) do |cnt|
+      @roster.available_slots.should == 4
+      nil  # should rewind
+    end
+    @roster.available_slots.should == 8
     
     @roster.available_slots.should == 8
     @roster.available_slots.incr do |cnt|
+      if 1 == 2  # should rewind
+        true
+      end
+    end
+    @roster.available_slots.should == 8
+
+    @roster.available_slots.should == 8
+    @roster.available_slots.incr(5) do |cnt|
       if 1 == 2  # should rewind
         true
       end
@@ -323,7 +338,22 @@ describe Redis::Objects do
     Roster.get_counter(:available_slots, @roster.id).should == 8
 
     Roster.get_counter(:available_slots, @roster.id).should == 8
+    Roster.decrement_counter(:available_slots, @roster.id, 4) do |cnt|
+      Roster.get_counter(:available_slots, @roster.id).should == 4
+      nil  # should rewind
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+
+    Roster.get_counter(:available_slots, @roster.id).should == 8
     Roster.increment_counter(:available_slots, @roster.id) do |cnt|
+      if 1 == 2  # should rewind
+        true
+      end
+    end
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+
+    Roster.get_counter(:available_slots, @roster.id).should == 8
+    Roster.increment_counter(:available_slots, @roster.id, 4) do |cnt|
       if 1 == 2  # should rewind
         true
       end
