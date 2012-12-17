@@ -13,6 +13,7 @@ class Redis
     attr_reader :key, :options, :redis
     def initialize(key, *args)
       super(key, *args)
+      @expiration = @options[:expiration]
       @redis.setnx(key, to_redis(@options[:default])) if @options[:default]
     end
 
@@ -21,6 +22,9 @@ class Redis
         delete
       else
         redis.set key, to_redis(val)
+        if @expiration
+          redis.expire key, @expiration
+        end
       end
     end
     alias_method :set, :value=
