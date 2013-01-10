@@ -30,7 +30,7 @@ end
 
 desc "run all the specs"
 task :test do
-  sh "bundle exec bacon spec/*_spec.rb"
+  sh "bacon spec/*_spec.rb"
 end
 
 

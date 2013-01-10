@@ -1,7 +1,16 @@
 # Redis::Objects - Lightweight object layer around redis-rb
 # See README.rdoc for usage and approach.
 require 'redis'
+
 class Redis
+  autoload :Counter,   'redis/counter'
+  autoload :List,      'redis/list'
+  autoload :Lock,      'redis/lock'
+  autoload :Set,       'redis/set'
+  autoload :SortedSet, 'redis/sorted_set'
+  autoload :Value,     'redis/value'
+  autoload :HashKey,   'redis/hash_key'
+
   #
   # Redis::Objects enables high-performance atomic operations in your app
   # by leveraging the atomic features of the Redis server.  To use Redis::Objects,
@@ -38,13 +47,13 @@ class Redis
   module Objects
     dir = File.expand_path(__FILE__.sub(/\.rb$/,''))
 
-    autoload :Counters, File.join(dir, 'counters')
-    autoload :Lists, File.join(dir, 'lists')
-    autoload :Locks, File.join(dir, 'locks')
-    autoload :Sets, File.join(dir, 'sets')
-    autoload :SortedSets, File.join(dir, 'sorted_sets')
-    autoload :Values, File.join(dir, 'values')
-    autoload :Hashes, File.join(dir, 'hashes')
+    autoload :Counters,   'redis/objects/counters'
+    autoload :Lists,      'redis/objects/lists'
+    autoload :Locks,      'redis/objects/locks'
+    autoload :Sets,       'redis/objects/sets'
+    autoload :SortedSets, 'redis/objects/sorted_sets'
+    autoload :Values,     'redis/objects/values'
+    autoload :Hashes,     'redis/objects/hashes'
 
     class NotConnected < StandardError; end
     class NilObjectId  < StandardError; end

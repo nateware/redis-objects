@@ -2,7 +2,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/objects'
-Redis::Objects.redis = $redis
+# $redis used automatically
 
 begin
   require 'active_record'
