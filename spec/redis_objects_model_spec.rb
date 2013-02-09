@@ -48,7 +48,7 @@ class ExtendedRoster < Roster
   value :extended_value
   list :extended_list
   set :extended_set
-  # sorted_set :rank
+  sorted_set :extended_sorted_set
 end
 
 class CustomRoster < Roster
@@ -143,6 +143,10 @@ describe Redis::Objects do
     @extended_roster.outfielders.should.be.kind_of(Redis::Set)
     @extended_roster.extended_set.should.be.kind_of(Redis::Set)
     @roster.respond_to?(:extended_set).should == false
+
+    @extended_roster.rank.should.be.kind_of(Redis::SortedSet)
+    @extended_roster.extended_sorted_set.should.be.kind_of(Redis::SortedSet)
+    @roster.respond_to?(:extended_sorted_set).should == false
   end
 
   it "should provide a connection method" do
