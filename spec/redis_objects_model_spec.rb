@@ -44,7 +44,7 @@ class ExtendedRoster < Roster
   # No explicit Redis::Objects
   counter :extended_counter
   hash_key :extended_hash_key
-  # lock :resort, :timeout => 2
+  lock :extended
   # value :starting_pitcher, :marshal => true
   # list :player_stats, :marshal => true
   # set :outfielders, :marshal => true
@@ -127,6 +127,10 @@ describe Redis::Objects do
     @extended_roster.contact_information.should.be.kind_of(Redis::HashKey)
     @extended_roster.extended_hash_key.should.be.kind_of(Redis::HashKey)
     @roster.respond_to?(:extended_hash_key).should == false
+
+    @extended_roster.resort_lock.should.be.kind_of(Redis::Lock)
+    @extended_roster.extended_lock.should.be.kind_of(Redis::Lock)
+    @roster.respond_to?(:extended_lock).should == false
   end
 
 
