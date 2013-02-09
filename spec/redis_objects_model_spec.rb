@@ -40,17 +40,6 @@ class VanillaRoster < Roster
   # No explicit Redis::Objects
 end
 
-class ExtendedRoster < Roster
-  # No explicit Redis::Objects
-  counter :extended_counter
-  hash_key :extended_hash_key
-  lock :extended
-  value :extended_value
-  list :extended_list
-  set :extended_set
-  sorted_set :extended_sorted_set
-end
-
 class CustomRoster < Roster
   include Redis::Objects
 
@@ -83,9 +72,8 @@ describe Redis::Objects do
     @roster_2 = Roster.new(2)
     @roster_3 = Roster.new(3)
 
-    @vanilla_roster   = VanillaRoster.new
-    @custom_roster    = CustomRoster.new
-    @extended_roster  = ExtendedRoster.new
+    @vanilla_roster = VanillaRoster.new
+    @custom_roster  = CustomRoster.new
 
     @roster.available_slots.reset
     @roster.pitchers.reset
@@ -117,36 +105,6 @@ describe Redis::Objects do
 
     @custom_roster.basic.reset
     @custom_roster.special.reset
-  end
-
-  it "should pick up objects and class methods from superclass automatically" do
-    @extended_roster.basic.should.be.kind_of(Redis::Counter)
-    @extended_roster.extended_counter.should.be.kind_of(Redis::Counter)
-    @roster.respond_to?(:extended_counter).should == false
-
-    @extended_roster.contact_information.should.be.kind_of(Redis::HashKey)
-    @extended_roster.extended_hash_key.should.be.kind_of(Redis::HashKey)
-    @roster.respond_to?(:extended_hash_key).should == false
-
-    @extended_roster.resort_lock.should.be.kind_of(Redis::Lock)
-    @extended_roster.extended_lock.should.be.kind_of(Redis::Lock)
-    @roster.respond_to?(:extended_lock).should == false
-
-    @extended_roster.starting_pitcher.should.be.kind_of(Redis::Value)
-    @extended_roster.extended_value.should.be.kind_of(Redis::Value)
-    @roster.respond_to?(:extended_value).should == false
-
-    @extended_roster.player_stats.should.be.kind_of(Redis::List)
-    @extended_roster.extended_list.should.be.kind_of(Redis::List)
-    @roster.respond_to?(:extended_list).should == false
-
-    @extended_roster.outfielders.should.be.kind_of(Redis::Set)
-    @extended_roster.extended_set.should.be.kind_of(Redis::Set)
-    @roster.respond_to?(:extended_set).should == false
-
-    @extended_roster.rank.should.be.kind_of(Redis::SortedSet)
-    @extended_roster.extended_sorted_set.should.be.kind_of(Redis::SortedSet)
-    @roster.respond_to?(:extended_sorted_set).should == false
   end
 
   it "should provide a connection method" do
@@ -884,5 +842,56 @@ describe Redis::Objects do
     @custom_method_roster.basic.reset.should.be.true
     @custom_method_roster.basic.should == 0
     @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
+  end
+
+  it "should pick up class methods from superclass automatically" do
+    CounterRoster = Class.new(Roster)
+    CounterRoster.counter :extended_counter
+    extended_roster = CounterRoster.new
+    extended_roster.basic.should.be.kind_of(Redis::Counter)
+    extended_roster.extended_counter.should.be.kind_of(Redis::Counter)
+    @roster.respond_to?(:extended_counter).should == false
+
+    HashKeyRoster = Class.new(Roster)
+    HashKeyRoster.hash_key :extended_hash_key
+    extended_roster = HashKeyRoster.new
+    extended_roster.contact_information.should.be.kind_of(Redis::HashKey)
+    extended_roster.extended_hash_key.should.be.kind_of(Redis::HashKey)
+    @roster.respond_to?(:extended_hash_key).should == false
+
+    LockRoster = Class.new(Roster)
+    LockRoster.lock :extended
+    extended_roster = LockRoster.new
+    extended_roster.resort_lock.should.be.kind_of(Redis::Lock)
+    extended_roster.extended_lock.should.be.kind_of(Redis::Lock)
+    @roster.respond_to?(:extended_lock).should == false
+
+    ValueRoster = Class.new(Roster)
+    ValueRoster.value :extended_value
+    extended_roster = ValueRoster.new
+    extended_roster.starting_pitcher.should.be.kind_of(Redis::Value)
+    extended_roster.extended_value.should.be.kind_of(Redis::Value)
+    @roster.respond_to?(:extended_value).should == false
+
+    ListRoster = Class.new(Roster)
+    ListRoster.list :extended_list
+    extended_roster = ListRoster.new
+    extended_roster.player_stats.should.be.kind_of(Redis::List)
+    extended_roster.extended_list.should.be.kind_of(Redis::List)
+    @roster.respond_to?(:extended_list).should == false
+
+    SetRoster = Class.new(Roster)
+    SetRoster.set :extended_set
+    extended_roster = SetRoster.new
+    extended_roster.outfielders.should.be.kind_of(Redis::Set)
+    extended_roster.extended_set.should.be.kind_of(Redis::Set)
+    @roster.respond_to?(:extended_set).should == false
+
+    SortedSetRoster = Class.new(Roster)
+    SortedSetRoster.sorted_set :extended_sorted_set
+    extended_roster = SortedSetRoster.new
+    extended_roster.rank.should.be.kind_of(Redis::SortedSet)
+    extended_roster.extended_sorted_set.should.be.kind_of(Redis::SortedSet)
+    @roster.respond_to?(:extended_sorted_set).should == false
   end
 end
