@@ -46,7 +46,7 @@ class ExtendedRoster < Roster
   hash_key :extended_hash_key
   lock :extended
   value :extended_value
-  # list :player_stats, :marshal => true
+  list :extended_list
   # set :outfielders, :marshal => true
   # sorted_set :rank
 end
@@ -135,6 +135,10 @@ describe Redis::Objects do
     @extended_roster.starting_pitcher.should.be.kind_of(Redis::Value)
     @extended_roster.extended_value.should.be.kind_of(Redis::Value)
     @roster.respond_to?(:extended_value).should == false
+
+    @extended_roster.player_stats.should.be.kind_of(Redis::List)
+    @extended_roster.extended_list.should.be.kind_of(Redis::List)
+    @roster.respond_to?(:extended_list).should == false
   end
 
   it "should provide a connection method" do
