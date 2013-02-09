@@ -22,7 +22,7 @@ class Redis
         def counter(name, options={})
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
-          @redis_objects[name.to_sym] = options.merge(:type => :counter)
+          redis_objects[name.to_sym] = options.merge(:type => :counter)
           klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
@@ -77,7 +77,7 @@ class Redis
         # Reset a counter to its starting value.
         def reset_counter(name, id=nil, to=nil)
           verify_counter_defined!(name, id)
-          to = @redis_objects[name][:start] if to.nil?
+          to = redis_objects[name][:start] if to.nil?
           redis.set(redis_field_key(name, id), to.to_i)
           true
         end
@@ -85,7 +85,7 @@ class Redis
         # Set a counter to its starting value and return the old value.
         def getset_counter(name, id=nil, to=nil)
           verify_counter_defined!(name, id)
-          to = @redis_objects[name][:start] if to.nil?
+          to = redis_objects[name][:start] if to.nil?
           redis.getset(redis_field_key(name, id), to.to_i).to_i
         end
 
@@ -93,19 +93,19 @@ class Redis
 
         def verify_counter_defined!(name, id) #:nodoc:
           raise NoMethodError, "Undefined counter :#{name} for class #{self.name}" unless counter_defined?(name)
-          if id.nil? and !@redis_objects[name][:global]
+          if id.nil? and !redis_objects[name][:global]
             raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
           end
         end
 
         def counter_defined?(name) #:nodoc:
-          @redis_objects && @redis_objects.has_key?(name)
+          redis_objects && redis_objects.has_key?(name)
         end
 
         def initialize_counter!(name, id) #:nodoc:
           key = redis_field_key(name, id)
           unless @initialized_counters[key]
-            redis.setnx(key, @redis_objects[name][:start])
+            redis.setnx(key, redis_objects[name][:start])
           end
           @initialized_counters[key] = true
         end
