@@ -14,7 +14,7 @@ class Redis
         # Define a new hash key.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def hash_key(name, options={})
-          @redis_objects[name.to_sym] = options.merge(:type => :dict)
+          redis_objects[name.to_sym] = options.merge(:type => :dict)
           klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods

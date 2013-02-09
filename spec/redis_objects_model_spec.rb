@@ -42,8 +42,8 @@ end
 
 class ExtendedRoster < Roster
   # No explicit Redis::Objects
-  counter :extended_basic
-  # hash_key :contact_information, :marshal_keys=>{'updated_at'=>true}
+  counter :extended_counter
+  hash_key :extended_hash_key
   # lock :resort, :timeout => 2
   # value :starting_pitcher, :marshal => true
   # list :player_stats, :marshal => true
@@ -119,9 +119,14 @@ describe Redis::Objects do
     @custom_roster.special.reset
   end
 
-  it "should pick up objects from superclass automatically" do
-    @roster.respond_to?(:extended_basic).should == false
-    @extended_roster.extended_basic.should.be.kind_of(Redis::Counter)
+  it "should pick up objects and class methods from superclass automatically" do
+    @extended_roster.basic.should.be.kind_of(Redis::Counter)
+    @extended_roster.extended_counter.should.be.kind_of(Redis::Counter)
+    @roster.respond_to?(:extended_counter).should == false
+
+    @extended_roster.contact_information.should.be.kind_of(Redis::HashKey)
+    @extended_roster.extended_hash_key.should.be.kind_of(Redis::HashKey)
+    @roster.respond_to?(:extended_hash_key).should == false
   end
 
 
