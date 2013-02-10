@@ -7,3 +7,4 @@ spec/*.sqlite3
 spec/redis.pid
 .bundle/
 dump.rdb
+Gemfile.lock
