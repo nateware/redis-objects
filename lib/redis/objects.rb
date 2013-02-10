@@ -26,7 +26,7 @@ class Redis
   #     lock :archive_game
   #     set :player_ids
   #   end
-  # 
+  #
   # The, you can use these counters both for bookeeping and as atomic actions:
   #
   #   @game = Game.find(id)
@@ -70,7 +70,7 @@ class Redis
         klass.instance_variable_set('@redis_objects', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
-        
+
         # Pull in each object type
         klass.send :include, Redis::Objects::Counters
         klass.send :include, Redis::Objects::Lists
@@ -87,6 +87,10 @@ class Redis
       attr_writer   :redis
       attr_accessor :redis_objects
       def redis() @redis ||= Objects.redis end
+
+      def redis_objects
+        @redis_objects ||= {}
+      end
 
       # Set the Redis redis_prefix to use. Defaults to model_name
       def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
