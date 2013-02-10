@@ -17,7 +17,7 @@ class Redis
         def lock(name, options={})
           options[:timeout] ||= 5  # seconds
           lock_name = "#{name}_lock"
-          @redis_objects[lock_name.to_sym] = options.merge(:type => :lock)
+          redis_objects[lock_name.to_sym] = options.merge(:type => :lock)
           klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
@@ -46,7 +46,7 @@ class Redis
           verify_lock_defined!(name)
           raise ArgumentError, "Missing block to #{self.name}.obtain_lock" unless block_given?
           lock_name = "#{name}_lock"
-          Redis::Lock.new(redis_field_key(lock_name, id), redis, @redis_objects[lock_name.to_sym]).lock(&block)
+          Redis::Lock.new(redis_field_key(lock_name, id), redis, redis_objects[lock_name.to_sym]).lock(&block)
         end
 
         # Clear the lock.  Use with care - usually only in an Admin page to clear
@@ -57,9 +57,9 @@ class Redis
         end
 
         private
-        
+
         def verify_lock_defined!(name)
-          unless @redis_objects.has_key?("#{name}_lock".to_sym)
+          unless redis_objects.has_key?("#{name}_lock".to_sym)
             raise Redis::Objects::UndefinedLock, "Undefined lock :#{name} for class #{self.name}"
           end
         end

@@ -1,6 +1,8 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+require 'redis/objects'
+
 class Roster
   include Redis::Objects
   counter :available_slots, :start => 10
@@ -17,7 +19,7 @@ class Roster
   counter :total_players_online, :global => true
   set :all_players_online, :global => true
   value :last_player, :global => true
-  
+
   # custom keys
   counter :player_totals, :key => 'players/#{username}/total'
   list :all_player_stats, :key => 'players:all_stats', :global => true
@@ -49,14 +51,14 @@ class MethodRoster
   def increment(attribute, by=1)
     42
   end
-  
+
   def initialize(id=1) @id = id end
   def id; @id; end
 end
 
 class CustomMethodRoster < MethodRoster
   include Redis::Objects
-  
+
   attr_accessor :counter
   counter :basic
 end
@@ -65,7 +67,7 @@ describe Redis::Objects do
   before do
     @roster  = Roster.new
     @roster2 = Roster.new
-    
+
     @roster_1 = Roster.new(1)
     @roster_2 = Roster.new(2)
     @roster_3 = Roster.new(3)
@@ -93,7 +95,7 @@ describe Redis::Objects do
     Roster.all_players_online.clear
     Roster.last_player.delete
     Roster.weird_key.clear
-    
+
     @roster.player_totals.clear
     @roster.all_player_stats.clear
     @roster.total_wins.clear
@@ -170,11 +172,11 @@ describe Redis::Objects do
        @roster.respond_to?(m).should == true
      end
   end
-  
+
   it "should support increment/decrement of counters" do
     @roster.available_slots.key.should == 'roster:1:available_slots'
     @roster.available_slots.should == 10
-    
+
     # math proxy ops
     (@roster.available_slots == 10).should.be.true
     (@roster.available_slots <= 10).should.be.true
@@ -201,7 +203,7 @@ describe Redis::Objects do
     @roster2.basic.decrement.should == 0
     @roster.basic.get.should == 0
   end
-  
+
   it "should support class-level increment/decrement of counters" do
     Roster.get_counter(:available_slots, @roster.id).should == 10
     Roster.increment_counter(:available_slots, @roster.id).should == 11
@@ -222,7 +224,7 @@ describe Redis::Objects do
     Roster.total_players_online.decrement(2).should == 1
     Roster.total_players_online.reset.should.be.true
     Roster.total_players_online.should == 0
-    
+
     Roster.get_counter(:total_players_online).should == 0
     Roster.increment_counter(:total_players_online).should == 1
     Roster.increment_counter(:total_players_online, nil, 3).should == 4
@@ -244,14 +246,14 @@ describe Redis::Objects do
     end
     @roster.available_slots.should == 9
     a.should.be.true
-    
+
     @roster.available_slots.should == 9
     @roster.available_slots.decr do |cnt|
       @roster.available_slots.should == 8
       false
     end
     @roster.available_slots.should == 8
-    
+
     @roster.available_slots.should == 8
     @roster.available_slots.decr do |cnt|
       @roster.available_slots.should == 7
@@ -265,7 +267,7 @@ describe Redis::Objects do
       nil  # should rewind
     end
     @roster.available_slots.should == 8
-    
+
     @roster.available_slots.should == 8
     @roster.available_slots.incr do |cnt|
       if 1 == 2  # should rewind
@@ -298,7 +300,7 @@ describe Redis::Objects do
     rescue
     end
     @roster.available_slots.should == 9
-    
+
     # check return value from the block
     value =
       @roster.available_slots.decr do |cnt|
@@ -433,7 +435,7 @@ describe Redis::Objects do
     error.should.be.nil
     Roster.redis.get("roster:2:resort_lock").should.be.nil
   end
-  
+
   it "should handle simple values" do
     @roster.starting_pitcher.should == nil
     @roster.starting_pitcher = 'Trevor Hoffman'
@@ -542,7 +544,7 @@ describe Redis::Objects do
     @roster.outfielders.get.sort.should == ['a','b']
     @roster.outfielders.length.should == 2
     @roster.outfielders.size.should == 2
-    
+
     i = 0
     @roster.outfielders.each do |st|
       i += 1
@@ -562,7 +564,7 @@ describe Redis::Objects do
     coll.should == ['c']
     @roster.outfielders.sort.should == ['a','b','c']
   end
-  
+
   it "should handle set intersections and unions" do
     @roster_1.outfielders << 'a' << 'b' << 'c' << 'd' << 'e'
     @roster_2.outfielders << 'c' << 'd' << 'e' << 'f' << 'g'
@@ -678,7 +680,7 @@ describe Redis::Objects do
     Roster.all_players_online.get.sort.should == ['a','b']
     Roster.all_players_online.length.should == 2
     Roster.all_players_online.size.should == 2
-    
+
     i = 0
     Roster.all_players_online.each do |st|
       i += 1
@@ -698,7 +700,7 @@ describe Redis::Objects do
     coll.should == ['c']
     Roster.all_players_online.sort.should == ['a','b','c']
   end
-  
+
   it "should handle class-level global values" do
     Roster.last_player.should == nil
     Roster.last_player = 'Trevor Hoffman'
@@ -732,7 +734,7 @@ describe Redis::Objects do
     @roster2.all_player_stats.should == ['b','a']
     @roster2.all_player_stats << 'b'
     @roster.all_player_stats.should == ['b','a','b']
-    
+
     @roster.last_player.should == nil
     @roster.class.last_player = 'Trevor Hoffman'
     @roster.last_player.should == 'Trevor Hoffman'
@@ -754,7 +756,7 @@ describe Redis::Objects do
     @roster.player_stats.last.should == [1,2,3,[4,5]]
     @roster.player_stats.shift.should == {:json => 'data'}
   end
-  
+
   it "should handle sets of complex data types" do
     @roster.outfielders << {:a => 1}
     @roster.outfielders.members.should == [{:a => 1}]
@@ -774,7 +776,7 @@ describe Redis::Objects do
     end
     a.should.be.true
   end
-  
+
   it "should raise an exception if the timeout is exceeded" do
     @roster.redis.set(@roster.resort_lock.key, 1)
     error = nil
@@ -826,7 +828,7 @@ describe Redis::Objects do
   it "should handle new subclass objects" do
     @custom_roster.special.increment.should == 1
   end
-  
+
   it "should allow passing of increment/decrement to super class" do
     @custom_method_roster = CustomMethodRoster.new
     @custom_method_roster.counter.should.be.nil
@@ -840,5 +842,56 @@ describe Redis::Objects do
     @custom_method_roster.basic.reset.should.be.true
     @custom_method_roster.basic.should == 0
     @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
+  end
+
+  it "should pick up class methods from superclass automatically" do
+    CounterRoster = Class.new(Roster)
+    CounterRoster.counter :extended_counter
+    extended_roster = CounterRoster.new
+    extended_roster.basic.should.be.kind_of(Redis::Counter)
+    extended_roster.extended_counter.should.be.kind_of(Redis::Counter)
+    @roster.respond_to?(:extended_counter).should == false
+
+    HashKeyRoster = Class.new(Roster)
+    HashKeyRoster.hash_key :extended_hash_key
+    extended_roster = HashKeyRoster.new
+    extended_roster.contact_information.should.be.kind_of(Redis::HashKey)
+    extended_roster.extended_hash_key.should.be.kind_of(Redis::HashKey)
+    @roster.respond_to?(:extended_hash_key).should == false
+
+    LockRoster = Class.new(Roster)
+    LockRoster.lock :extended
+    extended_roster = LockRoster.new
+    extended_roster.resort_lock.should.be.kind_of(Redis::Lock)
+    extended_roster.extended_lock.should.be.kind_of(Redis::Lock)
+    @roster.respond_to?(:extended_lock).should == false
+
+    ValueRoster = Class.new(Roster)
+    ValueRoster.value :extended_value
+    extended_roster = ValueRoster.new
+    extended_roster.starting_pitcher.should.be.kind_of(Redis::Value)
+    extended_roster.extended_value.should.be.kind_of(Redis::Value)
+    @roster.respond_to?(:extended_value).should == false
+
+    ListRoster = Class.new(Roster)
+    ListRoster.list :extended_list
+    extended_roster = ListRoster.new
+    extended_roster.player_stats.should.be.kind_of(Redis::List)
+    extended_roster.extended_list.should.be.kind_of(Redis::List)
+    @roster.respond_to?(:extended_list).should == false
+
+    SetRoster = Class.new(Roster)
+    SetRoster.set :extended_set
+    extended_roster = SetRoster.new
+    extended_roster.outfielders.should.be.kind_of(Redis::Set)
+    extended_roster.extended_set.should.be.kind_of(Redis::Set)
+    @roster.respond_to?(:extended_set).should == false
+
+    SortedSetRoster = Class.new(Roster)
+    SortedSetRoster.sorted_set :extended_sorted_set
+    extended_roster = SortedSetRoster.new
+    extended_roster.rank.should.be.kind_of(Redis::SortedSet)
+    extended_roster.extended_sorted_set.should.be.kind_of(Redis::SortedSet)
+    @roster.respond_to?(:extended_sorted_set).should == false
   end
 end

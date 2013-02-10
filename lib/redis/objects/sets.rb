@@ -14,7 +14,7 @@ class Redis
         # Define a new list.  It will function like a regular instance
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def set(name, options={})
-          @redis_objects[name.to_sym] = options.merge(:type => :set)
+          redis_objects[name.to_sym] = options.merge(:type => :set)
           klass_name = '::' + self.name
           if options[:global]
             instance_eval <<-EndMethods
@@ -34,7 +34,7 @@ class Redis
               end
             EndMethods
           end
-          
+
         end
       end
 
