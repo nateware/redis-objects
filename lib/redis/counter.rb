@@ -60,7 +60,7 @@ class Redis
     # a block, that block will be evaluated with the new value of the counter
     # as an argument. If the block returns nil or throws an exception, the
     # counter will automatically be incremented to its previous value.  This
-    # method is aliased as incr() for brevity.
+    # method is aliased as decr() for brevity.
     def decrement(by=1, &block)
       val = redis.decrby(key, by).to_i
       block_given? ? rewindable_block(:increment, by, val, &block) : val
