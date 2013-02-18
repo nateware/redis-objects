@@ -28,7 +28,7 @@ you want to create.
 
 Add it to your Gemfile as:
 
-    gem 'redis-objects', :require => 'redis/objects'
+    gem 'redis-objects'
 
 == Example 1: Model Class Usage
 
