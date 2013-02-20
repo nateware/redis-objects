@@ -7,7 +7,7 @@ begin
     gem.name = "redis-objects"
     gem.summary = %Q{Map Redis types directly to Ruby objects}
     gem.description = %Q{Map Redis types directly to Ruby objects. Works with any class or ORM.}
-    gem.email = "nate@wiger.org"
+    gem.email = "nwiger@gmail.com"
     gem.homepage = "http://github.com/nateware/redis-objects"
     gem.authors = ["Nate Wiger"]
     gem.add_development_dependency "bacon", ">= 0"

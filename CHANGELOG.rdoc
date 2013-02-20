@@ -1,10 +1,20 @@
 = Changelog for Redis::Objects
 
-== 0.6.1 (24 October 2012)
+== 0.6.2 (20 Feb 2013)
+
+* Enable inheritance of Redis::Objects models [rossta]
+
+* Finally fix require/autoload in a seemingly sane manner [nateware]
+
+* Add lib/redis-objects.rb for easier Gemfile require [notEthan]
+
+* Fix wrong readme line, fix some indentation [giglemad]
+
+== 0.6.1 (13 Dec 2012)
 
 * Fixed error that incorrectly specified activerecord as a gem dep [nateware]
 
-== 0.6.0 (24 October 2012)
+== 0.6.0 (13 Dec 2012)
 
 * Add +@set.merge()+ method to add multiple members at once [hfwang] 
 
@@ -28,7 +38,7 @@
 
 * group_set_with_scores is no longer needed.
 
-== 0.5.2 (13 June 2012)
+== 0.5.2 (13 Jun 2012)
 
 * Added Redis::SortedSet#member? method [Karl Varga]
 
@@ -44,7 +54,7 @@
 
 * Updated URLs to reflect new redis.io website [Jérémy Lecour]
 
-== 0.5.0 (8 November 2010)
+== 0.5.0 (8 Nov 2010)
 
 * Incompatible change: Had to rename Redis::Hash to Redis::HashKey due to internal conflicts with Redis lib and Ruby [Nate Wiger]
 
@@ -58,7 +68,7 @@
 
 * Updated Redis DEL semantics per API change [Gabe da Silveira]
 
-== 0.4.1 (23 August 2010)
+== 0.4.1 (23 Aug 2010)
 
 * Fixes for Ruby 1.8 failures due to missing flatten() [Gabe da Silveira]
 
@@ -68,7 +78,7 @@
 
 * Fixed a typo in delete_if and added missing test coverage [Julio Capote, Nate Wiger]
 
-== 0.4.0 (11 August 2010)
+== 0.4.0 (11 Aug 2010)
 
 * Full support for redis hashes via new Redis::Hash class [Julio Capote, Nate Wiger]
 
@@ -82,7 +92,7 @@
 
 * Renamed :withscores option to :with_scores for consistency with redis-rb 2.0, but kept backwards compat [Tom Stuart, Nate Wiger]
 
-== 0.3.2 (21 July 2010)
+== 0.3.2 (21 Jul 2010)
 
 * New "maxlength" option to Redis::List can create length-limited lists (eg, like a ring buffer) from dbalatero [David Balatero]
 
@@ -90,21 +100,21 @@
 
 * Switched from rspec to bacon for tests
 
-== 0.3.1 (1 June 2010)
+== 0.3.1 (1 Jun 2010)
 
 * Integrated fixes for sorted_set deletions from capotej [Julio Capote]
 
-== 0.3.0 (14 April 2010)
+== 0.3.0 (14 Apr 2010)
 
 * Due to Ruby 1.9 bugs and performance considerations, marshaling of data types is now OFF by default.  You must say :marshal => true for any objects that you want serialization enabled on. [Nate Wiger]
 
 * Sorted Set class changed slightly due to feedback. You can now get an individual element back via @set['item'] since it acts like a Hash.
 
-== 0.2.4 (9 April 2010)
+== 0.2.4 (9 Apr 2010)
 
 * Added sorted set support via Redis::SortedSet [Nate Wiger]
 
-== 0.2.3 (18 February 2010)
+== 0.2.3 (18 Feb 2010)
 
 * Added lock expiration to Redis::Lock [Ben VandenBos]
 
@@ -112,7 +122,7 @@
 
 * Added lock tests and test helpers [Ben VandenBos]
 
-== 0.2.2 (14 December 2009)
+== 0.2.2 (14 Dec 2009)
 
 * Added @set.diff(@set2) with "^" and "-" synonyms (oversight). [Nate Wiger]
 
@@ -122,7 +132,7 @@
 
 * More spec coverage. [Nate Wiger]
 
-== 0.2.1 (27 November 2009)
+== 0.2.1 (27 Nov 2009)
 
 * First worthwhile public release, with good spec coverage and functionality. [Nate Wiger]
 
