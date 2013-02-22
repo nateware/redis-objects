@@ -12,7 +12,7 @@ class Redis
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
 
-    attr_reader :key, :options, :redis
+    attr_reader :key, :options
 
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:

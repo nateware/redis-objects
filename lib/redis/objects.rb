@@ -59,14 +59,17 @@ class Redis
     class NilObjectId  < StandardError; end
 
     class << self
-      def redis=(conn) @redis = conn end
+      def redis=(conn)
+        @redis = conn
+      end
       def redis
-        @redis ||= $redis || Redis.current || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
+        @redis || $redis || Redis.current ||
+          raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
       def included(klass)
         # Core (this file)
-        klass.instance_variable_set('@redis', @redis)
+        klass.instance_variable_set('@redis', nil)
         klass.instance_variable_set('@redis_objects', {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
@@ -84,10 +87,14 @@ class Redis
 
     # Class methods that appear in your class when you include Redis::Objects.
     module ClassMethods
-      attr_writer   :redis
-      attr_accessor :redis_objects
-      def redis() @redis ||= Objects.redis end
+      # Enable per-class connections (eg, User and Post can use diff redis-server)
+      attr_writer :redis
+      def redis
+        @redis || Objects.redis
+      end
 
+      # Internal list of objects
+      attr_writer :redis_objects
       def redis_objects
         @redis_objects ||= {}
       end

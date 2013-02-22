@@ -12,7 +12,7 @@ class Redis
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
 
-    attr_reader :key, :options, :redis
+    attr_reader :key, :options
 
     # Works like add.  Can chain together: list << 'a' << 'b'
     def <<(value)

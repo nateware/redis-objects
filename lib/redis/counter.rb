@@ -12,11 +12,11 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options, :redis
+    attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
       @options[:start] ||= 0
-      @redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
+      redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
 
     # Reset the counter to its starting value.  Not atomic, so use with care.

@@ -28,6 +28,7 @@ describe 'redis-server' do
       system "(echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}) | #{REDIS_BIN} -"
     end
     fork_pid.should > 0
+    sleep 2 
   end
 end
 
@@ -40,9 +41,19 @@ at_exit do
   File.unlink REDIS_DUMP if File.exists? REDIS_DUMP
 end
 
+def raises_exception(&block)
+  e = nil
+  begin
+    block.call
+  rescue => e
+  end
+  e.should.be.is_a?(StandardError)
+end
+
 # Grab a global handle
 REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-$redis = REDIS_HANDLE
+#$redis = REDIS_HANDLE
+Redis.current = REDIS_HANDLE
 
 SORT_ORDER = {:order => 'desc alpha'}
 SORT_LIMIT = {:limit => [2, 2]}

@@ -27,6 +27,8 @@ describe Redis::Value do
     @value.get.should == 'Trevor Hoffman'
     @value.del.should == 1
     @value.should.be.nil
+    @value.value = 42
+    @value.value.should == '42'
   end
 
   it "should handle complex marshaled values" do
@@ -100,7 +102,6 @@ describe Redis::List do
   describe "as a bounded list" do
     before do
       @list = Redis::List.new('spec/bounded_list',
-                              $redis,
                               :maxlength => 10)
       1.upto(10) do |i|
         @list << i
@@ -330,7 +331,7 @@ end
 
 describe Redis::Lock do
   before do
-    $redis.flushall
+    REDIS_HANDLE.flushall
   end
 
   it "should set the value to the expiration" do
@@ -338,7 +339,7 @@ describe Redis::Lock do
     expiry = 15
     lock = Redis::Lock.new(:test_lock, :expiration => expiry)
     lock.lock do
-      expiration = $redis.get("test_lock").to_f
+      expiration = REDIS_HANDLE.get("test_lock").to_f
 
       # The expiration stored in redis should be 15 seconds from when we started
       # or a little more
@@ -346,17 +347,17 @@ describe Redis::Lock do
     end
 
     # key should have been cleaned up
-    $redis.get("test_lock").should.be.nil
+    REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
   it "should set value to 1 when no expiration is set" do
     lock = Redis::Lock.new(:test_lock)
     lock.lock do
-      $redis.get('test_lock').should == '1'
+      REDIS_HANDLE.get('test_lock').should == '1'
     end
 
     # key should have been cleaned up
-    $redis.get("test_lock").should.be.nil
+    REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
   it "should let lock be gettable when lock is expired" do
@@ -364,7 +365,7 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock in the past
-    $redis.set("test_lock", Time.now-(expiry + 60))
+    REDIS_HANDLE.set("test_lock", Time.now-(expiry + 60))
 
     gotit = false
     lock.lock do
@@ -373,7 +374,7 @@ describe Redis::Lock do
 
     # should get the lock because it has expired
     gotit.should.be.true
-    $redis.get("test_lock").should.be.nil
+    REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
   it "should not let non-expired locks be gettable" do
@@ -381,7 +382,7 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock
-    $redis.set("test_lock", (Time.now + expiry).to_f)
+    REDIS_HANDLE.set("test_lock", (Time.now + expiry).to_f)
 
     gotit = false
     error = nil
@@ -398,7 +399,7 @@ describe Redis::Lock do
     gotit.should.not.be.true
 
     # lock value should still be set
-    $redis.get("test_lock").should.not.be.nil
+    REDIS_HANDLE.get("test_lock").should.not.be.nil
   end
 
   it "should not remove the key if lock is held past expiration" do
@@ -409,7 +410,7 @@ describe Redis::Lock do
     end
 
     # lock value should still be set since the lock was held for more than the expiry
-    $redis.get("test_lock").should.not.be.nil
+    REDIS_HANDLE.get("test_lock").should.not.be.nil
   end
 end
 
@@ -417,8 +418,7 @@ end
 describe Redis::HashKey do
   describe "With Marshal" do
     before do
-      @hash = Redis::HashKey.new('test_hash', $redis,
-                                {:marshal_keys=>{'created_at'=>true}})
+      @hash = Redis::HashKey.new('test_hash', {:marshal_keys=>{'created_at'=>true}})
       @hash.clear
     end
 
@@ -449,7 +449,7 @@ describe Redis::HashKey do
   end
 
   before do
-    @hash  = Redis::HashKey.new('test_hash')
+    @hash = Redis::HashKey.new('test_hash')
     @hash.clear
   end
   

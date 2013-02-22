@@ -12,8 +12,7 @@ class Redis
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
 
-    attr_reader :key, :options, :redis
-
+    attr_reader :key, :options
     def initialize(key, *args)
       super
       @options[:marshal_keys] ||= {} 

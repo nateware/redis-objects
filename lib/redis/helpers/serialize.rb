@@ -12,8 +12,20 @@ class Redis
           dump(value)
         end
       end
-    
+ 
       def from_redis(value, marshal=false)
+        # This was removed because we can't reliably determine
+        # if a person said @value = "123.4" maybe for space/etc.
+        #begin
+        #  case value
+        #  when /^\d+$/
+        #    return Integer(value)
+        #  when /^(?:\d+\d.\d*|\d*\.\d+)$/
+        #    return Float(value)
+        #  end
+        #rescue
+        #  # continue below
+        #end
         return value unless options[:marshal] || marshal
         case value
         when Array

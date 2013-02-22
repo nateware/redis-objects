@@ -10,10 +10,10 @@ class Redis
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
 
-    attr_reader :key, :options, :redis
+    attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      @redis.setnx(key, to_redis(@options[:default])) if @options[:default]
+      redis.setnx(key, to_redis(@options[:default])) if @options[:default]
     end
 
     def value=(val)
