@@ -11,12 +11,21 @@ class Redis
   class Counter < BaseObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
+    require 'redis/helpers/auto_expire'
+    include Redis::Helpers::AutoExpire
 
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
+      
       @options[:start] ||= 0
       redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
+
+      init_auto_exprire
+    end
+
+    def setter_methods
+      [ :increment, :decrement ]
     end
 
     # Reset the counter to its starting value.  Not atomic, so use with care.

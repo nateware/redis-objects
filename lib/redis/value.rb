@@ -9,11 +9,23 @@ class Redis
     include Redis::Helpers::CoreCommands
     require 'redis/helpers/serialize'
     include Redis::Helpers::Serialize
+    require 'redis/helpers/auto_expire'
+    include Redis::Helpers::AutoExpire
 
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      redis.setnx(key, to_redis(@options[:default])) if @options[:default]
+
+      if @options[:default]
+        redis.setnx(key, to_redis(@options[:default])) 
+        auto_exprire
+      end
+      
+      init_auto_exprire
+    end
+
+    def setter_methods
+      [ :value= ]
     end
 
     def value=(val)

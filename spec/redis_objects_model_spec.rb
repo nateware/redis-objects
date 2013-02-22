@@ -30,6 +30,10 @@ class Roster
   #callable as key
   counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
 
+  # auto expires
+  value   :last_kick, :expires => 120
+  counter :count_last_kick, :expires => 120
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -159,6 +163,24 @@ describe Redis::Objects do
     @roster.my_rank.persist
     @roster.my_rank.ttl.should == -1
     @roster.my_rank.to_i.should == 42
+  end
+
+  it 'should be able to auto expire keys and then persist them' do
+    # on a value
+    @roster.last_kick = 42
+    @roster.last_kick.ttl.should > -1
+    @roster.last_kick.ttl.should <= 120
+    @roster.last_kick.persist
+    @roster.last_kick.ttl.should == -1
+    @roster.last_kick.to_i.should == 42
+
+    # on a counter
+    @roster.count_last_kick.increment 42
+    @roster.count_last_kick.ttl.should > -1
+    @roster.count_last_kick.ttl.should <= 120
+    @roster.count_last_kick.persist
+    @roster.count_last_kick.ttl.should == -1
+    @roster.count_last_kick.to_i.should == 42
   end
 
   it "should be marshalling hash keys" do
