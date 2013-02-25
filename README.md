@@ -1,14 +1,15 @@
-= Redis::Objects - Map Redis types directly to Ruby objects
+Redis::Objects - Map Redis types directly to Ruby objects
+=========================================================
 
-This is *not* an ORM. People that are wrapping ORM’s around Redis are missing the point.
+This is **not** an ORM. People that are wrapping ORM’s around Redis are missing the point.
 
 The killer feature of Redis is that it allows you to perform _atomic_ operations
-on _individual_ data structures, like counters, lists, and sets.  The *atomic* part is HUGE.
+on _individual_ data structures, like counters, lists, and sets.  The **atomic** part is HUGE.
 Using an ORM wrapper that retrieves a "record", updates values, then sends those values back,
 _removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
 
-This gem provides a Rubyish interface to Redis, by mapping {Redis types}[http://redis.io/commands]
-to Ruby objects, via a thin layer over Ezra's +redis+ gem.  It offers several advantages
+This gem provides a Rubyish interface to Redis, by mapping [Redis types](http://redis.io/commands)
+to Ruby objects, via a thin layer over the `redis` gem.  It offers several advantages
 over the lower-level redis-rb API:
 
 1. Easy to integrate directly with existing ORMs - ActiveRecord, DataMapper, etc.  Add counters to your model!
@@ -17,44 +18,62 @@ over the lower-level redis-rb API:
 4. Higher-level types are provided, such as Locks, that wrap multiple calls
 
 This gem originally arose out of a need for high-concurrency atomic operations;
-for a fun rant on the topic, see {An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant],
-or scroll down to "Atomicity" in this README.
+for a fun rant on the topic, see [An Atomic Rant](http://nateware.com/2010/02/18/an-atomic-rant),
+or scroll down to [Atomic Counters and Locks](#atomicity) in this README.
 
 There are two ways to use Redis::Objects, either as an include in a model class (to
 integrate with ORMs or other classes), or by using new with the type of data structure
 you want to create. 
 
-== Installation
-
+Installation and Setup
+----------------------
 Add it to your Gemfile as:
 
     gem 'redis-objects'
 
-== Example 1: Model Class Usage
+`Redis::Objects` needs a handle created by `Redis.new`. The recommended approach
+is to set `Redis.current` to point to your server, which `Redis::Objects` will
+pick up automatically.
 
+    require 'redis/objects'
+    Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
+
+(If you're on Rails, `config/initializers/redis.rb` is a good place for this.)
+Remember you can use Redis::Objects in any Ruby code.  There are **no** dependencies
+on Rails.  Standalone, Sinatra, Resque - no problem.
+
+Alternatively, you can set the `redis` handle directly:
+
+    Redis::Objects.redis = Redis.new(...)
+
+Finally, you can even setup different handles for different classes:
+
+    class User
+      include Redis::Objects
+    end
+    class Post
+      include Redis::Objects
+    end
+
+    User.redis = Redis.new(...)
+    Post.redis = Redis.new(...)
+
+As of `0.7.0`, `redis-objects` now takes autoloads the appropriate `Redis::Whatever`
+classes on demand.  Previous strategies of requiring `redis/list` or `redis/set`
+are no longer required.  In 
+
+Option 1: Model Class Usage
+============================
 Using Redis::Objects this way makes it trivial to integrate Redis types with an
 existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
-will work with _any_ class that provides an +id+ method that returns a unique
+will work with _any_ class that provides an `id` method that returns a unique
 value.  Redis::Objects will automatically create keys that are unique to
 each object, in the format:
 
     model_name:id:field_name
 
-=== Initialization
-
-Redis::Objects needs a handle created by Redis.new.  (If you're on Rails,
-config/initializers/redis.rb is a good place for this.)
-
-    require 'redis'
-    require 'redis/objects'
-    # if you are also using a list or any other complex object, please make sure to "require 'redis/list'" respectively
-    Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
-
-Remember you can use Redis::Objects in any Ruby code.  There are *no* dependencies
-on Rails.  Standalone, Sinatra, Resque - no problem.
-
-=== Model Class
-
+Model Class
+-----------
 You can include Redis::Objects in any type of class:
 
     class Team < ActiveRecord::Base
@@ -108,41 +127,27 @@ Counters can be atomically incremented/decremented (but not assigned):
     @team.hits.incr(3)    # add 3
     @team.runs = 4        # exception
 
-Finally, for free, you get a +redis+ method that points directly to a Redis connection:
+Finally, for free, you get a `redis` method that points directly to a Redis connection:
 
     Team.redis.get('somekey')
     @team = Team.new
     @team.redis.get('somekey')
     @team.redis.smembers('someset')
 
-You can use the +redis+ handle to directly call any {Redis API command}[http://redis.io/commands].
+You can use the `redis` handle to directly call any [Redis API command](http://redis.io/commands).
 
-== Example 2: Standalone Usage
-
+Option 2: Standalone Usage
+===========================
 There is a Ruby class that maps to each Redis type, with methods for each
-{Redis API command}[http://redis.io/commands].
-Note that calling +new+ does not imply it's actually a "new" value - it just
+[Redis API command](http://redis.io/commands).
+Note that calling `new` does not imply it's actually a "new" value - it just
 creates a mapping between that object and the corresponding Redis data structure,
 which may already exist on the redis-server.
 
-=== Initialization
+Counters
+--------
+Create a new counter. The `counter_name` is the key stored in Redis.
 
-Redis::Objects needs a handle to the +redis+ server.  For standalone use, you
-can either set Redis.current:
-
-    Redis.current = Redis.new(:host => 'localhost', :port => 6379)
-    @list = Redis::List.new('mylist')
-
-Or you can pass the Redis handle into the new method for each type:
-
-    @redis = Redis.new(:host => 'localhost', :port => 6379)
-    @list = Redis::List.new('mylist', @redis)
-
-=== Counters
-
-Create a new counter. The +counter_name+ is the key stored in Redis.
-
-    require 'redis/counter'
     @counter = Redis::Counter.new('counter_name')
     @counter.increment
     @counter.decrement
@@ -154,13 +159,12 @@ This gem provides a clean way to do atomic blocks as well:
       raise "Full" if val > MAX_VAL  # rewind counter
     end
 
-See the section on "Atomicity" for cool uses of atomic counter blocks.
+See the section on [Atomic Counters and Locks](#atomicity) for cool uses of atomic counter blocks.
 
-=== Locks
+Locks
+-----
+A convenience class that wraps the pattern of [using setnx to perform locking](http://redis.io/commands/setnx).
 
-A convenience class that wraps the pattern of {using +setnx+ to perform locking}[http://redis.io/commands/setnx].
-
-    require 'redis/lock'
     @lock = Redis::Lock.new('image_resizing', :expiration => 15, :timeout => 0.1)
     @lock.lock do
       # do work
@@ -168,11 +172,10 @@ A convenience class that wraps the pattern of {using +setnx+ to perform locking}
 
 This can be especially useful if you're running batch jobs spread across multiple hosts.
 
-=== Values
-
+Values
+------
 Simple values are easy as well:
 
-    require 'redis/value'
     @value = Redis::Value.new('value_name')
     @value.value = 'a'
     @value.delete
@@ -184,11 +187,10 @@ Complex data is no problem with :marshal => true:
     @newest.value = @account.attributes
     puts @newest.value['username']
 
-=== Lists
-
+Lists
+-----
 Lists work just like Ruby arrays:
 
-    require 'redis/list'
     @list = Redis::List.new('list_name')
     @list << 'a'
     @list << 'b'
@@ -218,13 +220,12 @@ Complex data types are no problem with :marshal => true:
       puts "#{el[:name]} lives in #{el[:city]}"
     end
 
-=== Hashes
-
-Hashes work like a Ruby {Hash}[http://ruby-doc.org/core/classes/Hash.html], with
+Hashes
+------
+Hashes work like a Ruby [Hash](http://ruby-doc.org/core/classes/Hash.html), with
 a few Redis-specific additions.  (The class name is "HashKey" not just "Hash", due to
 conflicts with the Ruby core Hash class in other gems.)
 
-    require 'redis/hash_key'
     @hash = Redis::HashKey.new('hash_name')
     @hash['a'] = 1
     @hash['b'] = 2
@@ -243,11 +244,10 @@ Redis also adds incrementing and bulk operations:
 
 Remember that numbers become strings in Redis.  Unlike with other Redis data types, redis-objects can't guess at your data type in this situation.
 
-=== Sets
+Sets
+----
+Sets work like the Ruby [Set](http://ruby-doc.org/core/classes/Set.html) class:
 
-Sets work like the Ruby {Set}[http://ruby-doc.org/core/classes/Set.html] class:
-
-    require 'redis/set'
     @set = Redis::Set.new('set_name')
     @set << 'a'
     @set << 'b'
@@ -297,12 +297,11 @@ And use complex data types too, with :marshal => true:
     @set1 - @set2  # Peter
     @set1 | @set2  # all 3 people
 
-=== Sorted Sets
-
+Sorted Sets
+-----------
 Due to their unique properties, Sorted Sets work like a hybrid between
 a Hash and an Array.  You assign like a Hash, but retrieve like an Array:
 
-    require 'redis/sorted_set'
     @sorted_set = Redis::SortedSet.new('number_of_posts')
     @sorted_set['Nate']  = 15
     @sorted_set['Peter'] = 75
@@ -335,13 +334,13 @@ a Hash and an Array.  You assign like a Hash, but retrieve like an Array:
     @sorted_set.incr('Peter')   # shorthand
     @sorted_set.incr('Jeff', 4)
 
-The other Redis Sorted Set commands are supported as well; see {Sorted Sets API}[http://redis.io/commands#sorted_set].
+The other Redis Sorted Set commands are supported as well; see [Sorted Sets API](http://redis.io/commands#sorted_set).
 
-== Atomic Counters and Locks
-
+<a name="atomicity"></a>
+Atomic Counters and Locks
+-------------------------
 You are probably not handling atomicity correctly in your app.  For a fun rant
-on the topic, see
-{An Atomic Rant}[http://nateware.com/2010/02/18/an-atomic-rant].
+on the topic, see [An Atomic Rant](http://nateware.com/an-atomic-rant.html).
 
 Atomic counters are a good way to handle concurrency:
 
@@ -355,16 +354,16 @@ Atomic counters are a good way to handle concurrency:
       @team.drafted_players.decrement
     end
 
-Atomic block - a cleaner way to do the above. <b><em>Exceptions or returning nil
-rewind counter back to previous state</em></b>:
+An _atomic block_ is a cleaner way to do the above. Exceptions or returning nil
+will rewind the counter back to its previous state:
 
     @team.drafted_players.increment do |val|
-      raise Team::TeamFullError if val > @team.max_players
+      raise Team::TeamFullError if val > @team.max_players  # rewind
       @team.team_players.create!(:player_id => 221)
       @team.active_players.increment
     end
 
-Similar approach, using an if block (failure rewinds counter):
+Here's a similar approach, using an if block (failure rewinds counter):
 
     @team.drafted_players.increment do |val|
       if val <= @team.max_players
@@ -373,20 +372,23 @@ Similar approach, using an if block (failure rewinds counter):
       end
     end
 
-Class methods work too - notice we override ActiveRecord counters:
+Class methods work too, using the familiar ActiveRecord counter syntax:
 
     Team.increment_counter :drafted_players, team_id
     Team.decrement_counter :drafted_players, team_id, 2
     Team.increment_counter :total_online_players  # no ID on global counter
 
-Class-level atomic block (may save a DB fetch depending on your app):
+Class-level atomic blocks can also be used.  This may save a DB fetch, if you have
+a record ID and don't need any other attributes from the DB table:
 
     Team.increment_counter(:drafted_players, team_id) do |val|
       TeamPitcher.create!(:team_id => team_id, :pitcher_id => 181)
       Team.increment_counter(:active_players, team_id)
     end
 
-Locks with Redis. On completion or exception the lock is released:
+### Locks ###
+
+Locks work similarly. On completion or exception the lock is released:
 
     class Team < ActiveRecord::Base
       lock :reorder # declare a lock
@@ -412,9 +414,11 @@ lock time.
       lock :reorder, :expiration => 15.minutes
     end
 
+Keep in mind that true locks serialize your entire application at that point.  As
+such, atomic counters are strongly preferred.
 
-== Author
-
-Copyright (c) 2009-2012 {Nate Wiger}[http://nateware.com].  All Rights Reserved.
-Released under the {Artistic License}[http://www.opensource.org/licenses/artistic-license-2.0.php].
+Author
+=======
+Copyright (c) 2009-2013 [Nate Wiger](http://nateware.com).  All Rights Reserved.
+Released under the [Artistic License](http://www.opensource.org/licenses/artistic-license-2.0.php).
 
