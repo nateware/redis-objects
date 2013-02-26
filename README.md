@@ -31,15 +31,15 @@ Add it to your Gemfile as:
 
     gem 'redis-objects'
 
-`Redis::Objects` needs a handle created by `Redis.new`. The recommended approach
-is to set `Redis.current` to point to your server, which `Redis::Objects` will
+**Redis::Objects** needs a handle created by `Redis.new`. The recommended approach
+is to set `Redis.current` to point to your server, which **Redis::Objects** will
 pick up automatically.
 
     require 'redis/objects'
     Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 (If you're on Rails, `config/initializers/redis.rb` is a good place for this.)
-Remember you can use Redis::Objects in any Ruby code.  There are **no** dependencies
+Remember you can use **Redis::Objects** in any Ruby code.  There are **no** dependencies
 on Rails.  Standalone, Sinatra, Resque - no problem.
 
 Alternatively, you can set the `redis` handle directly:
@@ -58,38 +58,56 @@ Finally, you can even setup different handles for different classes:
     User.redis = Redis.new(...)
     Post.redis = Redis.new(...)
 
-As of `0.7.0`, `redis-objects` now takes autoloads the appropriate `Redis::Whatever`
-classes on demand.  Previous strategies of requiring `redis/list` or `redis/set`
-are no longer required.  In 
+As of `0.7.0`, `redis-objects` now autoloads the appropriate `Redis::Whatever`
+classes on demand.  Previous strategies of individually requiring `redis/list`
+or `redis/set` are no longer required.
+
+There are two ways to use **Redis::Objects**: As part of an model class (ActiveRecord,
+DataMapper, Mongoid, etc) or as standalong data type classes (`Redis::Set`, `Redis::List`, etc).
 
 Option 1: Model Class Usage
 ============================
 Using Redis::Objects this way makes it trivial to integrate Redis types with an
-existing ActiveRecord model, DataMapper resource, or other class.  Redis::Objects
+existing ActiveRecord model, DataMapper resource, or other class.  **Redis::Objects**
 will work with _any_ class that provides an `id` method that returns a unique
-value.  Redis::Objects will automatically create keys that are unique to
+value.  **Redis::Objects** will then automatically create keys that are unique to
 each object, in the format:
 
     model_name:id:field_name
 
-Model Class
------------
+For illustration purposes, consider this stub class:
+
+    class User
+      include Redis::Objects
+      counter :my_posts
+      def id
+        1
+      end
+    end
+
+    user = User.new
+    user.id  # 1
+    user.my_posts.increment
+    user.my_posts.increment
+    user.my_posts.increment
+    puts user.my_posts  # 3
+
 You can include Redis::Objects in any type of class:
 
     class Team < ActiveRecord::Base
       include Redis::Objects
 
       lock :trade_players, :expiration => 15  # sec
+      value :at_bat
       counter :hits
       counter :runs
       counter :outs
       counter :inning, :start => 1
       list :on_base
-      set :outfielders
-      value :at_bat
-      sorted_set :rank, :global => true
-      hash_key :pitchers_faced  # "hash" is taken by Ruby
       list :coaches, :marshal => true
+      set  :outfielders
+      hash_key :pitchers_faced  # "hash" is taken by Ruby
+      sorted_set :rank, :global => true
     end
 
 Familiar Ruby array operations Just Work (TM):
@@ -141,16 +159,17 @@ Option 2: Standalone Usage
 There is a Ruby class that maps to each Redis type, with methods for each
 [Redis API command](http://redis.io/commands).
 Note that calling `new` does not imply it's actually a "new" value - it just
-creates a mapping between that object and the corresponding Redis data structure,
-which may already exist on the redis-server.
+creates a mapping between that Ruby object and the corresponding Redis data
+structure, which may already exist on the `redis-server`.
 
 Counters
 --------
-Create a new counter. The `counter_name` is the key stored in Redis.
+The `counter_name` is the key stored in Redis.
 
     @counter = Redis::Counter.new('counter_name')
-    @counter.increment
-    @counter.decrement
+    @counter.increment  # or incr
+    @counter.decrement  # or decr
+    @counter.increment(3)
     puts @counter.value
 
 This gem provides a clean way to do atomic blocks as well:
@@ -165,7 +184,7 @@ Locks
 -----
 A convenience class that wraps the pattern of [using setnx to perform locking](http://redis.io/commands/setnx).
 
-    @lock = Redis::Lock.new('image_resizing', :expiration => 15, :timeout => 0.1)
+    @lock = Redis::Lock.new('serialize_stuff', :expiration => 15, :timeout => 0.1)
     @lock.lock do
       # do work
     end
@@ -211,7 +230,7 @@ You can bound the size of the list to only hold N elements like so:
     # Only holds 10 elements, throws out old ones when you reach :maxlength.
     @list = Redis::List.new('list_name', :maxlength => 10)
 
-Complex data types are no problem with :marshal => true:
+Complex data types are no handled with :marshal => true:
 
     @list = Redis::List.new('list_name', :marshal => true)
     @list << {:name => "Nate", :city => "San Diego"}
@@ -242,11 +261,14 @@ Redis also adds incrementing and bulk operations:
     @hash.bulk_set('d' => 5, 'e' => 6)
     @hash.bulk_get('d','e')  # "5", "6"
 
-Remember that numbers become strings in Redis.  Unlike with other Redis data types, redis-objects can't guess at your data type in this situation.
+Remember that numbers become strings in Redis.  Unlike with other Redis data types,
+`redis-objects` can't guess at your data type in this situation, since you may
+actually mean to store "1.5".
 
 Sets
 ----
-Sets work like the Ruby [Set](http://ruby-doc.org/core/classes/Set.html) class:
+Sets work like the Ruby [Set](http://ruby-doc.org/core/classes/Set.html) class.
+They are unordered, but guarantee uniqueness of members.
 
     @set = Redis::Set.new('set_name')
     @set << 'a'
@@ -288,10 +310,10 @@ And use complex data types too, with :marshal => true:
 
     @set1 = Redis::Set.new('set1', :marshal => true)
     @set2 = Redis::Set.new('set2', :marshal => true)
-    @set1 << {:name => "Nate", :city => "San Diego"}
+    @set1 << {:name => "Nate",  :city => "San Diego"}
     @set1 << {:name => "Peter", :city => "Oceanside"}
-    @set2 << {:name => "Nate", :city => "San Diego"}
-    @set2 << {:name => "Jeff", :city => "Del Mar"}
+    @set2 << {:name => "Nate",  :city => "San Diego"}
+    @set2 << {:name => "Jeff",  :city => "Del Mar"}
 
     @set1 & @set2  # Nate
     @set1 - @set2  # Peter
@@ -354,7 +376,7 @@ Atomic counters are a good way to handle concurrency:
       @team.drafted_players.decrement
     end
 
-An _atomic block_ is a cleaner way to do the above. Exceptions or returning nil
+An _atomic block_ gives you a cleaner way to do the above. Exceptions or returning nil
 will rewind the counter back to its previous state:
 
     @team.drafted_players.increment do |val|
