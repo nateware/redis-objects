@@ -8,7 +8,7 @@ on _individual_ data structures, like counters, lists, and sets.  The **atomic**
 Using an ORM wrapper that retrieves a "record", updates values, then sends those values back,
 _removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
 
-This gem provides a Rubyish interface to Redis, by mapping [Redis types](http://redis.io/commands)
+This gem provides a Rubyish interface to Redis, by mapping [Redis data types](http://redis.io/commands)
 to Ruby objects, via a thin layer over the `redis` gem.  It offers several advantages
 over the lower-level redis-rb API:
 
@@ -22,8 +22,8 @@ for a fun rant on the topic, see [An Atomic Rant](http://nateware.com/2010/02/18
 or scroll down to [Atomic Counters and Locks](#atomicity) in this README.
 
 There are two ways to use Redis::Objects, either as an include in a model class (to
-integrate with ORMs or other classes), or by using new with the type of data structure
-you want to create. 
+tightly integrate with ORMs or other classes), or standalone by using classes such
+as `Redis::List` and `Redis::SortedSet`.
 
 Installation and Setup
 ----------------------
@@ -31,22 +31,21 @@ Add it to your Gemfile as:
 
     gem 'redis-objects'
 
-**Redis::Objects** needs a handle created by `Redis.new`. The recommended approach
-is to set `Redis.current` to point to your server, which **Redis::Objects** will
+Redis::Objects needs a handle created by `Redis.new`. The recommended approach
+is to set `Redis.current` to point to your server, which Redis::Objects will
 pick up automatically.
 
-    require 'redis/objects'
     Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 
 (If you're on Rails, `config/initializers/redis.rb` is a good place for this.)
-Remember you can use **Redis::Objects** in any Ruby code.  There are **no** dependencies
+Remember you can use Redis::Objects in any Ruby code.  There are **no** dependencies
 on Rails.  Standalone, Sinatra, Resque - no problem.
 
 Alternatively, you can set the `redis` handle directly:
 
     Redis::Objects.redis = Redis.new(...)
 
-Finally, you can even setup different handles for different classes:
+Finally, you can even set different handles for different classes:
 
     class User
       include Redis::Objects
@@ -55,23 +54,19 @@ Finally, you can even setup different handles for different classes:
       include Redis::Objects
     end
 
-    User.redis = Redis.new(...)
-    Post.redis = Redis.new(...)
+    User.redis = Redis.new(:host => '1.2.3.4')
+    Post.redis = Redis.new(:host => '5.6.7.8')
 
 As of `0.7.0`, `redis-objects` now autoloads the appropriate `Redis::Whatever`
 classes on demand.  Previous strategies of individually requiring `redis/list`
 or `redis/set` are no longer required.
 
-There are two ways to use **Redis::Objects**: As part of an model class (ActiveRecord,
-DataMapper, Mongoid, etc) or as standalong data type classes (`Redis::Set`, `Redis::List`, etc).
-
-Option 1: Model Class Usage
-============================
-Using Redis::Objects this way makes it trivial to integrate Redis types with an
-existing ActiveRecord model, DataMapper resource, or other class.  **Redis::Objects**
-will work with _any_ class that provides an `id` method that returns a unique
-value.  **Redis::Objects** will then automatically create keys that are unique to
-each object, in the format:
+Option 1: Model Class Include
+=============================
+Including Redis::Objects in a model class makes it trivial to integrate Redis types
+with an existing ActiveRecord, DataMapper, Mongoid, or similar class.  **Redis::Objects
+will work with _any_ class that provides an `id` method that returns a unique value.**
+Redis::Objects automatically creates keys that are unique to each object, in the format:
 
     model_name:id:field_name
 
@@ -92,7 +87,7 @@ For illustration purposes, consider this stub class:
     user.my_posts.increment
     puts user.my_posts  # 3
 
-You can include Redis::Objects in any type of class:
+Here's an example that integrates several data types with an ActiveRecord model:
 
     class Team < ActiveRecord::Base
       include Redis::Objects
@@ -133,7 +128,7 @@ Sets work too:
     end
     player = @team.outfielders.detect{|of| of == 'outfielder2'}
 
-And you can do intersections between objects (kinda cool):
+And you can do unions and intersections between objects (kinda cool):
 
     @team1.outfielders | @team2.outfielders   # outfielders on both teams
     @team1.outfielders & @team2.outfielders   # in baseball, should be empty :-)
