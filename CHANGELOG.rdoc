@@ -1,10 +1,12 @@
 = Changelog for Redis::Objects
 
-== 0.6.2 (20 Feb 2013)
+== 0.7.0 (27 Feb 2013)
 
 * Enable inheritance of Redis::Objects models [rossta]
 
-* Finally fix require/autoload in a seemingly sane manner [nateware]
+* Finally fix require/autoload so "require 'redis/foo'" is not needed [nateware]
+
+* Redis::Objects.redis= now properly sets subclass handles as expected [nateware]
 
 * Add lib/redis-objects.rb for easier Gemfile require [notEthan]
 
