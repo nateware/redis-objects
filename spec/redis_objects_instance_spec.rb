@@ -1,13 +1,7 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-require 'redis/counter'
-require 'redis/list'
-require 'redis/value'
-require 'redis/lock'
-require 'redis/set'
-require 'redis/sorted_set'
-require 'redis/hash_key'
+require 'redis/objects'
 
 describe Redis::Value do
   before do
