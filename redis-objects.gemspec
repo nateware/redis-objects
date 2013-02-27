@@ -5,24 +5,24 @@
 
 Gem::Specification.new do |s|
   s.name = "redis-objects"
-  s.version = "0.6.1"
+  s.version = "0.7.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Nate Wiger"]
-  s.date = "2012-10-24"
+  s.date = "2013-02-27"
   s.description = "Map Redis types directly to Ruby objects. Works with any class or ORM."
-  s.email = "nate@wiger.org"
+  s.email = "nwiger@gmail.com"
   s.extra_rdoc_files = [
-    "README.rdoc"
+    "README.md"
   ]
   s.files = [
     "ATOMICITY.rdoc",
     "CHANGELOG.rdoc",
     "Gemfile",
-    "Gemfile.lock",
-    "README.rdoc",
+    "README.md",
     "Rakefile",
     "VERSION",
+    "lib/redis-objects.rb",
     "lib/redis/base_object.rb",
     "lib/redis/counter.rb",
     "lib/redis/hash_key.rb",
@@ -42,8 +42,10 @@ Gem::Specification.new do |s|
     "lib/redis/sorted_set.rb",
     "lib/redis/value.rb",
     "redis-objects.gemspec",
+    "spec/redis_autoload_objects_spec.rb",
     "spec/redis_namespace_compat_spec.rb",
     "spec/redis_objects_active_record_spec.rb",
+    "spec/redis_objects_conn_spec.rb",
     "spec/redis_objects_instance_spec.rb",
     "spec/redis_objects_model_spec.rb",
     "spec/spec_helper.rb"
