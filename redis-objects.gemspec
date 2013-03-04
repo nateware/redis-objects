@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
     "lib/redis/base_object.rb",
     "lib/redis/counter.rb",
     "lib/redis/hash_key.rb",
+    "lib/redis/helpers/auto_expire.rb",    
     "lib/redis/helpers/core_commands.rb",
     "lib/redis/helpers/serialize.rb",
     "lib/redis/list.rb",
