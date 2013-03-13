@@ -34,6 +34,15 @@ class Roster
   def id; @id; end
   def username; "user#{id}"; end
   def max_pitchers; 3; end
+
+  attr_reader :before_hook_value
+  attr_reader :after_hook_value
+  def starting_pitcher
+    @before_hook_value = :before
+    pitcher = super
+    @after_hook_value  = :after
+    pitcher
+  end
 end
 
 class VanillaRoster < Roster
@@ -454,6 +463,13 @@ describe Redis::Objects do
     @roster.starting_pitcher.get.should == {:json => 'data'}
     @roster.starting_pitcher.del.should == 1
     @roster.starting_pitcher.should.be.nil
+  end
+
+  it 'should allow redefinition of methods while preserving original behavior' do
+    roster = Roster.new
+    roster.starting_pitcher = {:json => 'data'}
+    roster.before_hook_value.should == :before
+    roster.after_hook_value.should  == :after
   end
 
   it "should handle lists of simple values" do

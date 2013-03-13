@@ -34,14 +34,20 @@ class Redis
               end
             EndMethods
           else
-            class_eval <<-EndMethods
-              def #{name}
-                @#{name} ||= Redis::Value.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+            mod =  Module.new do
+              define_method name do
+                ivar_name = "@#{name}".to_sym
+                if instance_variable_defined?(ivar_name)
+                  instance_variable_get(ivar_name)
+                else
+                  instance_variable_set(ivar_name, Redis::Value.new(redis_field_key(name.to_sym), self.class.redis, self.class.redis_objects[name.to_sym]))
+                end
               end
-              def #{name}=(value)
-                #{name}.value = value
+              define_method "#{name}=" do |value|
+                public_send(name).value = value
               end
-            EndMethods
+            end
+            include mod
           end
 
         end
