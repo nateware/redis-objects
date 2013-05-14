@@ -233,6 +233,15 @@ describe Redis::List do
 			@list.insert("after",'d','e')
 			@list.should == ['z','a','b','c','d','e']
 		end
+		
+		it "should handle insert at a specific index" do
+			@list << 'b' << 'd'
+			@list.should == ['b','d']
+			@list[0] = 'a'
+			@list.should == ['a', 'd']
+			@list[1] = 'b'
+			@list.should == ['a', 'b']
+		end
 
     it "should handle lists of complex data types" do
       @list.options[:marshal] = true
@@ -241,10 +250,12 @@ describe Redis::List do
       @list << v1
       @list << v2
       @list.first.should == v1
+      @list[0] = @list[0].tap{|d| d[:json] = 'data_4'}
+      @list.first.should == {:json => 'data_4'}
       @list.last.should == v2
       @list << [1,2,3,[4,5]]
       @list.last.should == [1,2,3,[4,5]]
-      @list.shift.should == {:json => 'data'}
+      @list.shift.should == {:json => 'data_4'}
       @list.size.should == 2
       @list.delete(v2)
       @list.size.should == 1
@@ -716,7 +727,14 @@ describe Redis::Set do
     @set_2.sort(SORT_LIMIT).should == %w(3 4)
 
     @set_3 << 'm_4' << 'm_5' << 'm_1' << 'm_3' << 'm_2'
-    @set_3.sort(:by => 'm_*').should == %w(m_1 m_2 m_3 m_4 m_5)        
+		### incorrect interpretation of what the :by parameter means
+		### :by will look up values of keys so it would try to find a value in 
+		### redis of "m_m_1" which doesn't exist at this point, it is not a way to 
+		### alter the value to sort by but rather use a different value for this value
+		### in the set (Kris Fox)
+    # @set_3.sort(:by => 'm_*').should == %w(m_1 m_2 m_3 m_4 m_5)        
+		# below passes just fine
+		@set_3.sort.should == %w(m_1 m_2 m_3 m_4 m_5)
 
     val1 = Redis::Value.new('spec/3/sorted')
     val2 = Redis::Value.new('spec/4/sorted')

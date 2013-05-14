@@ -88,7 +88,7 @@ class Redis
 
     # Same functionality as Ruby arrays.
     def []=(index, value)
-      redis.lset(key, index, value)
+      redis.lset(key, index, to_redis(value))
     end
 
     # Delete the element(s) from the list that match name. If count is specified,
