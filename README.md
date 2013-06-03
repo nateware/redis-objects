@@ -225,7 +225,7 @@ You can bound the size of the list to only hold N elements like so:
     # Only holds 10 elements, throws out old ones when you reach :maxlength.
     @list = Redis::List.new('list_name', :maxlength => 10)
 
-Complex data types are no handled with :marshal => true:
+Complex data types are now handled with :marshal => true:
 
     @list = Redis::List.new('list_name', :marshal => true)
     @list << {:name => "Nate", :city => "San Diego"}
