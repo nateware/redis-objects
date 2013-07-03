@@ -892,4 +892,44 @@ describe Redis::SortedSet do
     @set_2.clear
     @set_3.clear
   end
+
+  describe "as a bounded sorted set" do
+    before do
+      @high_set = Redis::SortedSet.new('spec/bounded_sorted_set',
+                                       maxlength: 10)
+      @low_set  = Redis::SortedSet.new('spec/bounded_low_sorted_set',
+                                       maxlength: 10,
+                                       pop_highest_score: true)
+      1.upto(10) do |i|
+        @high_set[i.chr] = i
+        @low_set.add(i.chr, i)
+      end
+
+      # Make sure that adding < maxlength doesn't mess up.
+      1.upto(10) do |i|
+        @high_set[i.chr].should == i.to_f
+        @low_set[i.chr].should == i.to_f
+      end
+    end
+
+    after do
+      @high_set.clear
+      @low_set.clear
+    end
+
+    it "should push the element with the lowest score out of the set" do
+      @high_set[11.chr] = 11.to_f
+      @high_set.last.should == 11.chr
+      @high_set.first.should == 2.chr
+      @high_set.length.should == 10
+    end
+
+    it "should push the element with the highest score out of the set" do
+      @low_set[0.chr] = 0.to_f
+      @low_set.last.should == 9.chr
+      @low_set.first.should == 0.chr
+      @low_set.length.should == 10
+    end
+  end
+
 end
