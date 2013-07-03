@@ -26,6 +26,16 @@ class Redis
     # the score, since the member is the unique item (not the score).
     def add(member, score)
       redis.zadd(key, score, to_redis(member))
+
+      if ( maxlength = options[:maxlength] ) &&
+         ( (surplus = (redis.zcard(key) - maxlength)) > 0 )
+        members = if options[:pop_highest_score]
+                    redis.zrevrange(key, 0, surplus - 1)
+                  else
+                    redis.zrange(key, 0, surplus - 1)
+                  end
+        redis.zrem(key, members)
+      end
     end
 
     # Same functionality as Ruby arrays.  If a single number is given, return
