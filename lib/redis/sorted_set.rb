@@ -14,6 +14,11 @@ class Redis
 
     attr_reader :key, :options
 
+    def initialize(key, *args)
+      super
+      @options[:marshal_score] ||= Float
+    end
+
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
     #    num_posts['Peter'] = 163
@@ -47,12 +52,12 @@ class Redis
     alias_method :slice, :[]
 
     # Return the score of the specified element of the sorted set at key. If the
-    # specified element does not exist in the sorted set, or the key does not exist
-    # at all, nil is returned. Redis: ZSCORE.
+    # specified element does not exist in the sorted set, or the key does not
+    # exist at all, nil is returned. Redis: ZSCORE.
     def score(member)
       result = redis.zscore(key, to_redis(member))
 
-      result.to_f unless result.nil?
+      coerce_score(result) unless result.nil?
     end
 
     # Return the rank of the member in the sorted set, with scores ordered from
@@ -85,23 +90,24 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
-      else
-        from_redis redis.zrange(key, start_index, end_index)
-      end
+      opts = {}
+      opts = {:with_scores => true} if options[:withscores] || options[:with_scores]
+
+      from_redis_with_scores(
+          redis.zrange(key, start_index, end_index, opts),
+          opts)
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
-      else
-        from_redis redis.zrevrange(key, start_index, end_index)
-      end
+      opts = {}
+      opts = {:with_scores => true} if options[:withscores] || options[:with_scores]
+
+      from_redis_with_scores(
+          redis.zrevrange(key, start_index, end_index, opts), opts)
     end
 
-    # Return the all the elements in the sorted set at key with a score between min and max
+    # Return all the elements in the sorted set at key with a score between min and max
     # (including elements with score equal to min or max).  Options:
     #     :count, :offset - passed to LIMIT
     #     :withscores     - if true, scores are returned as well
@@ -112,17 +118,23 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      from_redis redis.zrangebyscore(key, min, max, args)
+      from_redis_with_scores(
+          redis.zrangebyscore(key, min, max, args), args)
     end
 
-    # Forwards compat (not yet implemented in Redis)
+    # Return all the elements in the sorted set at key with a score between min and max
+    # (including elements with score equal to min or max).  Options:
+    #     :count, :offset - passed to LIMIT
+    #     :withscores     - if true, scores are returned as well
+    # Redis: ZREVRANGEBYSCORE
     def revrangebyscore(min, max, options={})
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      from_redis redis.zrevrangebyscore(key, min, max, args)
+      from_redis_with_scores(
+          redis.zrevrangebyscore(key, min, max, args), args)
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -160,14 +172,14 @@ class Redis
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
     def increment(member, by=1)
-      redis.zincrby(key, by, member).to_i
+      coerce_score(redis.zincrby(key, by, member))
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
     def decrement(member, by=1)
-      redis.zincrby(key, -by, member).to_i
+      coerce_score(redis.zincrby(key, -by, member))
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -290,10 +302,30 @@ class Redis
     end
 
     private
-
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
+    end
+
+    # Either call from_redis for each value, or if it is interleaved with
+    # scores, coerce the scores as needed.
+    def from_redis_with_scores(result, opts)
+      if opts[:with_scores]
+        return result.map { |val, score|
+          next [from_redis(val), coerce_score(score)]
+        }
+      else
+        return result.map { |val| from_redis(val) }
+      end
+    end
+
+    # Coerces the score according to the settings of the sorted set object.
+    def coerce_score(score)
+      if @options[:marshal_score] == Integer
+        return score.to_i
+      else
+        return score.to_f
+      end
     end
   end
 end
