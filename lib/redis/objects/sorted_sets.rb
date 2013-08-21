@@ -19,7 +19,7 @@ class Redis
           if options[:global]
             instance_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::SortedSet.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::SortedSet.new(redis_field_key(:#{name}), redis_field_redis(:#{name}), redis_field_redis(:#{name})_objects[:#{name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -30,7 +30,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{name}
-                @#{name} ||= Redis::SortedSet.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
+                @#{name} ||= Redis::SortedSet.new(redis_field_key(:#{name}), redis_field_redis(:#{name}), redis_field_redis(:#{name})_objects[:#{name}])
               end
             EndMethods
           end
