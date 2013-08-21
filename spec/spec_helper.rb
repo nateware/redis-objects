@@ -25,10 +25,10 @@ REDIS_DUMP = File.expand_path 'redis.rdb', File.dirname(__FILE__)
 describe 'redis-server' do
   it "starting redis-server on #{REDIS_HOST}:#{REDIS_PORT}" do
     fork_pid = fork do
-      system "(echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}); echo databases 32 | #{REDIS_BIN} -"
+      system "(echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}; echo databases 32) | #{REDIS_BIN} -"
     end
     fork_pid.should > 0
-    sleep 2 
+    sleep 2
   end
 end
 

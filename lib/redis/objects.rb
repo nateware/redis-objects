@@ -109,6 +109,11 @@ class Redis
           downcase
       end
 
+      def redis_field_redis(name) #:nodoc:
+        klass = first_ancestor_with(name)
+        return klass.redis_objects[name.to_sym][:redis] || self.redis
+      end
+
       def redis_field_key(name, id=nil) #:nodoc:
         klass = first_ancestor_with(name)
         # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
@@ -136,6 +141,12 @@ class Redis
     # Instance methods that appear in your class when you include Redis::Objects.
     module InstanceMethods
       def redis() self.class.redis end
+
+      def redis_field_redis(name) #:nodoc:
+        klass = self.class.first_ancestor_with(name)
+        return klass.redis_objects[name.to_sym][:redis] || self.redis
+      end
+
       def redis_field_key(name) #:nodoc:
         klass = self.class.first_ancestor_with(name)
         if key = klass.redis_objects[name.to_sym][:key]
