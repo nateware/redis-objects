@@ -109,6 +109,11 @@ class Redis
           downcase
       end
 
+      def redis_field_redis(name) #:nodoc:
+        klass = first_ancestor_with(name)
+        return klass.redis_objects[name.to_sym][:redis] || self.redis
+      end
+
       def redis_field_key(name, id=nil, context=self) #:nodoc:
         klass = first_ancestor_with(name)
         # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
@@ -148,8 +153,13 @@ class Redis
       def redis()         self.class.redis end
       def redis_objects() self.class.redis_objects end
 
+      def redis_field_redis(name) #:nodoc:
+        return self.class.redis_field_redis(name)
+      end
+
       def redis_field_key(name) #:nodoc:
-        self.class.redis_field_key(name, send(self.class.redis_id_field), self)
+        id = send(self.class.redis_id_field) rescue nil
+        self.class.redis_field_key(name, id, self)
       end
     end
   end

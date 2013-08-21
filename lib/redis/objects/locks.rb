@@ -24,7 +24,7 @@ class Redis
               instance_variable_get("@#{lock_name}") or
                 instance_variable_set("@#{lock_name}",
                   Redis::Lock.new(
-                    redis_field_key(lock_name), redis, redis_objects[lock_name.to_sym]
+                    redis_field_key(lock_name), redis_field_redis(lock_name), redis_objects[lock_name.to_sym]
                   )
                 )
             end
@@ -49,7 +49,7 @@ class Redis
           verify_lock_defined!(name)
           raise ArgumentError, "Missing block to #{self.name}.obtain_lock" unless block_given?
           lock_name = "#{name}_lock"
-          Redis::Lock.new(redis_field_key(lock_name, id), redis, redis_objects[lock_name.to_sym]).lock(&block)
+          Redis::Lock.new(redis_field_key(lock_name, id), redis_field_redis(lock_name), redis_objects[lock_name.to_sym]).lock(&block)
         end
 
         # Clear the lock.  Use with care - usually only in an Admin page to clear
