@@ -585,13 +585,15 @@ describe Redis::HashKey do
     @hash['foo'].should == 'bar'
     @hash['abc'].should == '123'
     @hash['bang'].should == 'michael'
+
+    it "raises an error if a non-Hash is passed to fill" do
+      lambda { @hash.fill([]) }.should.raise(ArgumentError)
+    end
   end
-  
 
   after do
     @hash.clear
   end
-  
 end
 
 describe Redis::Set do
@@ -758,7 +760,6 @@ describe Redis::Set do
     @set_1.clear
     @set_2.clear
     @set_3.clear
-
   end
 end
 
