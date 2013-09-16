@@ -765,7 +765,7 @@ end
 
 describe Redis::SortedSet do
   before do
-    @set = Redis::SortedSet.new('spec/zset')
+    @set = Redis::SortedSet.new('spec/zset', :marshal => true)
     @set_1 = Redis::SortedSet.new('spec/zset_1')
     @set_2 = Redis::SortedSet.new('spec/zset_2')
     @set_3 = Redis::SortedSet.new('spec/zset_3')

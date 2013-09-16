@@ -160,14 +160,14 @@ class Redis
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
     def increment(member, by=1)
-      redis.zincrby(key, by, member).to_i
+      redis.zincrby(key, by, to_redis(member)).to_i
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
     def decrement(member, by=1)
-      redis.zincrby(key, -by, member).to_i
+      redis.zincrby(key, -by, to_redis(member)).to_i
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
