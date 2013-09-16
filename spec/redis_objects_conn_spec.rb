@@ -9,6 +9,35 @@ BAD_REDIS = "totally bad bogus redis handle"
 
 # Grab a global handle
 describe 'Connection tests' do
+  it "should support overriding object handles" do
+
+    class CustomConnectionObject
+      include Redis::Objects
+
+      redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 31)
+
+      value :redis_value, :redis => redis_handle, :key => 'rval'
+      value :default_redis_value, :key => 'rval'
+    end
+
+    obj = CustomConnectionObject.new
+
+    obj.default_redis_value.value.should == nil
+    obj.redis_value.value.should == nil
+
+    obj.default_redis_value.value = 'foo'
+    obj.default_redis_value.value.should == 'foo'
+    obj.redis_value.value.should == nil
+
+    obj.default_redis_value.clear
+    obj.redis_value.value = 'foo'
+    obj.redis_value.value.should == 'foo'
+    obj.default_redis_value.value.should == nil
+
+    obj.redis_value.clear
+    obj.default_redis_value.clear
+  end
+
   it "should support local handles" do
     Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
@@ -100,5 +129,3 @@ describe 'Connection tests' do
   end
 
 end
-
-

@@ -22,7 +22,7 @@ class Redis
           if options[:global]
             instance_eval <<-EndMethods
               def #{lock_name}(&block)
-                @#{lock_name} ||= Redis::Lock.new(redis_field_key(:#{lock_name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{lock_name}])
+                @#{lock_name} ||= Redis::Lock.new(redis_field_key(:#{lock_name}), redis_field_redis(:#{name}), redis_field_redis(:#{name})_objects[:#{lock_name}])
               end
             EndMethods
             class_eval <<-EndMethods
@@ -33,7 +33,7 @@ class Redis
           else
             class_eval <<-EndMethods
               def #{lock_name}(&block)
-                @#{lock_name} ||= Redis::Lock.new(redis_field_key(:#{lock_name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{lock_name}])
+                @#{lock_name} ||= Redis::Lock.new(redis_field_key(:#{lock_name}), redis_field_redis(:#{name}), redis_field_redis(:#{name})_objects[:#{lock_name}])
               end
             EndMethods
           end
