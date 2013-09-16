@@ -1,8 +1,14 @@
 = Changelog for Redis::Objects
 
-== 0.7.1
+== 0.8.0
+
+* Refactor to modular include/extend approach to enable hooking and remove evals [nateware]
+
+* Support marshaling of sorted set key names for incr/decr [hfwang]
 
 * Fix problematic typo in HashKey#fill [johnmaxwell]
+
+* Fix wrong parameter order for revrangebyscore method [FoGhost]
 
 * Convert to using Bundler from Jeweler to manage gem [nateware]
 
