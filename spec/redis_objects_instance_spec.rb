@@ -767,7 +767,8 @@ end
 
 describe Redis::SortedSet do
   before do
-    @set = Redis::SortedSet.new('spec/zset')
+    @fset = Redis::SortedSet.new('spec/zset')
+    @set = Redis::SortedSet.new('spec/zset', :marshal_score => Integer)
     @set_1 = Redis::SortedSet.new('spec/zset_1')
     @set_2 = Redis::SortedSet.new('spec/zset_2')
     @set_3 = Redis::SortedSet.new('spec/zset_3')
@@ -775,6 +776,19 @@ describe Redis::SortedSet do
     @set_1.clear
     @set_2.clear
     @set_3.clear
+  end
+
+  it "should handle sorted sets with floating point scores" do
+    @fset.should.be.empty
+    @fset['a'] = 11.12
+    @fset['a'].should == 11.12
+    @fset['a'] = 21.1
+    @fset.add('a', 5.5)
+    @fset.score('a').should == 5.5
+    @fset['b'] = 5.6
+    @fset['b'].should == 5.6
+
+    @fset.range(0, 1, :withscores => true).should == [['a', 5.5],['b', 5.6]]
   end
 
   it "should handle sorted sets of simple values" do
@@ -786,7 +800,7 @@ describe Redis::SortedSet do
     @set['a'].should == 5
     @set['a'] = 3
     @set['b'] = 5.6
-    @set['b'].should == 5.6
+    @set['b'].should == 5
     @set['c'] = 4
 
     a = @set.members
@@ -808,9 +822,9 @@ describe Redis::SortedSet do
 
     @set.members.should == ['a','c','b']
     @set.members.reverse.should == ['b','c','a']
-    @set.members(:withscores => true).should == [['a',3],['c',4],['b',5.6]]
-    @set.members(:with_scores => true).should == [['a',3],['c',4],['b',5.6]]
-    @set.members(:withscores => true).reverse.should == [['b',5.6],['c',4],['a',3]]
+    @set.members(:withscores => true).should == [['a',3],['c',4],['b',5]]
+    @set.members(:with_scores => true).should == [['a',3],['c',4],['b',5]]
+    @set.members(:withscores => true).reverse.should == [['b',5],['c',4],['a',3]]
 
     @set['b'] = 5
     @set['b'] = 6
