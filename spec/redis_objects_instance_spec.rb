@@ -765,14 +765,16 @@ end
 
 describe Redis::SortedSet do
   before do
-    @set = Redis::SortedSet.new('spec/zset', :marshal => true)
+    @set = Redis::SortedSet.new('spec/zset')
     @set_1 = Redis::SortedSet.new('spec/zset_1')
     @set_2 = Redis::SortedSet.new('spec/zset_2')
     @set_3 = Redis::SortedSet.new('spec/zset_3')
+    @set_4 = Redis::SortedSet.new('spec/zset_3', :marshal => true)
     @set.clear
     @set_1.clear
     @set_2.clear
     @set_3.clear
+    @set_4.clear
   end
 
   it "should handle sorted sets of simple values" do
@@ -869,6 +871,15 @@ describe Redis::SortedSet do
     @set.size.should == 3
   end
 
+  it "should support marshaling key names" do
+    @set_4[Object] = 1.20
+    @set_4[Module] = 2.30
+    @set_4.incr(Object, 0.5)
+    @set_4.decr(Module, 0.5)
+    @set_4[Object].round(1).should == 1.7
+    @set_4[Module].round(1).should == 1.8
+  end
+
   it "should support renaming sorted sets" do
     @set.should.be.empty
     @set['zynga'] = 151
@@ -892,5 +903,6 @@ describe Redis::SortedSet do
     @set_1.clear
     @set_2.clear
     @set_3.clear
+    @set_4.clear
   end
 end
