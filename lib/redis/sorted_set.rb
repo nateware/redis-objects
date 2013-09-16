@@ -115,14 +115,20 @@ class Redis
       from_redis redis.zrangebyscore(key, min, max, args)
     end
 
-    # Forwards compat (not yet implemented in Redis)
-    def revrangebyscore(min, max, options={})
+    # Returns all the elements in the sorted set at key with a score between max and min
+    # (including elements with score equal to max or min). In contrary to the default ordering of sorted sets,
+    # for this command the elements are considered to be ordered from high to low scores.
+    # Options:
+    #     :count, :offset - passed to LIMIT
+    #     :withscores     - if true, scores are returned as well
+    # Redis: ZREVRANGEBYSCORE
+    def revrangebyscore(max, min, options={})
       args = {}
       args[:limit] = [options[:offset] || 0, options[:limit] || options[:count]] if
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      from_redis redis.zrevrangebyscore(key, min, max, args)
+      from_redis redis.zrevrangebyscore(key, max, min, args)
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are

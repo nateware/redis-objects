@@ -827,12 +827,11 @@ describe Redis::SortedSet do
     @set.rangebyscore(0, 4, :count => 2).should == ['d','a']
     @set.rangebyscore(0, 4, :limit => 2).should == ['d','a']
 
-    # Redis 1.3.5
-    # @set.rangebyscore(0,4, :withscores => true).should == [['d',4],['a',3]]
-    # @set.revrangebyscore(0,4).should == ['d','a']
-    # @set.revrangebyscore(0,4, :count => 2).should == ['a','d']
-    # @set.rank('b').should == 2
-    # @set.revrank('b').should == 3
+    @set.revrangebyscore(4, 0, :withscores => true).should == [['a', 3], ['d', 0]]
+    @set.revrangebyscore(4, 0).should == ['a', 'd']
+    @set.revrangebyscore(4, 0, :count => 2).should == ['a','d']
+    @set.rank('b').should == 2
+    @set.revrank('b').should == 0
 
     # shouldn't report a rank for a key that doesn't exist
     @set.rank('foo').should.not == @set.rank(@set.first)
