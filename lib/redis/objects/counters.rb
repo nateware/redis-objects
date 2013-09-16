@@ -23,24 +23,27 @@ class Redis
           options[:start] ||= 0
           options[:type]  ||= options[:start] == 0 ? :increment : :decrement
           redis_objects[name.to_sym] = options.merge(:type => :counter)
-          klass_name = '::' + self.name
+
+          mod = Module.new do
+            define_method(name) do
+              instance_variable_get("@#{name}") or
+                instance_variable_set("@#{name}",
+                  Redis::Counter.new(
+                    redis_field_key(name), redis, redis_objects[name.to_sym]
+                  )
+                )
+            end
+          end
+
           if options[:global]
-            instance_eval <<-EndMethods
-              def #{name}
-                @#{name} ||= Redis::Counter.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
-              end
-            EndMethods
-            class_eval <<-EndMethods
-              def #{name}
-                self.class.#{name}
-              end
-            EndMethods
+            extend mod
+
+            # dispatch to class methods
+            define_method(name) do
+              self.class.public_send(name)
+            end
           else
-            class_eval <<-EndMethods
-              def #{name}
-                @#{name} ||= Redis::Counter.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
-              end
-            EndMethods
+            include mod
           end
         end
 

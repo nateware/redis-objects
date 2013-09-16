@@ -25,7 +25,10 @@ class Roster
   list :all_player_stats, :key => 'players:all_stats', :global => true
   set :total_wins, :key => 'players:#{id}:all_stats'
   value :my_rank, :key => 'players:my_rank:#{username}'
-  value :weird_key, :key => 'players:weird_key:#{raise}', :global => true
+
+  # now support class interpolation as well. not sure why not previously
+  def self.jimmyhat; 350; end
+  value :weird_key, :key => 'players:weird_key:#{jimmyhat}', :global => true
 
   #callable as key
   counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
@@ -125,7 +128,7 @@ describe Redis::Objects do
     @roster.my_rank = 'a'
     @roster.redis.get('players:my_rank:user1').should == 'a'
     Roster.weird_key = 'tuka'
-    Roster.redis.get('players:weird_key:#{raise}').should == 'tuka'
+    Roster.redis.get("players:weird_key:#{Roster.jimmyhat}").should == 'tuka'
 
     k = "Roster:#{Time.now.strftime('%Y-%m-%dT%H')}:daily"
     @roster.daily.incr

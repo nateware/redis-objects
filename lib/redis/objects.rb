@@ -109,19 +109,24 @@ class Redis
           downcase
       end
 
-      def redis_field_key(name, id=nil) #:nodoc:
+      def redis_field_key(name, id=nil, context=self) #:nodoc:
         klass = first_ancestor_with(name)
         # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
         # I don't think people were using Proc as keys before (that would create a weird key). Should be ok
-        key = klass.redis_objects[name.to_sym][:key]
-        if key && key.respond_to?(:call)
-          key = key.call self
+        if key = klass.redis_objects[name.to_sym][:key]
+          if key.respond_to?(:call)
+            key = key.call context
+          else
+            context.instance_eval "%(#{key})"
+          end
+        else
+          if id.nil? and !klass.redis_objects[name.to_sym][:global]
+            raise NilObjectId,
+              "[#{klass.redis_objects[name.to_sym]}] Attempt to address redis-object " +
+              ":#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
+          end
+          "#{redis_prefix(klass)}:#{id}:#{name}"
         end
-        if id.nil? and !klass.redis_objects[name.to_sym][:global]
-          raise NilObjectId,
-            "[#{klass.redis_objects[name.to_sym]}] Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
-        end
-        key || "#{redis_prefix(klass)}:#{id}:#{name}"
       end
 
       def first_ancestor_with(name)
@@ -135,23 +140,13 @@ class Redis
 
     # Instance methods that appear in your class when you include Redis::Objects.
     module InstanceMethods
-      def redis() self.class.redis end
+      # Map up one level to make modular extend/include approach sane
+      def redis()         self.class.redis end
+      def redis_prefix()  self.class.redis_prefix  end
+      def redis_objects() self.class.redis_objects end
+
       def redis_field_key(name) #:nodoc:
-        klass = self.class.first_ancestor_with(name)
-        if key = klass.redis_objects[name.to_sym][:key]
-          if key.respond_to?(:call)
-            key.call self
-          else
-            eval "%(#{key})"
-          end
-        else
-          if id.nil? and !klass.redis_objects[name.to_sym][:global]
-            raise NilObjectId,
-              "Attempt to address redis-object :#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
-          end
-          # don't try to refactor into class redis_field_key because fucks up eval context
-          "#{klass.redis_prefix}:#{id}:#{name}"
-        end
+        self.class.redis_field_key(name, id, self)
       end
     end
   end

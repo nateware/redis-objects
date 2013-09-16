@@ -15,26 +15,28 @@ class Redis
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def set(name, options={})
           redis_objects[name.to_sym] = options.merge(:type => :set)
-          klass_name = '::' + self.name
-          if options[:global]
-            instance_eval <<-EndMethods
-              def #{name}
-                @#{name} ||= Redis::Set.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
-              end
-            EndMethods
-            class_eval <<-EndMethods
-              def #{name}
-                self.class.#{name}
-              end
-            EndMethods
-          else
-            class_eval <<-EndMethods
-              def #{name}
-                @#{name} ||= Redis::Set.new(redis_field_key(:#{name}), #{klass_name}.redis, #{klass_name}.redis_objects[:#{name}])
-              end
-            EndMethods
+
+          mod = Module.new do
+            define_method(name) do
+              instance_variable_get("@#{name}") or
+                instance_variable_set("@#{name}",
+                  Redis::Set.new(
+                    redis_field_key(name), redis, redis_objects[name.to_sym]
+                  )
+                )
+            end
           end
 
+          if options[:global]
+            extend mod
+
+            # dispatch to class methods
+            define_method(name) do
+              self.class.public_send(name)
+            end
+          else
+            include mod
+          end
         end
       end
 
