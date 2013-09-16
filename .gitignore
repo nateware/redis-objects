@@ -8,3 +8,4 @@ spec/redis.pid
 .bundle/
 dump.rdb
 Gemfile.lock
+redis-objects-*.gem

@@ -1,5 +1,11 @@
 = Changelog for Redis::Objects
 
+== 0.7.1
+
+* Fix problematic typo in HashKey#fill [johnmaxwell]
+
+* Convert to using Bundler from Jeweler to manage gem [nateware]
+
 == 0.7.0 (27 Feb 2013)
 
 * Enable inheritance of Redis::Objects models [rossta]
