@@ -586,7 +586,10 @@ describe Redis::HashKey do
     @hash['abc'].should == '123'
     @hash['bang'].should == 'michael'
   end
-  
+
+  it "raises an error if a non-Hash is passed to fill" do
+    lambda { @hash.fill([]) }.should.raise(ArgumentError)
+  end
 
   after do
     @hash.clear
