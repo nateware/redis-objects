@@ -136,6 +136,10 @@ class Redis
           superclass.first_ancestor_with(name)
         end
       end
+
+      def redis_object_id_field(new_id_field=nil)
+        @redis_object_id_field = new_id_field || @redis_object_id_field || :id
+      end
     end
 
     # Instance methods that appear in your class when you include Redis::Objects.
@@ -146,7 +150,7 @@ class Redis
       def redis_objects() self.class.redis_objects end
 
       def redis_field_key(name) #:nodoc:
-        self.class.redis_field_key(name, id, self)
+        self.class.redis_field_key(name, send(self.class.redis_object_id_field), self)
       end
     end
   end
