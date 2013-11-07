@@ -504,30 +504,33 @@ describe Redis::Objects do
     @roster.player_stats.size.should == 4
     @roster.player_stats.should == ['a','c','f','j']
     @roster.player_stats.get.should == ['a','c','f','j']
+    @roster.player_stats.push *['h','i']
+    @roster.player_stats.should == ['a','c','f','j','h','i']
+    @roster.player_stats.get.should == ['a','c','f','j','h','i']
 
     i = -1
     @roster.player_stats.each do |st|
       st.should == @roster.player_stats[i += 1]
     end
-    @roster.player_stats.should == ['a','c','f','j']
-    @roster.player_stats.get.should == ['a','c','f','j']
+    @roster.player_stats.should == ['a','c','f','j','h','i']
+    @roster.player_stats.get.should == ['a','c','f','j','h','i']
 
     @roster.player_stats.each_with_index do |st,i|
       st.should == @roster.player_stats[i]
     end
-    @roster.player_stats.should == ['a','c','f','j']
-    @roster.player_stats.get.should == ['a','c','f','j']
+    @roster.player_stats.should == ['a','c','f','j','h','i']
+    @roster.player_stats.get.should == ['a','c','f','j','h','i']
 
     coll = @roster.player_stats.collect{|st| st}
-    coll.should == ['a','c','f','j']
-    @roster.player_stats.should == ['a','c','f','j']
-    @roster.player_stats.get.should == ['a','c','f','j']
+    coll.should == ['a','c','f','j','h','i']
+    @roster.player_stats.should == ['a','c','f','j','h','i']
+    @roster.player_stats.get.should == ['a','c','f','j','h','i']
 
     @roster.player_stats << 'a'
     coll = @roster.player_stats.select{|st| st == 'a'}
     coll.should == ['a','a']
-    @roster.player_stats.should == ['a','c','f','j','a']
-    @roster.player_stats.get.should == ['a','c','f','j','a']
+    @roster.player_stats.should == ['a','c','f','j','h','i','a']
+    @roster.player_stats.get.should == ['a','c','f','j','h','i','a']
   end
 
   it "should handle sets of simple values" do
