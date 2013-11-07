@@ -28,6 +28,18 @@ class Redis
       redis.zadd(key, score, to_redis(member))
     end
 
+    # Add a list of members and their corresponding value (or a hash mapping
+    # values to scores) to Redis. Note that the arguments to this are flipped;
+    # the member comes first rather than the score, since the member is the unique
+    # item (not the score).
+    def add_all(values)
+      redis_vals = []
+      values.each do |member, score|
+        redis_vals << score << to_redis(member)
+      end
+      redis.zadd(key, redis_vals)
+    end
+
     # Same functionality as Ruby arrays.  If a single number is given, return
     # just the element at that index using Redis: ZRANGE. Otherwise, return
     # a range of values using Redis: ZRANGE.
