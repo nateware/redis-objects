@@ -1,10 +1,14 @@
 = Changelog for Redis::Objects
 
-== 0.8.0
+== 0.8.0 (9 Nov 2013)
 
 * Refactor to modular include/extend approach to enable hooking and remove evals [nateware]
 
+* Custom id field via redis_id_field :whatever [liuming]
+
 * Support marshaling of sorted set key names for incr/decr [hfwang]
+
+* Add support for pushing multiple values into a list [scranton]
 
 * Fix problematic typo in HashKey#fill [johnmaxwell]
 
