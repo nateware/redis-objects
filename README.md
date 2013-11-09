@@ -147,6 +147,21 @@ Counters can be atomically incremented/decremented (but not assigned):
     @team.hits.incr(3)    # add 3
     @team.runs = 4        # exception
 
+Defining a diffrent method as id field is easy
+
+    class User
+      include Redis::Objects
+      redis_object_id_field :uid
+      counter :my_posts
+      def uid
+        'random_uid_string'
+      end
+    end
+
+    user.uid # 'random_uid_string'
+    user.my_posts.increment # 1
+
+
 Finally, for free, you get a `redis` method that points directly to a Redis connection:
 
     Team.redis.get('somekey')
