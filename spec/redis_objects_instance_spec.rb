@@ -171,8 +171,9 @@ describe Redis::List do
       @list.get.should == ['a','c','f']
       @list << 'j'
       @list.should == ['a','c','f','j']
-      @list.push *['h','i']
-      @list.should == ['a','c','f','j','h','i']
+      @list.push 'h'
+      @list.push 'i', 'j'
+      @list.should == ['a','c','f','j','h','i','j']
       # Test against similar Ruby functionality
       a = @list.values
       @list[0..2].should == a[0..2]
@@ -186,10 +187,11 @@ describe Redis::List do
       @list.slice(1, 3).should == a.slice(1, 3)
       @list[0, 0].should == []
       @list[0, -1].should == a[0, -1]
-      @list.length.should == 6
-      @list.size.should == 6
+      @list.length.should == 7
       @list.should == a
       @list.get.should == a
+      @list.pop # lose 'j'
+      @list.size.should == 6
 
       i = -1
       @list.each do |st|
@@ -249,22 +251,26 @@ describe Redis::List do
       @list.options[:marshal] = true
       v1 = {:json => 'data'}
       v2 = {:json2 => 'data2'}
+      v3 = [1,2,3]
       @list << v1
       @list << v2
       @list.first.should == v1
       @list[0] = @list[0].tap{|d| d[:json] = 'data_4'}
       @list.first.should == {:json => 'data_4'}
       @list.last.should == v2
-      @list << [1,2,3,[4,5]]
-      @list.last.should == [1,2,3,[4,5]]
+      @list << [1,2,3,[4,5],6]
+      @list.last.should == [1,2,3,[4,5],6]
       @list.shift.should == {:json => 'data_4'}
       @list.size.should == 2
       @list.delete(v2)
       @list.size.should == 1
-      @list.push *[v1, v2]
+      @list.push v1, v2
       @list[1].should == v1
       @list.last.should == v2
       @list.size.should == 3
+      @list.unshift v2, v3
+      @list.size.should == 5
+      @list.first.should == v3
       @list.options[:marshal] = false
     end
 

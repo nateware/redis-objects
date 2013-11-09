@@ -28,7 +28,7 @@ class Redis
 
     # Add a member to the end of the list. Redis: RPUSH
     def push(*values)
-      redis.rpush(key, values.map {|v| to_redis(v) })
+      redis.rpush(key, values.map{|v| to_redis(v) })
       redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
     end
 
@@ -50,8 +50,8 @@ class Redis
     end
 
     # Add a member to the start of the list. Redis: LPUSH
-    def unshift(value)
-      redis.lpush(key, to_redis(value))
+    def unshift(*values)
+      redis.lpush(key, values.map{|v| to_redis(v) })
       redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
     end
 
