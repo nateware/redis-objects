@@ -20,15 +20,15 @@ class Redis
       push(value)
       self  # for << 'a' << 'b'
     end
-	
+
     # Add a member before or after pivot in the list. Redis: LINSERT
     def insert(where,pivot,value)
       redis.linsert(key,where,to_redis(pivot),to_redis(value))
     end
 
     # Add a member to the end of the list. Redis: RPUSH
-    def push(value)
-      redis.rpush(key, to_redis(value))
+    def push(*values)
+      redis.rpush(key, values.map {|v| to_redis(v) })
       redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
     end
 
@@ -132,16 +132,16 @@ class Redis
       redis.llen(key)
     end
     alias_method :size, :length
-   
+
     # Returns true if there are no elements in the list. Redis: LLEN == 0
     def empty?
       length == 0
     end
- 
+
     def ==(x)
       values == x
     end
-    
+
     def to_s
       values.join(', ')
     end
