@@ -137,8 +137,8 @@ class Redis
         end
       end
 
-      def redis_object_id_field(new_id_field=nil)
-        @redis_object_id_field = new_id_field || @redis_object_id_field || :id
+      def redis_id_field(id=nil)
+        @redis_id_field = id || @redis_id_field || :id
       end
     end
 
@@ -146,11 +146,10 @@ class Redis
     module InstanceMethods
       # Map up one level to make modular extend/include approach sane
       def redis()         self.class.redis end
-      def redis_prefix()  self.class.redis_prefix  end
       def redis_objects() self.class.redis_objects end
 
       def redis_field_key(name) #:nodoc:
-        self.class.redis_field_key(name, send(self.class.redis_object_id_field), self)
+        self.class.redis_field_key(name, send(self.class.redis_id_field), self)
       end
     end
   end

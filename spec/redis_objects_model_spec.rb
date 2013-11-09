@@ -68,11 +68,11 @@ end
 
 class UidRoster < Roster
   attr_accessor :uid
-  def initialize(uid=1) @uid = uid end
+  def initialize(uid=123) @uid = uid end
 end
 
 class CustomIdFieldRoster < UidRoster
-  redis_object_id_field :uid
+  redis_id_field :uid
   include Redis::Objects
   counter :basic
 end
@@ -859,9 +859,12 @@ describe Redis::Objects do
   end
 
   it "should persist object with custom id field name" do
-    @custome_id_field_roster = CustomIdFieldRoster.new()
-    @custome_id_field_roster.increment(:basic).should == 1
-    @custome_id_field_roster.basic.increment.should == 2
+    @custom_id_field_roster = CustomIdFieldRoster.new()
+    @custom_id_field_roster.uid.should == 123 # sanity
+    @custom_id_field_roster.increment(:basic).should == 1
+    @custom_id_field_roster.basic.increment.should == 2
+    @custom_id_field_roster.basic.reset
+    @custom_id_field_roster.basic.should == 0
   end
 
   it "should pick up class methods from superclass automatically" do
