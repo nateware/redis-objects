@@ -89,6 +89,10 @@ For illustration purposes, consider this stub class:
     user.my_posts.increment
     user.my_posts.increment
     puts user.my_posts  # 3
+    user.my_posts.reset
+    puts user.my_posts.value # 0
+    user.my_posts.reset 5
+    puts user.my_posts.value # 5
 
 Here's an example that integrates several data types with an ActiveRecord model:
 
