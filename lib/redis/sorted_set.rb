@@ -222,7 +222,8 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      redis.zunionstore(name, keys_from_objects([self] + sets))
+      opts = sets.last.is_a?(Hash) ? sets.pop : {}
+      redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -296,6 +297,9 @@ class Redis
     end
 
     private
+    def key_from_object(set)
+      set.is_a?(Redis::SortedSet) ? set.key : set
+    end
 
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
