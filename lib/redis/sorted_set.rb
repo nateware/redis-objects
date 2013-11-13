@@ -32,13 +32,14 @@ class Redis
     # values to scores) to Redis. Note that the arguments to this are flipped;
     # the member comes first rather than the score, since the member is the unique
     # item (not the score).
-    def add_all(values)
+    def merge(values)
       redis_vals = []
       values.each do |member, score|
         redis_vals << score << to_redis(member)
       end
       redis.zadd(key, redis_vals)
     end
+    alias_method :add_all, :merge
 
     # Same functionality as Ruby arrays.  If a single number is given, return
     # just the element at that index using Redis: ZRANGE. Otherwise, return

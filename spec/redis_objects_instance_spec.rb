@@ -882,6 +882,13 @@ describe Redis::SortedSet do
     @set.size.should == 3
   end
 
+  it "should handle inserting multiple values at once" do
+    @set.merge({ 'a' => 1, 'b' => 2 })
+    @set.merge([['a', 4], ['c', 5]])
+
+    @set.members.sort.should == ['a', 'b', 'c']
+  end
+
   it "should support marshaling key names" do
     @set_4[Object] = 1.20
     @set_4[Module] = 2.30
