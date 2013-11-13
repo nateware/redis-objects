@@ -229,23 +229,23 @@ describe Redis::List do
       list2.should == ["b"]
     end
 
-		it "should handle insert" do
-			@list << 'b' << 'd'
-			@list.insert(:before,'b','a')
-			@list.insert(:after,'b','c')
-			@list.insert("before",'a','z')
-			@list.insert("after",'d','e')
-			@list.should == ['z','a','b','c','d','e']
-		end
+    it "should handle insert" do
+      @list << 'b' << 'd'
+      @list.insert(:before,'b','a')
+      @list.insert(:after,'b','c')
+      @list.insert("before",'a','z')
+      @list.insert("after",'d','e')
+      @list.should == ['z','a','b','c','d','e']
+    end
 
-		it "should handle insert at a specific index" do
-			@list << 'b' << 'd'
-			@list.should == ['b','d']
-			@list[0] = 'a'
-			@list.should == ['a', 'd']
-			@list[1] = 'b'
-			@list.should == ['a', 'b']
-		end
+    it "should handle insert at a specific index" do
+      @list << 'b' << 'd'
+      @list.should == ['b','d']
+      @list[0] = 'a'
+      @list.should == ['a', 'd']
+      @list[1] = 'b'
+      @list.should == ['a', 'b']
+    end
 
     it "should handle lists of complex data types" do
       @list.options[:marshal] = true
@@ -741,14 +741,14 @@ describe Redis::Set do
     @set_2.sort(SORT_LIMIT).should == %w(3 4)
 
     @set_3 << 'm_4' << 'm_5' << 'm_1' << 'm_3' << 'm_2'
-		### incorrect interpretation of what the :by parameter means
-		### :by will look up values of keys so it would try to find a value in
-		### redis of "m_m_1" which doesn't exist at this point, it is not a way to
-		### alter the value to sort by but rather use a different value for this value
-		### in the set (Kris Fox)
+    ### incorrect interpretation of what the :by parameter means
+    ### :by will look up values of keys so it would try to find a value in
+    ### redis of "m_m_1" which doesn't exist at this point, it is not a way to
+    ### alter the value to sort by but rather use a different value for this value
+    ### in the set (Kris Fox)
     # @set_3.sort(:by => 'm_*').should == %w(m_1 m_2 m_3 m_4 m_5)
-		# below passes just fine
-		@set_3.sort.should == %w(m_1 m_2 m_3 m_4 m_5)
+    # below passes just fine
+    @set_3.sort.should == %w(m_1 m_2 m_3 m_4 m_5)
 
     val1 = Redis::Value.new('spec/3/sorted')
     val2 = Redis::Value.new('spec/4/sorted')
@@ -907,6 +907,62 @@ describe Redis::SortedSet do
     @set.renamenx('spec/zfoo').should.be.true
     @set.clear
     @set.redis.del('spec/zset2')
+  end
+
+  it "should handle unions" do
+    @set_1.add('a', 1)
+    @set_1.add('b', 4)
+    @set_1.add('c', 3)
+
+    @set_2.add('b', 2)
+    @set_2.add('c', 1)
+    @set_2.add('d', 0)
+
+    @set_1.unionstore(@set.key, @set_2)
+    # @set is now: [[d, 0], [a, 1], [c, 4], [b, 6]]
+    @set.members.should == ['d', 'a', 'c', 'b']
+
+    @set_2.unionstore(@set, @set_1, :aggregate => :sum)
+    # @set is now: [[d, 0], [a, 1], [c, 4], [b, 6]]
+    @set.members.should == ['d', 'a', 'c', 'b']
+
+    @set_1.unionstore(@set, @set_2, :aggregate => :min)
+    # @set is now: [[d, 0], [a, 1], [c, 1], [b, 2]]
+    @set.members.should == ['d', 'a', 'c', 'b']
+    @set['b'].should == 2
+
+    @set_1.unionstore(@set, @set_2, :aggregate => :max)
+    # @set is now: [[d, 0], [a, 1], [c, 3], [b, 4]]
+    @set.members.should == ['d', 'a', 'c', 'b']
+    @set['b'].should == 4
+
+    @set_1.unionstore(@set, @set_2, :aggregate => :sum, :weights => [0, 1])
+    # @set is now: [[a, 0], [d, 0], [c, 1], [b, 2]]
+    @set.members.should == ['a', 'd', 'c', 'b']
+    @set['b'].should == 2
+  end
+
+  it "should handle intersections" do
+    @set_1.add('a', 1)
+    @set_1.add('b', 4)
+    @set_1.add('c', 3)
+
+    @set_2.add('b', 2)
+    @set_2.add('c', 1)
+    @set_2.add('d', 0)
+
+    @set_1.interstore(@set.key, @set_2)
+    # @set is now: [[c, 4], [b, 6]]
+    @set.members.should == ['c', 'b']
+
+    @set_2.interstore(@set, @set_1, :aggregate => :sum)
+    # @set is now: [[c, 4], [b, 6]]
+    @set.members.should == ['c', 'b']
+
+    @set_1.interstore(@set, @set_2, :aggregate => :min)
+    # @set is now: [[c, 1], [b, 2]]
+    @set.members.should == ['c', 'b']
+    @set['b'].should == 2
   end
 
   after do

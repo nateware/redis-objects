@@ -199,7 +199,8 @@ class Redis
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
-      redis.zinterstore(name, keys_from_objects([self] + sets))
+      opts = sets.last.is_a?(Hash) ? sets.pop : {}
+      redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
     # Return the union with another set.  Can pass it either another set
