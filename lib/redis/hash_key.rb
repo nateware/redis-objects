@@ -30,7 +30,7 @@ class Redis
 
     # Gets the value of a field
     def [](field)
-      fetch(field)
+      hget(field)
     end
 
     # Redis: HSET
@@ -39,7 +39,7 @@ class Redis
     end
 
     # Redis: HGET
-    def fetch(field)
+    def hget(field)
       from_redis redis.hget(key, field), options[:marshal_keys][field]
     end
 
@@ -54,6 +54,15 @@ class Redis
     # Delete field. Redis: HDEL
     def delete(field)
       redis.hdel(key, field)
+    end
+
+    def fetch field, *args, &block
+      value = hget(field)
+      default = args[0]
+
+      return value if value || (!default && !block_given?)
+
+      block_given? ? block.call(field) : default
     end
 
     # Return all the keys of the hash. Redis: HKEYS

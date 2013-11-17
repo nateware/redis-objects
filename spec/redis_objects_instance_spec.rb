@@ -603,6 +603,18 @@ describe Redis::HashKey do
     end
   end
 
+  it "should fetch default values" do
+    @hash['abc'] = "123"
+
+    value = @hash.fetch('missing_key','default_value')
+    block = @hash.fetch("missing_key") {|key| "oops: #{key}" }
+    no_error = @hash.fetch("abc") rescue "error"
+
+    no_error.should == "123"
+    value.should == "default_value"
+    block.should == "oops: missing_key"
+  end
+
   after do
     @hash.clear
   end
