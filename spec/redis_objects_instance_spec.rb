@@ -94,7 +94,7 @@ describe Redis::Value do
   end
 
   it 'should set expiration when expireat option assigned' do
-    @value = Redis::Value.new('spec/value', :expireat => (Time.now + 10.seconds).to_i)
+    @value = Redis::Value.new('spec/value', :expireat => Time.now + 10.seconds)
     @value.value = 'monkey'
     @value.ttl.should > 0
   end
@@ -319,7 +319,7 @@ describe Redis::List do
     end
 
     it 'should set expiration when expireat option assigned' do
-      @list = Redis::List.new('spec/list', :expireat => (Time.now + 10.seconds).to_i)
+      @list = Redis::List.new('spec/list', :expireat => Time.now + 10.seconds)
       @list << 'val'
       @list.ttl.should > 0
       @list.ttl.should <= 10
@@ -376,7 +376,7 @@ describe Redis::Counter do
   end
 
   it 'should set expiration when expireat option assigned' do
-    @counter = Redis::Counter.new('spec/counter', :expireat => (Time.now + 10.seconds).to_i)
+    @counter = Redis::Counter.new('spec/counter', :expireat => Time.now + 10.seconds)
     @counter.increment
     @counter.ttl.should > 0
     @counter.ttl.should <= 10
@@ -664,7 +664,7 @@ describe Redis::HashKey do
   end
 
   it 'should set expiration when expireat option assigned' do
-    @hash = Redis::HashKey.new('spec/hash_key', :expireat => (Time.now + 10.seconds).to_i)
+    @hash = Redis::HashKey.new('spec/hash_key', :expireat => Time.now + 10.seconds)
     @hash['foo'] = 'bar'
     @hash.ttl.should > 0
   end
@@ -677,7 +677,7 @@ describe Redis::HashKey do
   end
 
   it 'should set expiration when expireat option assigned' do
-    @hash = Redis::HashKey.new('spec/hash_key', :expireat => (Time.now + 10.seconds).to_i)
+    @hash = Redis::HashKey.new('spec/hash_key', :expireat => Time.now + 10.seconds)
     @hash['foo'] = 'bar'
     @hash.ttl.should > 0
   end
@@ -853,7 +853,7 @@ describe Redis::Set do
   end
 
   it 'should set expiration when expireat option assigned' do
-    @set = Redis::Set.new('spec/set', :expireat => (Time.now + 10.seconds).to_i)
+    @set = Redis::Set.new('spec/set', :expireat => Time.now + 10.seconds)
     @set << 'val'
     @set.ttl.should > 0
     @set.ttl.should <= 10

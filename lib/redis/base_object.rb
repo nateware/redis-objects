@@ -18,7 +18,7 @@ class Redis
       if !@options[:expiration].nil?
         redis.expire(@key, @options[:expiration]) if redis.ttl(@key) < 0
       elsif !@options[:expireat].nil?
-        redis.expireat(@key, @options[:expireat]) if redis.ttl(@key) < 0
+        redis.expireat(@key, @options[:expireat].to_i) if redis.ttl(@key) < 0
       end
     end
 

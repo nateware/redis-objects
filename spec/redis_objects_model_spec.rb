@@ -35,15 +35,15 @@ class Roster
 
   # set default expiration
   value :value_with_expiration, :expiration => 10
-  value :value_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  value :value_with_expireat, :expireat => Time.now + 10.seconds
   set :set_with_expiration, :expiration => 10
-  set :set_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  set :set_with_expireat, :expireat => Time.now + 10.seconds
   list :list_with_expiration, :expiration => 10
-  list :list_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  list :list_with_expireat, :expireat => Time.now + 10.seconds
   hash_key :hash_with_expiration, :expiration => 10
-  hash_key :hash_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  hash_key :hash_with_expireat, :expireat => Time.now + 10.seconds
   counter :counter_with_expiration, :expiration => 10
-  counter :counter_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  counter :counter_with_expireat, :expireat => Time.now + 10.seconds
 
   def initialize(id=1) @id = id end
   def id; @id; end
