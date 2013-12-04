@@ -81,6 +81,8 @@ class Redis
         end
       EndOverload
     end
+
+    expiration_filter :increment, :decrement
    
     private
 
