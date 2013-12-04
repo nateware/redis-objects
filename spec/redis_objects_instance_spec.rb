@@ -368,6 +368,20 @@ describe Redis::Counter do
     @counter.should == 111
   end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expiration => 10)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expireat => (Time.now + 10.seconds).to_i)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
+  end
+
   after do
     @counter.delete
   end

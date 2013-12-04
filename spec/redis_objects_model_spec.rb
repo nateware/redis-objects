@@ -42,6 +42,8 @@ class Roster
   list :list_with_expireat, :expireat => (Time.now + 10.seconds).to_i
   hash_key :hash_with_expiration, :expiration => 10
   hash_key :hash_with_expireat, :expireat => (Time.now + 10.seconds).to_i
+  counter :counter_with_expiration, :expiration => 10
+  counter :counter_with_expireat, :expireat => (Time.now + 10.seconds).to_i
 
   def initialize(id=1) @id = id end
   def id; @id; end
@@ -949,6 +951,10 @@ describe Redis::Objects do
     @roster.hash_with_expiration[:foo] = :bar
     @roster.hash_with_expiration.ttl.should > 0
     @roster.hash_with_expiration.ttl.should <= 10
+
+    @roster.counter_with_expiration.increment
+    @roster.counter_with_expiration.ttl.should > 0
+    @roster.counter_with_expiration.ttl.should <= 10
   end
 
   it "should set expiration when expireat option assigned" do

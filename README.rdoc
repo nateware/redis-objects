@@ -1,6 +1,6 @@
 = forked from {https://github.com/nateware/redis-objects}[https://github.com/nateware/redis-objects]
 
-Add :expiration and :expireat options to Redis::Value, Redis::List, Redis::Set and Redis::HashKey to set default expiration.
+Add :expiration and :expireat options to set default expiration.
 
     value :value_with_expiration, :expiration => 10
     value :value_with_expireat, :expireat => (Time.now + 1.hour).to_i
