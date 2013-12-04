@@ -669,6 +669,19 @@ describe Redis::HashKey do
     @hash.ttl.should > 0
   end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expiration => 10)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
+    @hash.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expireat => (Time.now + 10.seconds).to_i)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
+  end
+
   after do
     @hash.clear
   end
