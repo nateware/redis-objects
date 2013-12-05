@@ -131,8 +131,6 @@ describe Redis::Objects do
 
     @custom_roster.basic.reset
     @custom_roster.special.reset
-
-    @roster.value_with_expiration.delete
   end
 
   it "should provide a connection method" do
