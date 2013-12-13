@@ -23,7 +23,7 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, to_redis(value))
+      redis.sadd(key, to_redis(value)) if value.nil? || !Array(value).empty?
     end
 
     # Remove and return a random member.  Redis: SPOP
