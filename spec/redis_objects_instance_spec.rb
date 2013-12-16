@@ -908,8 +908,12 @@ describe Redis::SortedSet do
   it "should handle inserting multiple values at once" do
     @set.merge({ 'a' => 1, 'b' => 2 })
     @set.merge([['a', 4], ['c', 5]])
+    @set.merge({d: 0, e: 9 })
 
-    @set.members.sort.should == ['a', 'b', 'c']
+    @set.members.should == ["d", "b", "a", "c", "e"]
+
+    @set[:f] = 3
+    @set.members.should == ["d", "b", "f", "a", "c", "e"]
   end
 
   it "should support marshaling key names" do
