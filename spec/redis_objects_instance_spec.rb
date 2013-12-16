@@ -677,6 +677,17 @@ describe Redis::Set do
     @set.sort.should == ['a','b','c']
     @set.delete_if{|m| m == 'c'}
     @set.sort.should == ['a','b']
+
+    @set << nil
+    @set.include?("").should.be.true
+  end
+
+  it "should handle empty array adds" do
+    should.not.raise(Redis::CommandError) { @set.add([]) }
+    @set.should.be.empty
+
+    should.not.raise(Redis::CommandError) { @set << [] }
+    @set.should.be.empty
   end
 
   it "should handle set intersections, unions, and diffs" do
