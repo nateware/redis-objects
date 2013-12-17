@@ -23,12 +23,17 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, to_redis(value))
+      redis.sadd(key, to_redis(value)) if value.nil? || !Array(value).empty?
     end
 
     # Remove and return a random member.  Redis: SPOP
     def pop
       from_redis redis.spop(key)
+    end
+
+    # return a random member.  Redis: SRANDMEMBER
+    def randmember
+      from_redis redis.srandmember(key)
     end
 
     # Adds the specified values to the set. Only works on redis > 2.4
@@ -49,12 +54,12 @@ class Redis
       redis.sismember(key, to_redis(value))
     end
     alias_method :include?, :member?
-    
+
     # Delete the value from the set.  Redis: SREM
     def delete(value)
       redis.srem(key, to_redis(value))
     end
-    
+
     # Delete if matches block
     def delete_if(&block)
       res = false
@@ -65,7 +70,7 @@ class Redis
       end
       res
     end
-    
+
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
     # so you can also use familiar methods like +collect+, +detect+, and so forth.
     def each(&block)
@@ -89,7 +94,7 @@ class Redis
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
     alias_method :&, :intersection
-    
+
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
@@ -172,7 +177,7 @@ class Redis
     def ==(x)
       members == x
     end
-    
+
     def to_s
       members.join(', ')
     end
@@ -180,11 +185,11 @@ class Redis
     expiration_filter :add
 
     private
-    
+
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::Set) ? set.key : set}
     end
-    
+
   end
 end

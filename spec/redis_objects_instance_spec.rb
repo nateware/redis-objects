@@ -744,6 +744,17 @@ describe Redis::Set do
     @set.sort.should == ['a','b','c']
     @set.delete_if{|m| m == 'c'}
     @set.sort.should == ['a','b']
+
+    @set << nil
+    @set.include?("").should.be.true
+  end
+
+  it "should handle empty array adds" do
+    should.not.raise(Redis::CommandError) { @set.add([]) }
+    @set.should.be.empty
+
+    should.not.raise(Redis::CommandError) { @set << [] }
+    @set.should.be.empty
   end
 
   it "should handle set intersections, unions, and diffs" do
@@ -972,6 +983,17 @@ describe Redis::SortedSet do
 
     @set.delete_if{|m| m == 'b'}
     @set.size.should == 3
+  end
+
+  it "should handle inserting multiple values at once" do
+    @set.merge({ 'a' => 1, 'b' => 2 })
+    @set.merge([['a', 4], ['c', 5]])
+    @set.merge({d: 0, e: 9 })
+
+    @set.members.should == ["d", "b", "a", "c", "e"]
+
+    @set[:f] = 3
+    @set.members.should == ["d", "b", "f", "a", "c", "e"]
   end
 
   it "should support marshaling key names" do
