@@ -669,19 +669,6 @@ describe Redis::HashKey do
     @hash.ttl.should > 0
   end
 
-  it 'should set time to live in seconds when expiration option assigned' do
-    @hash = Redis::HashKey.new('spec/hash_key', :expiration => 10)
-    @hash['foo'] = 'bar'
-    @hash.ttl.should > 0
-    @hash.ttl.should <= 10
-  end
-
-  it 'should set expiration when expireat option assigned' do
-    @hash = Redis::HashKey.new('spec/hash_key', :expireat => Time.now + 10.seconds)
-    @hash['foo'] = 'bar'
-    @hash.ttl.should > 0
-  end
-
   after do
     @hash.clear
   end
@@ -1021,6 +1008,20 @@ describe Redis::SortedSet do
     @set.renamenx('spec/zfoo').should.be.true
     @set.clear
     @set.redis.del('spec/zset2')
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expiration => 10)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expireat => Time.now + 10.seconds)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
   end
 
   after do

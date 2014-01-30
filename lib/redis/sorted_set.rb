@@ -308,6 +308,8 @@ class Redis
       !redis.zscore(key, to_redis(value)).nil?
     end
 
+    expiration_filter :[]=, :add, :merge, :diffstore, :increment, :decrement, :intersection, :interstore, :unionstore
+
     private
 
     def keys_from_objects(sets)
