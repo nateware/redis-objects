@@ -21,48 +21,48 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, to_redis(value)) if value.nil? || !Array(value).empty?
+      redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
     end
 
     # Remove and return a random member.  Redis: SPOP
     def pop
-      from_redis redis.spop(key)
+      unmarshal redis.spop(key)
     end
 
     # return a random member.  Redis: SRANDMEMBER
     def randmember
-      from_redis redis.srandmember(key)
+      unmarshal redis.srandmember(key)
     end
 
     # Adds the specified values to the set. Only works on redis > 2.4
     # Redis: SADD
     def merge(*values)
-      redis.sadd(key, values.flatten.map{|v| to_redis(v)})
+      redis.sadd(key, values.flatten.map{|v| marshal(v)})
     end
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
       vals = redis.smembers(key)
-      vals.nil? ? [] : vals.map{|v| from_redis(v) }
+      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
     end
     alias_method :get, :members
 
     # Returns true if the specified value is in the set.  Redis: SISMEMBER
     def member?(value)
-      redis.sismember(key, to_redis(value))
+      redis.sismember(key, marshal(value))
     end
     alias_method :include?, :member?
 
     # Delete the value from the set.  Redis: SREM
     def delete(value)
-      redis.srem(key, to_redis(value))
+      redis.srem(key, marshal(value))
     end
 
     # Delete if matches block
     def delete_if(&block)
       res = false
       redis.smembers(key).each do |m|
-        if block.call(from_redis(m))
+        if block.call(unmarshal(m))
           res = redis.srem(key, m)
         end
       end
@@ -87,7 +87,7 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      redis.sinter(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
+      redis.sinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -111,7 +111,7 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      redis.sunion(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
+      redis.sunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -135,7 +135,7 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      redis.sdiff(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
+      redis.sdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :diff, :difference
     alias_method :^, :difference

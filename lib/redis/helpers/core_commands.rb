@@ -53,23 +53,23 @@ class Redis
       def sort(options={})
         options[:order] = "asc alpha" if options.keys.count == 0  # compat with Ruby
         val = redis.sort(key, options)
-        val.is_a?(Array) ? val.map{|v| from_redis(v)} : val
+        val.is_a?(Array) ? val.map{|v| unmarshal(v)} : val
       end
 
-      def to_redis(value, marshal=false)
+      def marshal(value, domarshal=false)
         if value.nil?
           nil
-        elsif options[:marshal] || marshal
+        elsif options[:marshal] || domarshal
           Marshal.dump(value)
         else
           value
         end
       end
  
-      def from_redis(value, marshal=false)
+      def unmarshal(value, domarshal=false)
         if value.nil?
           nil
-        elsif options[:marshal] || marshal
+        elsif options[:marshal] || domarshal
           Marshal.load(value) 
         else
           value

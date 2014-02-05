@@ -18,13 +18,13 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, to_redis(value, options[:marshal_keys][field]))
+      redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
     end
     alias_method :[]=, :store
 
     # Redis: HGET
     def hget(field)
-      from_redis redis.hget(key, field), options[:marshal_keys][field]
+      unmarshal redis.hget(key, field), options[:marshal_keys][field]
     end
     alias_method :get, :hget
     alias_method :[],  :hget
@@ -59,14 +59,14 @@ class Redis
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      redis.hvals(key).map{|v| from_redis(v) }
+      redis.hvals(key).map{|v| unmarshal(v) }
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
       h = redis.hgetall(key) || {}
-      h.each{|k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
+      h.each{|k,v| h[k] = unmarshal(v, options[:marshal_keys][k]) }
       h
     end
     alias_method :clone, :all
@@ -107,7 +107,7 @@ class Redis
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
       redis.hmset(key, *args.last.inject([]){ |arr,kv|
-        arr + [kv[0], to_redis(kv[1], options[:marshal_keys][kv[0]])]
+        arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
       })
     end
     alias_method :update, :bulk_set
@@ -116,7 +116,7 @@ class Redis
     def fill(pairs={})
       raise ArgumentError, "Arugment to fill must be a hash of key/value pairs" unless pairs.is_a?(::Hash)
       pairs.each do |field, value|
-        redis.hsetnx(key, field, to_redis(value, options[:marshal_keys][field]))
+        redis.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
       end
     end
 
@@ -125,7 +125,7 @@ class Redis
       hsh = {}
       res = redis.hmget(key, *fields.flatten)
       fields.each do |k|
-        hsh[k] = from_redis(res.shift, options[:marshal_keys][k])
+        hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
       end
       hsh
     end
@@ -134,7 +134,7 @@ class Redis
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
     def bulk_values(*keys)
       res = redis.hmget(key, *keys.flatten)
-      keys.inject([]){|collection, k| collection << from_redis(res.shift, options[:marshal_keys][k])}
+      keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
     end
 
     # Increment value by integer at field. Redis: HINCRBY
