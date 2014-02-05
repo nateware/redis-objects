@@ -13,7 +13,7 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super
-      @options[:marshal_keys] ||= {} 
+      @options[:marshal_keys] ||= {}
     end
 
     # Redis: HSET
@@ -147,6 +147,16 @@ class Redis
       end
     end
     alias_method :incr, :incrby
+
+    # Increment value by float at field. Redis: HINCRBYFLOAT
+    def incrbyfloat(field, val = 1.0)
+      ret = redis.hincrbyfloat(key, field, val)
+      unless ret.is_a? Array
+        ret.to_f
+      else
+        nil
+      end
+    end
 
   end
 end
