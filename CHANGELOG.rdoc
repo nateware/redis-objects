@@ -1,5 +1,21 @@
 = Changelog for Redis::Objects
 
+== 0.9.0 (6 Feb 2014)
+
+* Ensure we don't double-unmarshal values, which could be a security issue [markijbema, nateware]
+
+* HashKey#fetch now behaves more similarly to Ruby [datapimp]
+
+* Add support for @sorted_set.merge and variadic zadd [hfwang]
+
+* Add support for srandmember for sets [LYY]
+
+* Handle @set << [] in an intelligent way [kitchen]
+
+* Add multi-unshift functionality [nateware]
+
+* Additional test coverage for @sorted_set.merge and other ops [nateware]
+
 == 0.8.0 (9 Nov 2013)
 
 * Refactor to modular include/extend approach to enable hooking and remove evals [nateware]
