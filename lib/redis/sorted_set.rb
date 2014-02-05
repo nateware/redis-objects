@@ -9,8 +9,6 @@ class Redis
     # include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
 
@@ -33,11 +31,8 @@ class Redis
     # the member comes first rather than the score, since the member is the unique
     # item (not the score).
     def merge(values)
-      redis_vals = []
-      values.each do |member, score|
-        redis_vals << score << to_redis(member)
-      end
-      redis.zadd(key, redis_vals)
+      vals = values.map{|v,s| [s, to_redis(v)] }
+      redis.zadd(key, vals)
     end
     alias_method :add_all, :merge
 
@@ -91,26 +86,26 @@ class Redis
     # Return all members of the sorted set with their scores.  Extremely CPU-intensive.
     # Better to use a range instead.
     def members(options={})
-      v = from_redis range(0, -1, options)
-      v.nil? ? [] : v
+      vals = range(0, -1, options)
+      vals.nil? ? [] : vals.map{|v| from_redis(v) }
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
-        from_redis redis.zrange(key, start_index, end_index, :with_scores => true)
+        redis.zrange(key, start_index, end_index, :with_scores => true).map{|v,s| [from_redis(v), s] }
       else
-        from_redis redis.zrange(key, start_index, end_index)
+        redis.zrange(key, start_index, end_index).map{|v| from_redis(v) }
       end
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
-        from_redis redis.zrevrange(key, start_index, end_index, :with_scores => true)
+        redis.zrevrange(key, start_index, end_index, :with_scores => true).map{|v| from_redis(v) }
       else
-        from_redis redis.zrevrange(key, start_index, end_index)
+        redis.zrevrange(key, start_index, end_index).map{|v| from_redis(v) }
       end
     end
 
@@ -125,7 +120,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      from_redis redis.zrangebyscore(key, min, max, args)
+      redis.zrangebyscore(key, min, max, args).map{|v| from_redis(v) }
     end
 
     # Returns all the elements in the sorted set at key with a score between max and min
@@ -141,7 +136,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      from_redis redis.zrevrangebyscore(key, max, min, args)
+      redis.zrevrangebyscore(key, max, min, args).map{|v| from_redis(v) }
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -203,7 +198,7 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      from_redis redis.zinter(key, *keys_from_objects(sets))
+      redis.zinter(key, *keys_from_objects(sets)).map{|v| from_redis(v) }
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -227,7 +222,7 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      from_redis redis.zunion(key, *keys_from_objects(sets))
+      redis.zunion(key, *keys_from_objects(sets)).map{|v| from_redis(v) }
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -251,7 +246,7 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      from_redis redis.zdiff(key, *keys_from_objects(sets))
+      redis.zdiff(key, *keys_from_objects(sets)).map{|v| from_redis(v) }
     end
     alias_method :diff, :difference
     alias_method :^, :difference

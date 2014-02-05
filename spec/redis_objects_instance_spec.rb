@@ -46,6 +46,24 @@ describe Redis::Value do
     @value.options[:marshal] = false
   end
 
+  it "should not erroneously unmarshall a string" do
+    json_string = {json: 'value'}
+    @value = Redis::Value.new('spec/value', :marshal => true)
+    @value.value = json_string
+    @value.value.should == json_string
+    @value.clear
+
+    default_json_string = {json: 'default'}
+    @value = Redis::Value.new('spec/default', :default => default_json_string, :marshal => true)
+    @value.value.should == default_json_string
+    @value.clear
+
+    marshalled_string = Marshal.dump({json: 'marshal'})
+    @value = Redis::Value.new('spec/marshal', :default => marshalled_string, :marshal => true)
+    @value.value.should == marshalled_string
+    @value.clear
+  end
+
   it "should support renaming values" do
     @value.value = 'Peter Pan'
     @value.key.should == 'spec/value'
@@ -473,8 +491,8 @@ describe Redis::HashKey do
   it "should handle complex marshaled values" do
     @hash.options[:marshal] = true
     @hash['abc'].should == nil
-    @hash['abc'] = {:json => 'data'}
-    @hash['abc'].should == {:json => 'data'}
+    @hash['abc'] = {:json => 'hash marshal'}
+    @hash['abc'].should == {:json => 'hash marshal'}
 
     # no marshaling
     @hash.options[:marshal] = false

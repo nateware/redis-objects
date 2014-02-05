@@ -10,14 +10,12 @@ class Redis
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
 
     # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)
-      push(value)
+      push(value) # to_redis in push()
       self  # for << 'a' << 'b'
     end
 
@@ -62,8 +60,8 @@ class Redis
 
     # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      v = from_redis range(0, -1)
-      v.nil? ? [] : v
+      vals = range(0, -1)
+      vals.nil? ? [] : vals
     end
     alias_method :get, :values
 
@@ -108,7 +106,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: LRANGE
     def range(start_index, end_index)
-      from_redis redis.lrange(key, start_index, end_index)
+      redis.lrange(key, start_index, end_index).map{|v| from_redis(v) }
     end
 
     # Return the value at the given index. Can also use familiar list[index] syntax.

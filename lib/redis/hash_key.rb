@@ -9,8 +9,6 @@ class Redis
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
     def initialize(key, *args)
@@ -18,30 +16,18 @@ class Redis
       @options[:marshal_keys] ||= {} 
     end
 
-    # Needed since Redis::Hash masks bare Hash in redis.rb
-    def self.[](*args)
-      ::Hash[*args]
-    end
-
-    # Sets a field to value
-    def []=(field, value)
-      store(field, to_redis(value))
-    end
-
-    # Gets the value of a field
-    def [](field)
-      hget(field)
-    end
-
     # Redis: HSET
     def store(field, value)
       redis.hset(key, field, to_redis(value, options[:marshal_keys][field]))
     end
+    alias_method :[]=, :store
 
     # Redis: HGET
     def hget(field)
       from_redis redis.hget(key, field), options[:marshal_keys][field]
     end
+    alias_method :get, :hget
+    alias_method :[],  :hget
 
     # Verify that a field exists. Redis: HEXISTS
     def has_key?(field)
@@ -56,7 +42,8 @@ class Redis
       redis.hdel(key, field)
     end
 
-    def fetch field, *args, &block
+    # Fetch a key in a way similar to Ruby's Hash#fetch
+    def fetch(field, *args, &block)
       value = hget(field)
       default = args[0]
 
@@ -72,14 +59,14 @@ class Redis
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      from_redis redis.hvals(key)
+      redis.hvals(key).map{|v| from_redis(v) }
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
       h = redis.hgetall(key) || {}
-      h.each { |k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
+      h.each{|k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
       h
     end
     alias_method :clone, :all
@@ -147,7 +134,7 @@ class Redis
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
     def bulk_values(*keys)
       res = redis.hmget(key, *keys.flatten)
-      keys.inject([]){|collection, k| collection << from_redis(res.shift)}
+      keys.inject([]){|collection, k| collection << from_redis(res.shift, options[:marshal_keys][k])}
     end
 
     # Increment value by integer at field. Redis: HINCRBY

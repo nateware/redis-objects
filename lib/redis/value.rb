@@ -7,8 +7,6 @@ class Redis
   class Value < BaseObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
     def initialize(key, *args)

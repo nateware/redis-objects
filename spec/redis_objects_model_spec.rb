@@ -594,19 +594,23 @@ describe Redis::Objects do
     @roster_1.outfielders.intersection(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
     @roster_1.outfielders.intersect(@roster_2.outfielders).sort.should == ['c','d','e']
     @roster_1.outfielders.inter(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
+
     @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders).should == 3
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['c','d','e']
+
     @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 1
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['d']
 
     (@roster_1.outfielders | @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     (@roster_1.outfielders + @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.union(@roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.union(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['a','b','c','d','e','f','g','l','m']
+
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders).should == 7
-    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
+    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g']
+
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
-    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g','l','m']
   end
 
   it "should handle class-level global lists of simple values" do

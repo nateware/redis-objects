@@ -9,8 +9,6 @@ class Redis
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
 
@@ -44,8 +42,8 @@ class Redis
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
-      v = from_redis redis.smembers(key)
-      v.nil? ? [] : v
+      vals = redis.smembers(key)
+      vals.nil? ? [] : vals.map{|v| from_redis(v) }
     end
     alias_method :get, :members
 
@@ -89,7 +87,7 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      from_redis redis.sinter(key, *keys_from_objects(sets))
+      redis.sinter(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -113,7 +111,7 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      from_redis redis.sunion(key, *keys_from_objects(sets))
+      redis.sunion(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -137,7 +135,7 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      from_redis redis.sdiff(key, *keys_from_objects(sets))
+      redis.sdiff(key, *keys_from_objects(sets)).map{|v| from_redis(v)}
     end
     alias_method :diff, :difference
     alias_method :^, :difference
