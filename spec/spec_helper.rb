@@ -27,7 +27,7 @@ if !(defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby")
   describe 'redis-server' do
     it "starting redis-server on #{REDIS_HOST}:#{REDIS_PORT}" do
       fork_pid = fork do
-        system "cd #{REDIS_RUNDIR} && (echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}) | #{REDIS_BIN} -"
+        system "cd #{REDIS_RUNDIR} && (echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}; echo databases 32) | #{REDIS_BIN} -"
       end
       fork_pid.should > 0
       sleep 2
