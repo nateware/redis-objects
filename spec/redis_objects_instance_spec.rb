@@ -386,6 +386,19 @@ describe Redis::Counter do
     @counter.should == 111
   end
 
+  it "should support increment/decrement by float" do
+    @counter = Redis::Counter.new('spec/floater')
+    @counter.set 10.5
+    @counter.incrbyfloat 1
+    @counter.incrbyfloat 0.01
+    @counter.to_f.should == 11.51
+    @counter.set '5.0e3'
+    @counter.decrbyfloat -14.31
+    @counter.incrbyfloat 2.0e2
+    @counter.to_f.should == 5214.31
+    @counter.clear
+  end
+
   it 'should set time to live in seconds when expiration option assigned' do
     @counter = Redis::Counter.new('spec/counter', :expiration => 10)
     @counter.increment
@@ -601,6 +614,29 @@ describe Redis::HashKey do
     @hash.each_key do |key|
       key.should == 'foo'
     end
+  end
+
+  it "should handle increment/decrement" do
+    @hash['integer'] = 1
+    @hash.incrby('integer')
+    @hash.incrby('integer', 2)
+    @hash.get('integer').to_i.should == 4
+
+    @hash['integer'] = 9
+    @hash.decrby('integer')
+    @hash.decrby('integer', 6)
+    @hash.get('integer').to_i.should == 2
+
+    @hash['float'] = 12.34
+    @hash.decrbyfloat('float')
+    @hash.decrbyfloat('float', 6.3)
+    @hash.get('float').to_f.should == 5.04
+
+    @hash['float'] = '5.0e3'
+    @hash.incrbyfloat('float')
+    @hash.incrbyfloat('float', '1.23e3')
+    @hash.incrbyfloat('float', 45.3)
+    @hash.get('float').to_f.should == 6276.3
   end
 
   it "should respond to each_value" do

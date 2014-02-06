@@ -138,8 +138,8 @@ class Redis
     end
 
     # Increment value by integer at field. Redis: HINCRBY
-    def incrby(field, val = 1)
-      ret = redis.hincrby(key, field, val)
+    def incrby(field, by=1)
+      ret = redis.hincrby(key, field, by)
       unless ret.is_a? Array
         ret.to_i
       else
@@ -147,6 +147,27 @@ class Redis
       end
     end
     alias_method :incr, :incrby
+
+    # Decrement value by integer at field. Redis: HINCRBY
+    def decrby(field, by=1)
+      incrby(field, -by)
+    end
+    alias_method :decr, :decrby
+
+    # Increment value by float at field. Redis: HINCRBYFLOAT
+    def incrbyfloat(field, by=1.0)
+      ret = redis.hincrbyfloat(key, field, by)
+      unless ret.is_a? Array
+        ret.to_i
+      else
+        nil
+      end
+    end
+
+    # Decrement value by float at field. Redis: HINCRBYFLOAT
+    def decrbyfloat(field, by=1.0)
+      incrbyfloat(field, -by)
+    end
 
     expiration_filter :[]=, :store, :bulk_set, :fill, :incrby
   end

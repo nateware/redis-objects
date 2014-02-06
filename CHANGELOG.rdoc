@@ -4,7 +4,11 @@
 
 * Ensure we don't double-unmarshal values, which could be a security issue [markijbema, nateware]
 
+* Support a custom redis connection per redis key [hfwang]
+
 * HashKey#fetch now behaves more similarly to Ruby [datapimp]
+
+* Add incrbyfloat and decrbyfloat for values and hashes [nateware]
 
 * Add support for @sorted_set.merge and variadic zadd [hfwang]
 
