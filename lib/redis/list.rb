@@ -143,5 +143,7 @@ class Redis
     def to_s
       values.join(', ')
     end
+
+    expiration_filter :[]=, :push, :insert, :unshift
   end
 end

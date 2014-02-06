@@ -40,5 +40,7 @@ class Redis
     def method_missing(*args)
       self.value.send *args
     end
+
+    expiration_filter :value=
   end
 end

@@ -104,6 +104,19 @@ describe Redis::Value do
     @value.nil?.should == true
   end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @value = Redis::Value.new('spec/value', :expiration => 10)
+    @value.value = 'monkey'
+    @value.ttl.should > 0
+    @value.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @value = Redis::Value.new('spec/value', :expireat => Time.now + 10.seconds)
+    @value.value = 'monkey'
+    @value.ttl.should > 0
+  end
+
   after do
     @value.delete
   end
@@ -316,6 +329,20 @@ describe Redis::List do
       @list.redis.del('spec/list2')
     end
 
+    it 'should set time to live in seconds when expiration option assigned' do
+      @list = Redis::List.new('spec/list', :expiration => 10)
+      @list << 'val'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
+    it 'should set expiration when expireat option assigned' do
+      @list = Redis::List.new('spec/list', :expireat => Time.now + 10.seconds)
+      @list << 'val'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
     after do
       @list.clear
     end
@@ -357,6 +384,20 @@ describe Redis::Counter do
     @counter.should == 15
     @counter.getset(111).should == 15
     @counter.should == 111
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expiration => 10)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expireat => Time.now + 10.seconds)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
   end
 
   after do
@@ -633,6 +674,19 @@ describe Redis::HashKey do
     block.should == "oops: missing_key"
   end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expiration => 10)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
+    @hash.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expireat => Time.now + 10.seconds)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
+  end
+
   after do
     @hash.clear
   end
@@ -805,7 +859,20 @@ describe Redis::Set do
     @set_1.redis.del val1.key
     @set_1.redis.del val2.key
     @set_1.redis.del SORT_STORE[:store]
+  end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @set = Redis::Set.new('spec/set', :expiration => 10)
+    @set << 'val'
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @set = Redis::Set.new('spec/set', :expireat => Time.now + 10.seconds)
+    @set << 'val'
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
   end
 
   after do
@@ -959,6 +1026,20 @@ describe Redis::SortedSet do
     @set.renamenx('spec/zfoo').should.be.true
     @set.clear
     @set.redis.del('spec/zset2')
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expiration => 10)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expireat => Time.now + 10.seconds)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
   end
 
   after do

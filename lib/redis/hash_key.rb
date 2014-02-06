@@ -148,6 +148,7 @@ class Redis
     end
     alias_method :incr, :incrby
 
+    expiration_filter :[]=, :store, :bulk_set, :fill, :incrby
   end
 end
 
