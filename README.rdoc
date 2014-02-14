@@ -1,5 +1,6 @@
 = Redis::Objects - Map Redis types directly to Ruby objects
 
+
 This is *not* an ORM. People that are wrapping ORM’s around Redis are missing the point.
 
 The killer feature of Redis is that it allows you to perform _atomic_ operations
