@@ -87,7 +87,7 @@ class Redis
     # Better to use a range instead.
     def members(options={})
       vals = range(0, -1, options)
-      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
+      vals || []
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
