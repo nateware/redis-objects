@@ -966,6 +966,7 @@ describe Redis::SortedSet do
     @set.range(0, 2).should == a[0..2]
     @set[0, 0].should == []
     @set.range(0,1,:withscores => true).should == [['a',3],['c',4]]
+    @set.revrange(0,1,:withscores => true).should == [['b',5.6],['c',4]]
     @set.range(0,-1).should == a[0..-1]
     @set.revrange(0,-1).should == a[0..-1].reverse
     @set[0..1].should == a[0..1]
@@ -979,6 +980,8 @@ describe Redis::SortedSet do
     @set.members(:withscores => true).should == [['a',3],['c',4],['b',5.6]]
     @set.members(:with_scores => true).should == [['a',3],['c',4],['b',5.6]]
     @set.members(:withscores => true).reverse.should == [['b',5.6],['c',4],['a',3]]
+    @set.members(:withscores => true).should == @set.range(0,-1,:withscores => true)
+    @set.members(:withscores => true).reverse.should == @set.revrange(0,-1,:withscores => true)
 
     @set['b'] = 5
     @set['b'] = 6
@@ -1050,6 +1053,8 @@ describe Redis::SortedSet do
   end
 
   it "should support marshaling key names" do
+    @set_4.members.should == []
+
     @set_4[Object] = 1.20
     @set_4[Module] = 2.30
     @set_4[nil] = 3.40
@@ -1061,6 +1066,8 @@ describe Redis::SortedSet do
     @set_4[Object].round(1).should == 1.7
     @set_4[Module].round(1).should == 1.8
     @set_4[nil].round(1).should == 3.9
+
+    @set_4.members.should == [Object, Module, nil]
   end
 
   it "should support renaming sorted sets" do
