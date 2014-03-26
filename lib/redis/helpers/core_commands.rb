@@ -57,9 +57,7 @@ class Redis
       end
 
       def marshal(value, domarshal=false)
-        if value.nil?
-          nil
-        elsif options[:marshal] || domarshal
+        if options[:marshal] || domarshal
           Marshal.dump(value)
         else
           value

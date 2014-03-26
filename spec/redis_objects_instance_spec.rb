@@ -580,6 +580,18 @@ describe Redis::HashKey do
     @hash.options[:marshal] = false
   end
 
+  it "should marshal nil correctly" do
+    @hash.options[:marshal] = true
+
+    @hash['test'].should.be.nil
+    @hash['test'] = nil
+    @hash['test'].should.be.nil
+    @hash.delete('test').should == 1
+    @hash['test'].should.be.nil
+
+    @hash.options[:marshal] = false
+  end
+
   it "should get and set values" do
     @hash['foo'] = 'bar'
     @hash['foo'].should == 'bar'
@@ -1040,10 +1052,15 @@ describe Redis::SortedSet do
   it "should support marshaling key names" do
     @set_4[Object] = 1.20
     @set_4[Module] = 2.30
+    @set_4[nil] = 3.40
+
     @set_4.incr(Object, 0.5)
     @set_4.decr(Module, 0.5)
+    @set_4.incr(nil, 0.5)
+
     @set_4[Object].round(1).should == 1.7
     @set_4[Module].round(1).should == 1.8
+    @set_4[nil].round(1).should == 3.9
   end
 
   it "should support renaming sorted sets" do
