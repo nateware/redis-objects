@@ -87,7 +87,7 @@ class Redis
     # Better to use a range instead.
     def members(options={})
       vals = range(0, -1, options)
-      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
+      vals || []
     end
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
@@ -103,7 +103,7 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
       if options[:withscores] || options[:with_scores]
-        redis.zrevrange(key, start_index, end_index, :with_scores => true).map{|v| unmarshal(v) }
+        redis.zrevrange(key, start_index, end_index, :with_scores => true).map{|v,s| [unmarshal(v), s] }
       else
         redis.zrevrange(key, start_index, end_index).map{|v| unmarshal(v) }
       end
