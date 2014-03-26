@@ -15,7 +15,7 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      @options[:start] ||= 0
+      @options[:start] ||= @options[:default] || 0
       raise ArgumentError, "Marshalling redis counters does not make sense" if @options[:marshal]
       redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
