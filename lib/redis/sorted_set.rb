@@ -41,7 +41,7 @@ class Redis
     # a range of values using Redis: ZRANGE.
     def [](index, length=nil)
       if index.is_a? Range
-        range(index.first, index.last)
+        range(index.first, index.max)
       elsif length
         case length <=> 0
         when 1  then range(index, index + length - 1)

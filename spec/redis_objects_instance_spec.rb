@@ -960,6 +960,7 @@ describe Redis::SortedSet do
     a = @set.members
     @set[0,-1].should == a[0,-1]
     @set[0..2].should == a[0..2]
+    @set[0...2].should == a[0...2]
     @set.slice(0..2).should == a.slice(0..2)
     @set[0, 2].should == a[0,2]
     @set.slice(0, 2).should == a.slice(0, 2)
