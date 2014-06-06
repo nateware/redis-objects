@@ -14,6 +14,11 @@ describe Redis::Value do
     @value.value.should == {:json => 'data'}
   end
 
+  it "should be able to set the default value to false" do
+    @value = Redis::Value.new('spec/value', :default => false, :marshal => true)
+    @value.value.should == false
+  end
+  
   it "should handle simple values" do
     @value.should == nil
     @value.value = 'Trevor Hoffman'
