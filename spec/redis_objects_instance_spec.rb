@@ -938,11 +938,13 @@ describe Redis::SortedSet do
     @set_2 = Redis::SortedSet.new('spec/zset_2')
     @set_3 = Redis::SortedSet.new('spec/zset_3')
     @set_4 = Redis::SortedSet.new('spec/zset_3', :marshal => true)
+    @set_5 = Redis::Set.new('spec/zset_4')
     @set.clear
     @set_1.clear
     @set_2.clear
     @set_3.clear
     @set_4.clear
+    @set_5.clear
   end
 
   it "should handle sorted sets of simple values" do
@@ -1120,6 +1122,12 @@ describe Redis::SortedSet do
     # @set is now: [[a, 0], [d, 0], [c, 1], [b, 2]]
     @set.members.should == ['a', 'd', 'c', 'b']
     @set['b'].should == 2
+
+    @set_5 << ['a', 'e', 'f']
+    @set_1.unionstore(@set, @set_5, :aggregate => :sum)
+    # #set is now: [[e, 1], [f, 1], [a, 1], [c, 3], [b, 4]]
+    @set.members.should == ['e', 'f', 'a', 'c', 'b']
+    @set['e'].should == 1
   end
 
   it "should handle intersections" do
@@ -1143,6 +1151,12 @@ describe Redis::SortedSet do
     # @set is now: [[c, 1], [b, 2]]
     @set.members.should == ['c', 'b']
     @set['b'].should == 2
+
+    @set_5 << ['a', 'e', 'b']
+    @set_1.interstore(@set, @set_5, :aggregate => :max)
+    # @set is now: [[a, 1], [b, 4]]
+    @set.members.should == ['a', 'b']
+    @set['b'].should == 4
   end
 
   it 'should set time to live in seconds when expiration option assigned' do
@@ -1165,5 +1179,6 @@ describe Redis::SortedSet do
     @set_2.clear
     @set_3.clear
     @set_4.clear
+    @set_5.clear
   end
 end

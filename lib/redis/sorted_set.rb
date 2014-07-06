@@ -313,7 +313,7 @@ class Redis
 
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
-      sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
+      sets.collect{|set| set.is_a?(Redis::SortedSet) || set.is_a?(Redis::Set) ? set.key : set}
     end
   end
 end
