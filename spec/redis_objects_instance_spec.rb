@@ -46,6 +46,24 @@ describe Redis::Value do
     @value.options[:marshal] = false
   end
 
+  it "should not erroneously unmarshall a string" do
+    json_string = {json: 'value'}
+    @value = Redis::Value.new('spec/value', :marshal => true)
+    @value.value = json_string
+    @value.value.should == json_string
+    @value.clear
+
+    default_json_string = {json: 'default'}
+    @value = Redis::Value.new('spec/default', :default => default_json_string, :marshal => true)
+    @value.value.should == default_json_string
+    @value.clear
+
+    marshalled_string = Marshal.dump({json: 'marshal'})
+    @value = Redis::Value.new('spec/marshal', :default => marshalled_string, :marshal => true)
+    @value.value.should == marshalled_string
+    @value.clear
+  end
+
   it "should support renaming values" do
     @value.value = 'Peter Pan'
     @value.key.should == 'spec/value'
@@ -84,6 +102,19 @@ describe Redis::Value do
   it 'should equate setting the value to nil to deletion' do
     @value.value = nil
     @value.nil?.should == true
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @value = Redis::Value.new('spec/value', :expiration => 10)
+    @value.value = 'monkey'
+    @value.ttl.should > 0
+    @value.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @value = Redis::Value.new('spec/value', :expireat => Time.now + 10.seconds)
+    @value.value = 'monkey'
+    @value.ttl.should > 0
   end
 
   after do
@@ -298,6 +329,20 @@ describe Redis::List do
       @list.redis.del('spec/list2')
     end
 
+    it 'should set time to live in seconds when expiration option assigned' do
+      @list = Redis::List.new('spec/list', :expiration => 10)
+      @list << 'val'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
+    it 'should set expiration when expireat option assigned' do
+      @list = Redis::List.new('spec/list', :expireat => Time.now + 10.seconds)
+      @list << 'val'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
     after do
       @list.clear
     end
@@ -339,6 +384,33 @@ describe Redis::Counter do
     @counter.should == 15
     @counter.getset(111).should == 15
     @counter.should == 111
+  end
+
+  it "should support increment/decrement by float" do
+    @counter = Redis::Counter.new('spec/floater')
+    @counter.set 10.5
+    @counter.incrbyfloat 1
+    @counter.incrbyfloat 0.01
+    @counter.to_f.should == 11.51
+    @counter.set '5.0e3'
+    @counter.decrbyfloat -14.31
+    @counter.incrbyfloat 2.0e2
+    @counter.to_f.should == 5214.31
+    @counter.clear
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expiration => 10)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @counter = Redis::Counter.new('spec/counter', :expireat => Time.now + 10.seconds)
+    @counter.increment
+    @counter.ttl.should > 0
+    @counter.ttl.should <= 10
   end
 
   after do
@@ -473,8 +545,8 @@ describe Redis::HashKey do
   it "should handle complex marshaled values" do
     @hash.options[:marshal] = true
     @hash['abc'].should == nil
-    @hash['abc'] = {:json => 'data'}
-    @hash['abc'].should == {:json => 'data'}
+    @hash['abc'] = {:json => 'hash marshal'}
+    @hash['abc'].should == {:json => 'hash marshal'}
 
     # no marshaling
     @hash.options[:marshal] = false
@@ -504,6 +576,18 @@ describe Redis::HashKey do
 
     @hash.delete('def').should == 1
     @hash.delete('abc').should == 1
+
+    @hash.options[:marshal] = false
+  end
+
+  it "should marshal nil correctly" do
+    @hash.options[:marshal] = true
+
+    @hash['test'].should.be.nil
+    @hash['test'] = nil
+    @hash['test'].should.be.nil
+    @hash.delete('test').should == 1
+    @hash['test'].should.be.nil
 
     @hash.options[:marshal] = false
   end
@@ -542,6 +626,29 @@ describe Redis::HashKey do
     @hash.each_key do |key|
       key.should == 'foo'
     end
+  end
+
+  it "should handle increment/decrement" do
+    @hash['integer'] = 1
+    @hash.incrby('integer')
+    @hash.incrby('integer', 2)
+    @hash.get('integer').to_i.should == 4
+
+    @hash['integer'] = 9
+    @hash.decrby('integer')
+    @hash.decrby('integer', 6)
+    @hash.get('integer').to_i.should == 2
+
+    @hash['float'] = 12.34
+    @hash.decrbyfloat('float')
+    @hash.decrbyfloat('float', 6.3)
+    @hash.get('float').to_f.should == 5.04
+
+    @hash['float'] = '5.0e3'
+    @hash.incrbyfloat('float')
+    @hash.incrbyfloat('float', '1.23e3')
+    @hash.incrbyfloat('float', 45.3)
+    @hash.get('float').to_f.should == 6276.3
   end
 
   it "should respond to each_value" do
@@ -601,6 +708,31 @@ describe Redis::HashKey do
     it "raises an error if a non-Hash is passed to fill" do
       lambda { @hash.fill([]) }.should.raise(ArgumentError)
     end
+  end
+
+  it "should fetch default values" do
+    @hash['abc'] = "123"
+
+    value = @hash.fetch('missing_key','default_value')
+    block = @hash.fetch("missing_key") {|key| "oops: #{key}" }
+    no_error = @hash.fetch("abc") rescue "error"
+
+    no_error.should == "123"
+    value.should == "default_value"
+    block.should == "oops: missing_key"
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expiration => 10)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
+    @hash.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @hash = Redis::HashKey.new('spec/hash_key', :expireat => Time.now + 10.seconds)
+    @hash['foo'] = 'bar'
+    @hash.ttl.should > 0
   end
 
   after do
@@ -665,6 +797,17 @@ describe Redis::Set do
     @set.sort.should == ['a','b','c']
     @set.delete_if{|m| m == 'c'}
     @set.sort.should == ['a','b']
+
+    @set << nil
+    @set.include?("").should.be.true
+  end
+
+  it "should handle empty array adds" do
+    should.not.raise(Redis::CommandError) { @set.add([]) }
+    @set.should.be.empty
+
+    should.not.raise(Redis::CommandError) { @set << [] }
+    @set.should.be.empty
   end
 
   it "should handle set intersections, unions, and diffs" do
@@ -764,7 +907,20 @@ describe Redis::Set do
     @set_1.redis.del val1.key
     @set_1.redis.del val2.key
     @set_1.redis.del SORT_STORE[:store]
+  end
 
+  it 'should set time to live in seconds when expiration option assigned' do
+    @set = Redis::Set.new('spec/set', :expiration => 10)
+    @set << 'val'
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @set = Redis::Set.new('spec/set', :expireat => Time.now + 10.seconds)
+    @set << 'val'
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
   end
 
   after do
@@ -804,12 +960,14 @@ describe Redis::SortedSet do
     a = @set.members
     @set[0,-1].should == a[0,-1]
     @set[0..2].should == a[0..2]
+    @set[0...2].should == a[0...2]
     @set.slice(0..2).should == a.slice(0..2)
     @set[0, 2].should == a[0,2]
     @set.slice(0, 2).should == a.slice(0, 2)
     @set.range(0, 2).should == a[0..2]
     @set[0, 0].should == []
     @set.range(0,1,:withscores => true).should == [['a',3],['c',4]]
+    @set.revrange(0,1,:withscores => true).should == [['b',5.6],['c',4]]
     @set.range(0,-1).should == a[0..-1]
     @set.revrange(0,-1).should == a[0..-1].reverse
     @set[0..1].should == a[0..1]
@@ -823,6 +981,8 @@ describe Redis::SortedSet do
     @set.members(:withscores => true).should == [['a',3],['c',4],['b',5.6]]
     @set.members(:with_scores => true).should == [['a',3],['c',4],['b',5.6]]
     @set.members(:withscores => true).reverse.should == [['b',5.6],['c',4],['a',3]]
+    @set.members(:withscores => true).should == @set.range(0,-1,:withscores => true)
+    @set.members(:withscores => true).reverse.should == @set.revrange(0,-1,:withscores => true)
 
     @set['b'] = 5
     @set['b'] = 6
@@ -882,13 +1042,33 @@ describe Redis::SortedSet do
     @set.size.should == 3
   end
 
+  it "should handle inserting multiple values at once" do
+    @set.merge({ 'a' => 1, 'b' => 2 })
+    @set.merge([['a', 4], ['c', 5]])
+    @set.merge({d: 0, e: 9 })
+
+    @set.members.should == ["d", "b", "a", "c", "e"]
+
+    @set[:f] = 3
+    @set.members.should == ["d", "b", "f", "a", "c", "e"]
+  end
+
   it "should support marshaling key names" do
+    @set_4.members.should == []
+
     @set_4[Object] = 1.20
     @set_4[Module] = 2.30
+    @set_4[nil] = 3.40
+
     @set_4.incr(Object, 0.5)
     @set_4.decr(Module, 0.5)
+    @set_4.incr(nil, 0.5)
+
     @set_4[Object].round(1).should == 1.7
     @set_4[Module].round(1).should == 1.8
+    @set_4[nil].round(1).should == 3.9
+
+    @set_4.members.should == [Object, Module, nil]
   end
 
   it "should support renaming sorted sets" do
@@ -963,6 +1143,20 @@ describe Redis::SortedSet do
     # @set is now: [[c, 1], [b, 2]]
     @set.members.should == ['c', 'b']
     @set['b'].should == 2
+  end
+
+  it 'should set time to live in seconds when expiration option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expiration => 10)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
+  end
+
+  it 'should set expiration when expireat option assigned' do
+    @set = Redis::SortedSet.new('spec/zset', :expireat => Time.now + 10.seconds)
+    @set['val'] = 1
+    @set.ttl.should > 0
+    @set.ttl.should <= 10
   end
 
   after do

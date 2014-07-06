@@ -9,8 +9,6 @@ class Redis
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
 
@@ -23,49 +21,54 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, to_redis(value))
+      redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
     end
 
     # Remove and return a random member.  Redis: SPOP
     def pop
-      from_redis redis.spop(key)
+      unmarshal redis.spop(key)
+    end
+
+    # return a random member.  Redis: SRANDMEMBER
+    def randmember
+      unmarshal redis.srandmember(key)
     end
 
     # Adds the specified values to the set. Only works on redis > 2.4
     # Redis: SADD
     def merge(*values)
-      redis.sadd(key, values.flatten.map{|v| to_redis(v)})
+      redis.sadd(key, values.flatten.map{|v| marshal(v)})
     end
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
-      v = from_redis redis.smembers(key)
-      v.nil? ? [] : v
+      vals = redis.smembers(key)
+      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
     end
     alias_method :get, :members
 
     # Returns true if the specified value is in the set.  Redis: SISMEMBER
     def member?(value)
-      redis.sismember(key, to_redis(value))
+      redis.sismember(key, marshal(value))
     end
     alias_method :include?, :member?
-    
+
     # Delete the value from the set.  Redis: SREM
     def delete(value)
-      redis.srem(key, to_redis(value))
+      redis.srem(key, marshal(value))
     end
-    
+
     # Delete if matches block
     def delete_if(&block)
       res = false
       redis.smembers(key).each do |m|
-        if block.call(from_redis(m))
+        if block.call(unmarshal(m))
           res = redis.srem(key, m)
         end
       end
       res
     end
-    
+
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
     # so you can also use familiar methods like +collect+, +detect+, and so forth.
     def each(&block)
@@ -84,12 +87,12 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      from_redis redis.sinter(key, *keys_from_objects(sets))
+      redis.sinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
     alias_method :&, :intersection
-    
+
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
@@ -108,7 +111,7 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      from_redis redis.sunion(key, *keys_from_objects(sets))
+      redis.sunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -132,7 +135,7 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      from_redis redis.sdiff(key, *keys_from_objects(sets))
+      redis.sdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
     end
     alias_method :diff, :difference
     alias_method :^, :difference
@@ -172,17 +175,19 @@ class Redis
     def ==(x)
       members == x
     end
-    
+
     def to_s
       members.join(', ')
     end
 
+    expiration_filter :add
+
     private
-    
+
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::Set) ? set.key : set}
     end
-    
+
   end
 end

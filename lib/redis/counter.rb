@@ -15,7 +15,8 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      @options[:start] ||= 0
+      @options[:start] ||= @options[:default] || 0
+      raise ArgumentError, "Marshalling redis counters does not make sense" if @options[:marshal]
       redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
 
@@ -45,6 +46,20 @@ class Redis
     end
     alias_method :get, :value
 
+    def value=(val)
+      if val.nil?
+        delete
+      else
+        redis.set key, val
+      end
+    end
+    alias_method :set, :value=
+
+    # Like .value but casts to float since Redis addresses these differently.
+    def to_f
+      redis.get(key).to_f
+    end
+
     # Increment the counter atomically and return the new value.  If passed
     # a block, that block will be evaluated with the new value of the counter
     # as an argument. If the block returns nil or throws an exception, the
@@ -55,6 +70,7 @@ class Redis
       block_given? ? rewindable_block(:decrement, by, val, &block) : val
     end
     alias_method :incr, :increment
+    alias_method :incrby, :increment
 
     # Decrement the counter atomically and return the new value.  If passed
     # a block, that block will be evaluated with the new value of the counter
@@ -66,6 +82,21 @@ class Redis
       block_given? ? rewindable_block(:increment, by, val, &block) : val
     end
     alias_method :decr, :decrement
+    alias_method :decrby, :decrement
+
+    # Increment a floating point counter atomically.
+    # Redis uses separate API's to interact with integers vs floats.
+    def incrbyfloat(by=1.0, &block)
+      val = redis.incrbyfloat(key, by).to_f
+      block_given? ? rewindable_block(:decrbyfloat, by, val, &block) : val
+    end
+
+    # Decrement a floating point counter atomically.
+    # Redis uses separate API's to interact with integers vs floats.
+    def decrbyfloat(by=1.0, &block)
+      val = redis.incrbyfloat(key, -by).to_f
+      block_given? ? rewindable_block(:incrbyfloat, -by, val, &block) : val
+    end
 
     ##
     # Proxy methods to help make @object.counter == 10 work
@@ -81,6 +112,8 @@ class Redis
         end
       EndOverload
     end
+
+    expiration_filter :increment, :decrement
    
     private
 

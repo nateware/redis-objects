@@ -1,5 +1,33 @@
 = Changelog for Redis::Objects
 
+== 0.9.1 (25 Mar 2024)
+
+* Fix bad marshal calls in SortedSet [Fleurer, nateware]
+
+* Handle marshalling/unmarshalling of nil values [anujdas]
+
+* Add :default as synonym to :start for Counter [Fleurer]
+
+== 0.9.0 (6 Feb 2014)
+
+* Ensure we don't double-unmarshal values, which could be a security issue [markijbema, nateware]
+
+* Support a custom redis connection per redis key [hfwang]
+
+* HashKey#fetch now behaves more similarly to Ruby [datapimp]
+
+* Add incrbyfloat and decrbyfloat for values and hashes [nateware]
+
+* Add support for @sorted_set.merge and variadic zadd [hfwang]
+
+* Add support for srandmember for sets [LYY]
+
+* Handle @set << [] in an intelligent way [kitchen]
+
+* Add multi-unshift functionality [nateware]
+
+* Additional test coverage for @sorted_set.merge and other ops [nateware]
+
 == 0.8.0 (9 Nov 2013)
 
 * Refactor to modular include/extend approach to enable hooking and remove evals [nateware]
@@ -34,7 +62,7 @@
 
 == 0.6.0 (13 Dec 2012)
 
-* Add +@set.merge()+ method to add multiple members at once [hfwang] 
+* Add +@set.merge()+ method to add multiple members at once [hfwang]
 
 * Add +insert+ method to Redis::List instances [giglemad]
 
@@ -42,7 +70,7 @@
 
 * Add HashKey#bulk_values for fetching values in the same order than the given keys [aspgems]
 
-* Lists now handle the insert command 
+* Lists now handle the insert command
 
 * Changed +@sset.score+ method on SortedSet to return nil for invalid members [hkarthik]
 
@@ -68,7 +96,7 @@
 
 * Added zcount method to SortedSet [dunedain289]
 
-* Updated redis-objects to look for Redis.current and prefer it over global $redis variable [Jean Boussier] 
+* Updated redis-objects to look for Redis.current and prefer it over global $redis variable [Jean Boussier]
 
 * Updated URLs to reflect new redis.io website [Jérémy Lecour]
 

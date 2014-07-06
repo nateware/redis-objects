@@ -452,6 +452,13 @@ lock time.
 Keep in mind that true locks serialize your entire application at that point.  As
 such, atomic counters are strongly preferred.
 
+### Expiration ###
+
+Use :expiration and :expireat options to set default expiration.
+
+    value :value_with_expiration, :expiration => 1.hour
+    value :value_with_expireat, :expireat => Time.now + 1.hour
+
 Author
 =======
 Copyright (c) 2009-2013 [Nate Wiger](http://nateware.com).  All Rights Reserved.

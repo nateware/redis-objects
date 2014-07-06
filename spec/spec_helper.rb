@@ -19,26 +19,31 @@ DIFFSTORE_KEY  = 'test:diffstore'
 REDIS_BIN  = 'redis-server'
 REDIS_PORT = ENV['REDIS_PORT'] || 9212
 REDIS_HOST = ENV['REDIS_HOST'] || 'localhost'
-REDIS_PID  = File.expand_path 'redis.pid', File.dirname(__FILE__)
-REDIS_DUMP = File.expand_path 'redis.rdb', File.dirname(__FILE__)
+REDIS_PID  = 'redis.pid'  # can't be absolute
+REDIS_DUMP = 'redis.rdb'  # can't be absolute
+REDIS_RUNDIR = File.dirname(__FILE__)
 
-describe 'redis-server' do
-  it "starting redis-server on #{REDIS_HOST}:#{REDIS_PORT}" do
-    fork_pid = fork do
-      system "(echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}) | #{REDIS_BIN} -"
+if !(defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby")
+  describe 'redis-server' do
+    it "starting redis-server on #{REDIS_HOST}:#{REDIS_PORT}" do
+      fork_pid = fork do
+        system "cd #{REDIS_RUNDIR} && (echo port #{REDIS_PORT}; echo logfile /dev/null; echo daemonize yes; echo pidfile #{REDIS_PID}; echo dbfilename #{REDIS_DUMP}; echo databases 32) | #{REDIS_BIN} -"
+      end
+      fork_pid.should > 0
+      sleep 2
     end
-    fork_pid.should > 0
-    sleep 2 
   end
-end
 
-at_exit do
-  pid = File.read(REDIS_PID).to_i
-  puts "=> Killing #{REDIS_BIN} with pid #{pid}"
-  Process.kill "TERM", pid
-  Process.kill "KILL", pid
-  File.unlink REDIS_PID
-  File.unlink REDIS_DUMP if File.exists? REDIS_DUMP
+  at_exit do
+    pidfile = File.expand_path REDIS_PID,  REDIS_RUNDIR
+    rdbfile = File.expand_path REDIS_DUMP, REDIS_RUNDIR
+    pid = File.read(pidfile).to_i
+    puts "=> Killing #{REDIS_BIN} with pid #{pid}"
+    Process.kill "TERM", pid
+    Process.kill "KILL", pid
+    File.unlink pidfile
+    File.unlink rdbfile if File.exists? rdbfile
+  end
 end
 
 def raises_exception(&block)

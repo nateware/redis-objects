@@ -33,6 +33,20 @@ class Roster
   #callable as key
   counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
 
+  # set default expiration
+  value :value_with_expiration, :expiration => 10
+  value :value_with_expireat, :expireat => Time.now + 10.seconds
+  set :set_with_expiration, :expiration => 10
+  set :set_with_expireat, :expireat => Time.now + 10.seconds
+  list :list_with_expiration, :expiration => 10
+  list :list_with_expireat, :expireat => Time.now + 10.seconds
+  hash_key :hash_with_expiration, :expiration => 10
+  hash_key :hash_with_expireat, :expireat => Time.now + 10.seconds
+  counter :counter_with_expiration, :expiration => 10
+  counter :counter_with_expireat, :expireat => Time.now + 10.seconds
+  sorted_set :sorted_set_with_expiration,:expiration => 10
+  sorted_set :sorted_set_with_expireat, :expireat => Time.now + 10.seconds
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -594,19 +608,23 @@ describe Redis::Objects do
     @roster_1.outfielders.intersection(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
     @roster_1.outfielders.intersect(@roster_2.outfielders).sort.should == ['c','d','e']
     @roster_1.outfielders.inter(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
+
     @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders).should == 3
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['c','d','e']
+
     @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 1
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
+    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['d']
 
     (@roster_1.outfielders | @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     (@roster_1.outfielders + @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.union(@roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
     @roster_1.outfielders.union(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['a','b','c','d','e','f','g','l','m']
+
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders).should == 7
-    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
+    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g']
+
     @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
-    @roster_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g','l','m']
   end
 
   it "should handle class-level global lists of simple values" do
@@ -919,5 +937,53 @@ describe Redis::Objects do
     extended_roster.rank.should.be.kind_of(Redis::SortedSet)
     extended_roster.extended_sorted_set.should.be.kind_of(Redis::SortedSet)
     @roster.respond_to?(:extended_sorted_set).should == false
+  end
+
+  it "should set time to live in seconds when expiration option assigned" do
+    @roster.value_with_expiration.value = 'val'
+    @roster.value_with_expiration.ttl.should > 0
+    @roster.value_with_expiration.ttl.should <= 10
+
+    @roster.set_with_expiration << 'val'
+    @roster.set_with_expiration.ttl.should > 0
+    @roster.set_with_expiration.ttl.should <= 10
+
+    @roster.list_with_expiration << 'val'
+    @roster.list_with_expiration.ttl.should > 0
+    @roster.list_with_expiration.ttl.should <= 10
+
+    @roster.hash_with_expiration[:foo] = :bar
+    @roster.hash_with_expiration.ttl.should > 0
+    @roster.hash_with_expiration.ttl.should <= 10
+
+    @roster.counter_with_expiration.increment
+    @roster.counter_with_expiration.ttl.should > 0
+    @roster.counter_with_expiration.ttl.should <= 10
+
+    @roster.sorted_set_with_expiration[:foo] = 1
+    @roster.sorted_set_with_expiration.ttl.should > 0
+    @roster.sorted_set_with_expiration.ttl.should <= 10
+  end
+
+  it "should set expiration when expireat option assigned" do
+    @roster.value_with_expireat.value = 'val'
+    @roster.value_with_expireat.ttl.should > 0
+    @roster.value_with_expireat.ttl.should <= 10
+
+    @roster.set_with_expireat << 'val'
+    @roster.set_with_expireat.ttl.should > 0
+    @roster.set_with_expireat.ttl.should <= 10
+
+    @roster.list_with_expireat << 'val'
+    @roster.list_with_expireat.ttl.should > 0
+    @roster.list_with_expireat.ttl.should <= 10
+
+    @roster.hash_with_expireat[:foo] = :bar
+    @roster.hash_with_expireat.ttl.should > 0
+    @roster.hash_with_expireat.ttl.should <= 10
+
+    @roster.sorted_set_with_expireat[:foo] = 1
+    @roster.sorted_set_with_expireat.ttl.should > 0
+    @roster.sorted_set_with_expireat.ttl.should <= 10
   end
 end

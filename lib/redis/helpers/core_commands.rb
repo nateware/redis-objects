@@ -52,9 +52,27 @@ class Redis
 
       def sort(options={})
         options[:order] = "asc alpha" if options.keys.count == 0  # compat with Ruby
-        redis.sort(key, options)
+        val = redis.sort(key, options)
+        val.is_a?(Array) ? val.map{|v| unmarshal(v)} : val
+      end
+
+      def marshal(value, domarshal=false)
+        if options[:marshal] || domarshal
+          Marshal.dump(value)
+        else
+          value
+        end
+      end
+ 
+      def unmarshal(value, domarshal=false)
+        if value.nil?
+          nil
+        elsif options[:marshal] || domarshal
+          Marshal.load(value) 
+        else
+          value
+        end
       end
     end
-
   end
 end

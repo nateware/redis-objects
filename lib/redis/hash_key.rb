@@ -9,8 +9,6 @@ class Redis
     include Enumerable
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
-    require 'redis/helpers/serialize'
-    include Redis::Helpers::Serialize
 
     attr_reader :key, :options
     def initialize(key, *args)
@@ -18,30 +16,18 @@ class Redis
       @options[:marshal_keys] ||= {} 
     end
 
-    # Needed since Redis::Hash masks bare Hash in redis.rb
-    def self.[](*args)
-      ::Hash[*args]
-    end
-
-    # Sets a field to value
-    def []=(field, value)
-      store(field, to_redis(value))
-    end
-
-    # Gets the value of a field
-    def [](field)
-      fetch(field)
-    end
-
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, to_redis(value, options[:marshal_keys][field]))
+      redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
     end
+    alias_method :[]=, :store
 
     # Redis: HGET
-    def fetch(field)
-      from_redis redis.hget(key, field), options[:marshal_keys][field]
+    def hget(field)
+      unmarshal redis.hget(key, field), options[:marshal_keys][field]
     end
+    alias_method :get, :hget
+    alias_method :[],  :hget
 
     # Verify that a field exists. Redis: HEXISTS
     def has_key?(field)
@@ -56,6 +42,16 @@ class Redis
       redis.hdel(key, field)
     end
 
+    # Fetch a key in a way similar to Ruby's Hash#fetch
+    def fetch(field, *args, &block)
+      value = hget(field)
+      default = args[0]
+
+      return value if value || (!default && !block_given?)
+
+      block_given? ? block.call(field) : default
+    end
+
     # Return all the keys of the hash. Redis: HKEYS
     def keys
       redis.hkeys(key)
@@ -63,14 +59,14 @@ class Redis
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      from_redis redis.hvals(key)
+      redis.hvals(key).map{|v| unmarshal(v) }
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
       h = redis.hgetall(key) || {}
-      h.each { |k,v| h[k] = from_redis(v, options[:marshal_keys][k]) }
+      h.each{|k,v| h[k] = unmarshal(v, options[:marshal_keys][k]) }
       h
     end
     alias_method :clone, :all
@@ -111,7 +107,7 @@ class Redis
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
       redis.hmset(key, *args.last.inject([]){ |arr,kv|
-        arr + [kv[0], to_redis(kv[1], options[:marshal_keys][kv[0]])]
+        arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
       })
     end
     alias_method :update, :bulk_set
@@ -120,7 +116,7 @@ class Redis
     def fill(pairs={})
       raise ArgumentError, "Arugment to fill must be a hash of key/value pairs" unless pairs.is_a?(::Hash)
       pairs.each do |field, value|
-        redis.hsetnx(key, field, to_redis(value, options[:marshal_keys][field]))
+        redis.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
       end
     end
 
@@ -129,7 +125,7 @@ class Redis
       hsh = {}
       res = redis.hmget(key, *fields.flatten)
       fields.each do |k|
-        hsh[k] = from_redis(res.shift, options[:marshal_keys][k])
+        hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
       end
       hsh
     end
@@ -138,12 +134,12 @@ class Redis
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
     def bulk_values(*keys)
       res = redis.hmget(key, *keys.flatten)
-      keys.inject([]){|collection, k| collection << from_redis(res.shift)}
+      keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
     end
 
     # Increment value by integer at field. Redis: HINCRBY
-    def incrby(field, val = 1)
-      ret = redis.hincrby(key, field, val)
+    def incrby(field, by=1)
+      ret = redis.hincrby(key, field, by)
       unless ret.is_a? Array
         ret.to_i
       else
@@ -152,6 +148,28 @@ class Redis
     end
     alias_method :incr, :incrby
 
+    # Decrement value by integer at field. Redis: HINCRBY
+    def decrby(field, by=1)
+      incrby(field, -by)
+    end
+    alias_method :decr, :decrby
+
+    # Increment value by float at field. Redis: HINCRBYFLOAT
+    def incrbyfloat(field, by=1.0)
+      ret = redis.hincrbyfloat(key, field, by)
+      unless ret.is_a? Array
+        ret.to_i
+      else
+        nil
+      end
+    end
+
+    # Decrement value by float at field. Redis: HINCRBYFLOAT
+    def decrbyfloat(field, by=1.0)
+      incrbyfloat(field, -by)
+    end
+
+    expiration_filter :[]=, :store, :bulk_set, :fill, :incrby
   end
 end
 
