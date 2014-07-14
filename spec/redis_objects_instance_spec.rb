@@ -15,8 +15,8 @@ describe Redis::Value do
   end
 
   it "should be able to set the default value to false" do
-    #@value = Redis::Value.new('spec/value', :default => false, :marshal => true)
-    #@value.value.should == false
+    @value = Redis::Value.new('spec/value', :default => false, :marshal => true)
+    @value.value.should == false
   end
   
   it "should handle simple values" do
