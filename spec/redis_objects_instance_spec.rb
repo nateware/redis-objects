@@ -650,7 +650,7 @@ describe Redis::HashKey do
     @hash.incrbyfloat('float', 45.3).should == 6276.3
     @hash.get('float').to_f.should == 6276.3
   end
-  
+
   it "should respond to each_value" do
     @hash['foo'] = 'bar'
     @hash.each_value do |val|
