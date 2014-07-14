@@ -11,7 +11,6 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      # redis.setnx(key, marshal(@options[:default])) if @options[:default]
       redis.setnx(key, marshal(@options[:default])) if !@options[:default].nil?
     end
 
