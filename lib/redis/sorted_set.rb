@@ -302,7 +302,11 @@ class Redis
       !redis.zscore(key, marshal(value)).nil?
     end
 
-    expiration_filter :[]=, :add, :merge, :diffstore, :increment, :decrement, :intersection, :interstore, :unionstore
+    expiration_filter(
+      :[]=, :add, :merge, :add_all, :diffstore, :increment, :incr, :incrby,
+      :decrement, :decr, :decrby, :intersection, :intersect, :inter, :&,
+      :interstore, :unionstore
+    )
 
     private
 
