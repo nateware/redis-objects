@@ -1139,7 +1139,7 @@ describe Redis::SortedSet do
 
   it 'should set time to live in seconds when expiration option assigned' do
     @set = Redis::SortedSet.new('spec/zset', :expiration => 10)
-    @hash.expire(0)
+    @set.expire(0)
     @set['val'] = 1
     @set.ttl.should > 0
     @set.ttl.should <= 10
@@ -1147,7 +1147,7 @@ describe Redis::SortedSet do
 
   it 'should set expiration when expireat option assigned' do
     @set = Redis::SortedSet.new('spec/zset', :expireat => Time.now + 10.seconds)
-    @hash.expire(0)
+    @set.expire(0)
     @set['val'] = 1
     @set.ttl.should > 0
     @set.ttl.should <= 10
