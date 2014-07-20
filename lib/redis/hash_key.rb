@@ -13,7 +13,7 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super
-      @options[:marshal_keys] ||= {} 
+      @options[:marshal_keys] ||= {}
     end
 
     # Redis: HSET
@@ -169,7 +169,7 @@ class Redis
       incrbyfloat(field, -by)
     end
 
-    expiration_filter :[]=, :store, :bulk_set, :fill, :incrby
+    expiration_filter :[]=, :store, :bulk_set, :update, :fill, :incrby, :incr
   end
 end
 
