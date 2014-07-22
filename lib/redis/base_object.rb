@@ -40,8 +40,6 @@ class Redis
             set_expiration
             result
           end
-
-          alias_method name, with_name
         end
       end
     end
