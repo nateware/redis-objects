@@ -418,6 +418,23 @@ describe Redis::Counter do
     @counter.ttl.should <= 10
   end
 
+  it "should support a block" do
+    @counter = Redis::Counter.new("spec/block_counter")
+    @counter.should == 0
+    @counter.increment(1)
+    # The block is never executed.
+    @updated =
+      @counter.increment(1) do |updated|
+        if updated == 2
+          'yep'
+        else
+          raise("test failed")
+        end
+      end
+    @updated.should == 'yep'
+    @counter.should == 2
+  end
+
   after do
     @counter.delete
   end
