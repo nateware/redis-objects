@@ -1,6 +1,7 @@
 require 'rubygems'  # poor people still on 1.8
 gem 'redis', '>= 3.0.0'
 require 'redis'
+require 'active_support/core_ext'
 
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'bacon'
