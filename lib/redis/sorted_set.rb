@@ -206,7 +206,8 @@ class Redis
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
-      redis.zinterstore(name, keys_from_objects([self] + sets))
+      opts = sets.last.is_a?(Hash) ? sets.pop : {}
+      redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
     # Return the union with another set.  Can pass it either another set
@@ -229,7 +230,8 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      redis.zunionstore(name, keys_from_objects([self] + sets))
+      opts = sets.last.is_a?(Hash) ? sets.pop : {}
+      redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -305,10 +307,13 @@ class Redis
     expiration_filter :[]=, :add, :merge, :diffstore, :increment, :decrement, :intersection, :interstore, :unionstore
 
     private
+    def key_from_object(set)
+      set.is_a?(Redis::SortedSet) ? set.key : set
+    end
 
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
-      sets.collect{|set| set.is_a?(Redis::SortedSet) ? set.key : set}
+      sets.collect{|set| set.is_a?(Redis::SortedSet) || set.is_a?(Redis::Set) ? set.key : set}
     end
   end
 end
