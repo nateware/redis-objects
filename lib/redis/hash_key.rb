@@ -158,7 +158,7 @@ class Redis
     def incrbyfloat(field, by=1.0)
       ret = redis.hincrbyfloat(key, field, by)
       unless ret.is_a? Array
-        ret.to_i
+        ret.to_f
       else
         nil
       end

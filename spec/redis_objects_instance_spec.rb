@@ -647,7 +647,7 @@ describe Redis::HashKey do
     @hash['float'] = '5.0e3'
     @hash.incrbyfloat('float')
     @hash.incrbyfloat('float', '1.23e3')
-    @hash.incrbyfloat('float', 45.3)
+    @hash.incrbyfloat('float', 45.3).should == 6276.3
     @hash.get('float').to_f.should == 6276.3
   end
 
