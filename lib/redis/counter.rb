@@ -114,7 +114,7 @@ class Redis
     end
 
     expiration_filter :increment, :decrement
-   
+
     private
 
     # Implements atomic increment/decrement blocks
