@@ -1,6 +1,6 @@
 = Changelog for Redis::Objects
 
-== 0.9.1 (25 Mar 2024)
+== 0.9.1 (25 Mar 2014)
 
 * Fix bad marshal calls in SortedSet [Fleurer, nateware]
 
