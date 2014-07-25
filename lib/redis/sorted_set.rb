@@ -304,7 +304,9 @@ class Redis
       !redis.zscore(key, marshal(value)).nil?
     end
 
-    expiration_filter :[]=, :add, :merge, :diffstore, :increment, :decrement, :intersection, :interstore, :unionstore
+    expiration_filter :[]=, :add, :merge, :delete,
+                      :increment, :incr, :incrby, :decrement, :decr, :decrby,
+                      :intersection, :interstore, :unionstore, :diffstore
 
     private
     def key_from_object(set)

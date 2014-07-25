@@ -143,6 +143,6 @@ class Redis
       values.join(', ')
     end
 
-    expiration_filter :[]=, :push, :insert, :unshift
+    expiration_filter :[]=, :push, :<<, :insert, :unshift
   end
 end

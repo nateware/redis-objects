@@ -1,5 +1,17 @@
 = Changelog for Redis::Objects
 
+== 1.0.0 (25 Jul 2014)
+
+* Fix expiration filter to handle atomic blocks, remove method aliasing [nateware]
+
+* Fix incrbyfloat to actually return a float [james-lawrence]
+
+* Allow false as default: value (bugfix) [james-lawrence]
+
+* Allow unionstore and interstore between sorted sets and sets [jrdi]
+
+* Add syntax highlighting to README.md [bartolsthoorn]
+
 == 0.9.1 (25 Mar 2014)
 
 * Fix bad marshal calls in SortedSet [Fleurer, nateware]
