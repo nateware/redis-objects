@@ -113,8 +113,10 @@ class Redis
       EndOverload
     end
 
-    expiration_filter :increment, :decrement
-   
+    expiration_filter :increment, :incr, :incrby, :incrbyfloat, 
+                      :decrement, :decr, :decrby, :decrbyfloat,
+                      :value=, :set, :reset
+
     private
 
     # Implements atomic increment/decrement blocks

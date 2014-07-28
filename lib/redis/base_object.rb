@@ -25,23 +25,14 @@ class Redis
     class << self
       def expiration_filter(*names)
         names.each do |name|
-          if ['=', '?', '!'].include? name.to_s[-1]
-            with_name = "#{name[0..-2]}_with_expiration#{name[-1]}".to_sym
-            without_name = "#{name[0..-2]}_without_expiration#{name[-1]}".to_sym
-          else
-            with_name = "#{name}_with_expiration".to_sym
-            without_name = "#{name}_without_expiration".to_sym
-          end
+          # http://blog.jayfields.com/2006/12/ruby-alias-method-alternative.html
+          bind_method = instance_method(name)
 
-          alias_method without_name, name
-
-          define_method(with_name) do |*args|
-            result = send(without_name, *args)
+          define_method(name) do |*args, &block|
+            result = bind_method.bind(self).call(*args, &block)
             set_expiration
             result
           end
-
-          alias_method name, with_name
         end
       end
     end
