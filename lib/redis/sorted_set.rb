@@ -185,76 +185,22 @@ class Redis
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
 
-    # Return the intersection with another set.  Can pass it either another set
-    # object or set name.  Also available as & which is a bit cleaner:
-    #
-    #    members_in_both = set1 & set2
-    #
-    # If you want to specify multiple sets, you must use +intersection+:
-    #
-    #    members_in_all = set1.intersection(set2, set3, set4)
-    #    members_in_all = set1.inter(set2, set3, set4)  # alias
-    #
-    # Redis: SINTER
-    def intersection(*sets)
-      redis.zinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
-    end
-    alias_method :intersect, :intersection
-    alias_method :inter, :intersection
-    alias_method :&, :intersection
-
     # Calculate the intersection and store it in Redis as +name+. Returns the number
-    # of elements in the stored intersection. Redis: SUNIONSTORE
+    # of elements in the stored intersection. Redis: ZUNIONSTORE
     def interstore(name, *sets)
       opts = sets.last.is_a?(Hash) ? sets.pop : {}
       redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
-    # Return the union with another set.  Can pass it either another set
-    # object or set name. Also available as | and + which are a bit cleaner:
-    #
-    #    members_in_either = set1 | set2
-    #    members_in_either = set1 + set2
-    #
-    # If you want to specify multiple sets, you must use +union+:
-    #
-    #    members_in_all = set1.union(set2, set3, set4)
-    #
-    # Redis: SUNION
-    def union(*sets)
-      redis.zunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
-    end
-    alias_method :|, :union
-    alias_method :+, :union
-
     # Calculate the union and store it in Redis as +name+. Returns the number
-    # of elements in the stored union. Redis: SUNIONSTORE
+    # of elements in the stored union. Redis: ZUNIONSTORE
     def unionstore(name, *sets)
       opts = sets.last.is_a?(Hash) ? sets.pop : {}
       redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
     end
 
-    # Return the difference vs another set.  Can pass it either another set
-    # object or set name. Also available as ^ or - which is a bit cleaner:
-    #
-    #    members_difference = set1 ^ set2
-    #    members_difference = set1 - set2
-    #
-    # If you want to specify multiple sets, you must use +difference+:
-    #
-    #    members_difference = set1.difference(set2, set3, set4)
-    #    members_difference = set1.diff(set2, set3, set4)
-    #
-    # Redis: SDIFF
-    def difference(*sets)
-      redis.zdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
-    end
-    alias_method :diff, :difference
-    alias_method :^, :difference
-    alias_method :-, :difference
-
     # Calculate the diff and store it in Redis as +name+. Returns the number
-    # of elements in the stored union. Redis: SDIFFSTORE
+    # of elements in the stored union. Redis: ZDIFFSTORE
     def diffstore(name, *sets)
       redis.zdiffstore(name, key, *keys_from_objects(sets))
     end
@@ -306,7 +252,7 @@ class Redis
 
     expiration_filter :[]=, :add, :merge, :delete,
                       :increment, :incr, :incrby, :decrement, :decr, :decrby,
-                      :intersection, :interstore, :unionstore, :diffstore
+                      :interstore, :unionstore, :diffstore
 
     private
     def key_from_object(set)
