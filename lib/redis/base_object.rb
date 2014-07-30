@@ -35,8 +35,8 @@ class Redis
 
           alias_method without_name, name
 
-          define_method(with_name) do |*args|
-            result = send(without_name, *args)
+          define_method(with_name) do |*args, &block|
+            result = send(without_name, *args, &block)
             set_expiration
             result
           end
