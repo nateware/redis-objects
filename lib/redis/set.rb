@@ -21,49 +21,65 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
+      redis.with do |conn|
+        conn.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
+      end
     end
 
     # Remove and return a random member.  Redis: SPOP
     def pop
-      unmarshal redis.spop(key)
+      redis.with do |conn|
+        unmarshal conn.spop(key)
+      end
     end
 
     # return a random member.  Redis: SRANDMEMBER
     def randmember
-      unmarshal redis.srandmember(key)
+      redis.with do |conn|
+        unmarshal conn.srandmember(key)
+      end
     end
 
     # Adds the specified values to the set. Only works on redis > 2.4
     # Redis: SADD
     def merge(*values)
-      redis.sadd(key, values.flatten.map{|v| marshal(v)})
+      redis.with do |conn|
+        conn.sadd(key, values.flatten.map{|v| marshal(v)})
+      end
     end
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
-      vals = redis.smembers(key)
-      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
+      redis.with do |conn|
+        vals = conn.smembers(key)
+        vals.nil? ? [] : vals.map{|v| unmarshal(v) }
+      end
     end
     alias_method :get, :members
 
     # Returns true if the specified value is in the set.  Redis: SISMEMBER
     def member?(value)
-      redis.sismember(key, marshal(value))
+      redis.with do |conn|
+        conn.sismember(key, marshal(value))
+      end
     end
     alias_method :include?, :member?
 
     # Delete the value from the set.  Redis: SREM
     def delete(value)
-      redis.srem(key, marshal(value))
+      redis.with do |conn|
+        conn.srem(key, marshal(value))
+      end
     end
 
     # Delete if matches block
     def delete_if(&block)
       res = false
-      redis.smembers(key).each do |m|
-        if block.call(unmarshal(m))
-          res = redis.srem(key, m)
+      redis.with do |conn|
+        conn.smembers(key).each do |m|
+          if block.call(unmarshal(m))
+            res = conn.srem(key, m)
+          end
         end
       end
       res
@@ -87,7 +103,9 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      redis.sinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      redis.with do |conn|
+        conn.sinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      end
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -96,7 +114,9 @@ class Redis
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
-      redis.sinterstore(name, key, *keys_from_objects(sets))
+      redis.with do |conn|
+        conn.sinterstore(name, key, *keys_from_objects(sets))
+      end
     end
 
     # Return the union with another set.  Can pass it either another set
@@ -111,7 +131,9 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      redis.sunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      redis.with do |conn|
+        conn.sunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      end
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -119,7 +141,9 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      redis.sunionstore(name, key, *keys_from_objects(sets))
+      redis.with do |conn|
+        conn.sunionstore(name, key, *keys_from_objects(sets))
+      end
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -135,7 +159,9 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      redis.sdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      redis.with do |conn|
+        conn.sdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v)}
+      end
     end
     alias_method :diff, :difference
     alias_method :^, :difference
@@ -144,7 +170,9 @@ class Redis
     # Calculate the diff and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SDIFFSTORE
     def diffstore(name, *sets)
-      redis.sdiffstore(name, key, *keys_from_objects(sets))
+      redis.with do |conn|
+        conn.sdiffstore(name, key, *keys_from_objects(sets))
+      end
     end
 
     # Moves value from one set to another. Destination can be a String
@@ -157,12 +185,16 @@ class Redis
     #
     # Redis: SMOVE
     def move(value, destination)
-      redis.smove(key, destination.is_a?(Redis::Set) ? destination.key : destination.to_s, value)
+      redis.with do |conn|
+        conn.smove(key, destination.is_a?(Redis::Set) ? destination.key : destination.to_s, value)
+      end
     end
 
     # The number of members in the set. Aliased as size. Redis: SCARD
     def length
-      redis.scard(key)
+      redis.with do |conn|
+        conn.scard(key)
+      end
     end
     alias_method :size, :length
     alias_method :count, :length

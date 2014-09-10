@@ -18,20 +18,26 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
+      redis.with do |conn|
+        conn.hset(key, field, marshal(value, options[:marshal_keys][field]))
+      end
     end
     alias_method :[]=, :store
 
     # Redis: HGET
     def hget(field)
-      unmarshal redis.hget(key, field), options[:marshal_keys][field]
+      redis.with do |conn|
+        unmarshal conn.hget(key, field), options[:marshal_keys][field]
+      end
     end
     alias_method :get, :hget
     alias_method :[],  :hget
 
     # Verify that a field exists. Redis: HEXISTS
     def has_key?(field)
-      redis.hexists(key, field)
+      redis.with do |conn|
+        conn.hexists(key, field)
+      end
     end
     alias_method :include?, :has_key?
     alias_method :key?, :has_key?
@@ -39,7 +45,9 @@ class Redis
 
     # Delete field. Redis: HDEL
     def delete(field)
-      redis.hdel(key, field)
+      redis.with do |conn|
+        conn.hdel(key, field)
+      end
     end
 
     # Fetch a key in a way similar to Ruby's Hash#fetch
@@ -54,20 +62,26 @@ class Redis
 
     # Return all the keys of the hash. Redis: HKEYS
     def keys
-      redis.hkeys(key)
+      redis.with do |conn|
+        conn.hkeys(key)
+      end
     end
 
     # Return all the values of the hash. Redis: HVALS
     def values
-      redis.hvals(key).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.hvals(key).map{|v| unmarshal(v) }
+      end
     end
     alias_method :vals, :values
 
     # Retrieve the entire hash.  Redis: HGETALL
     def all
-      h = redis.hgetall(key) || {}
-      h.each{|k,v| h[k] = unmarshal(v, options[:marshal_keys][k]) }
-      h
+      redis.with do |conn|
+        h = conn.hgetall(key) || {}
+        h.each{|k,v| h[k] = unmarshal(v, options[:marshal_keys][k]) }
+        h
+      end
     end
     alias_method :clone, :all
 
@@ -88,7 +102,9 @@ class Redis
 
     # Return the size of the dict. Redis: HLEN
     def size
-      redis.hlen(key)
+      redis.with do |conn|
+        conn.hlen(key)
+      end
     end
     alias_method :length, :size
     alias_method :count, :size
@@ -100,50 +116,62 @@ class Redis
 
     # Clears the dict of all keys/values. Redis: DEL
     def clear
-      redis.del(key)
+      redis.with do |conn|
+        conn.del(key)
+      end
     end
 
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
-      redis.hmset(key, *args.last.inject([]){ |arr,kv|
-        arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
-      })
+      redis.with do |conn|
+        conn.hmset(key, *args.last.inject([]){ |arr,kv|
+          arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
+        })
+      end
     end
     alias_method :update, :bulk_set
 
     # Set keys in bulk if they do not exist. Takes a hash of field/values {'field1' => 'val1'}. Redis: HSETNX
     def fill(pairs={})
       raise ArgumentError, "Arugment to fill must be a hash of key/value pairs" unless pairs.is_a?(::Hash)
-      pairs.each do |field, value|
-        redis.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
+      redis.with do |conn|
+        pairs.each do |field, value|
+          conn.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
+        end
       end
     end
 
     # Get keys in bulk, takes an array of fields as arguments. Redis: HMGET
     def bulk_get(*fields)
       hsh = {}
-      res = redis.hmget(key, *fields.flatten)
-      fields.each do |k|
-        hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
+      redis.with do |conn|
+        res = conn.hmget(key, *fields.flatten)
+        fields.each do |k|
+          hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
+        end
+        hsh
       end
-      hsh
     end
 
     # Get values in bulk, takes an array of keys as arguments.
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
     def bulk_values(*keys)
-      res = redis.hmget(key, *keys.flatten)
-      keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
+      redis.with do |conn|
+        res = conn.hmget(key, *keys.flatten)
+        keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
+      end
     end
 
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, by=1)
-      ret = redis.hincrby(key, field, by)
-      unless ret.is_a? Array
-        ret.to_i
-      else
-        nil
+      redis.with do |conn|
+        ret = conn.hincrby(key, field, by)
+        unless ret.is_a? Array
+          ret.to_i
+        else
+          nil
+        end
       end
     end
     alias_method :incr, :incrby
@@ -156,11 +184,13 @@ class Redis
 
     # Increment value by float at field. Redis: HINCRBYFLOAT
     def incrbyfloat(field, by=1.0)
-      ret = redis.hincrbyfloat(key, field, by)
-      unless ret.is_a? Array
-        ret.to_f
-      else
-        nil
+      redis.with do |conn|
+        ret = conn.hincrbyfloat(key, field, by)
+        unless ret.is_a? Array
+          ret.to_f
+        else
+          nil
+        end
       end
     end
 

@@ -21,18 +21,24 @@ class Redis
 
     # Add a member before or after pivot in the list. Redis: LINSERT
     def insert(where,pivot,value)
-      redis.linsert(key,where,marshal(pivot),marshal(value))
+      redis.with do |conn|
+        conn.linsert(key,where,marshal(pivot),marshal(value))
+      end
     end
 
     # Add a member to the end of the list. Redis: RPUSH
     def push(*values)
-      redis.rpush(key, values.map{|v| marshal(v) })
-      redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+      redis.with do |conn|
+        conn.rpush(key, values.map{|v| marshal(v) })
+        conn.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+      end
     end
 
     # Remove a member from the end of the list. Redis: RPOP
     def pop
-      unmarshal redis.rpop(key)
+      redis.with do |conn|
+        unmarshal conn.rpop(key)
+      end
     end
 
     # Atomically pops a value from one list, pushes to another and returns the
@@ -44,18 +50,24 @@ class Redis
     #
     # Redis: RPOPLPUSH
     def rpoplpush(destination)
-      unmarshal redis.rpoplpush(key, destination.is_a?(Redis::List) ? destination.key : destination.to_s)
+      redis.with do |conn|
+        unmarshal conn.rpoplpush(key, destination.is_a?(Redis::List) ? destination.key : destination.to_s)
+      end
     end
 
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(*values)
-      redis.lpush(key, values.map{|v| marshal(v) })
-      redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+      redis.with do |conn|
+        conn.lpush(key, values.map{|v| marshal(v) })
+        conn.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+      end
     end
 
     # Remove a member from the start of the list. Redis: LPOP
     def shift
-      unmarshal redis.lpop(key)
+      redis.with do |conn|
+        unmarshal conn.lpop(key)
+      end
     end
 
     # Return all values in the list. Redis: LRANGE(0,-1)
@@ -85,7 +97,9 @@ class Redis
 
     # Same functionality as Ruby arrays.
     def []=(index, value)
-      redis.lset(key, index, marshal(value))
+      redis.with do |conn|
+        conn.lset(key, index, marshal(value))
+      end
     end
 
     # Delete the element(s) from the list that match name. If count is specified,
@@ -93,7 +107,9 @@ class Redis
     # Use .del to completely delete the entire key.
     # Redis: LREM
     def delete(name, count=0)
-      redis.lrem(key, count, marshal(name))  # weird api
+      redis.with do |conn|
+        conn.lrem(key, count, marshal(name))  # weird api
+      end
     end
 
     # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
@@ -105,13 +121,17 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: LRANGE
     def range(start_index, end_index)
-      redis.lrange(key, start_index, end_index).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.lrange(key, start_index, end_index).map{|v| unmarshal(v) }
+      end
     end
 
     # Return the value at the given index. Can also use familiar list[index] syntax.
     # Redis: LINDEX
     def at(index)
-      unmarshal redis.lindex(key, index)
+      redis.with do |conn|
+        unmarshal conn.lindex(key, index)
+      end
     end
 
     # Return the first element in the list. Redis: LINDEX(0)
@@ -126,7 +146,9 @@ class Redis
 
     # Return the length of the list. Aliased as size. Redis: LLEN
     def length
-      redis.llen(key)
+      redis.with do |conn|
+        conn.llen(key)
+      end
     end
     alias_method :size, :length
 

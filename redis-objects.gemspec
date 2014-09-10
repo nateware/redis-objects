@@ -26,5 +26,6 @@ Gem::Specification.new do |spec|
 
   # compatability testing
   spec.add_development_dependency "redis-namespace"
+  spec.add_development_dependency "connection_pool"
   spec.add_development_dependency "activerecord", "~> 3.2"
 end

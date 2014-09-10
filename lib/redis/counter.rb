@@ -17,7 +17,9 @@ class Redis
       super(key, *args)
       @options[:start] ||= @options[:default] || 0
       raise ArgumentError, "Marshalling redis counters does not make sense" if @options[:marshal]
-      redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
+      redis.with do |conn|
+        conn.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
+      end
     end
 
     # Reset the counter to its starting value.  Not atomic, so use with care.
@@ -25,7 +27,9 @@ class Redis
     # with a parent and starting over (for example, restarting a game and
     # disconnecting all players).
     def reset(to=options[:start])
-      redis.set key, to.to_i
+      redis.with do |conn|
+        conn.set key, to.to_i
+      end
       true  # hack for redis-rb regression
     end
 
@@ -34,7 +38,9 @@ class Redis
     # atomic in that no increments or decrements are lost if you process
     # the returned value.
     def getset(to=options[:start])
-      redis.getset(key, to.to_i).to_i
+      redis.with do |conn|
+        conn.getset(key, to.to_i).to_i
+      end
     end
 
     # Returns the current value of the counter.  Normally just calling the
@@ -42,7 +48,9 @@ class Redis
     # or decrement is called.  This forces a network call to redis-server
     # to get the current value.
     def value
-      redis.get(key).to_i
+      redis.with do |conn|
+        conn.get(key).to_i
+      end
     end
     alias_method :get, :value
 
@@ -50,14 +58,18 @@ class Redis
       if val.nil?
         delete
       else
-        redis.set key, val
+        redis.with do |conn|
+          conn.set key, val
+        end
       end
     end
     alias_method :set, :value=
 
     # Like .value but casts to float since Redis addresses these differently.
     def to_f
-      redis.get(key).to_f
+      redis.with do |conn|
+        conn.get(key).to_f
+      end
     end
 
     # Increment the counter atomically and return the new value.  If passed
@@ -66,8 +78,10 @@ class Redis
     # counter will automatically be decremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
-      val = redis.incrby(key, by).to_i
-      block_given? ? rewindable_block(:decrement, by, val, &block) : val
+      redis.with do |conn|
+        val = conn.incrby(key, by).to_i
+        block_given? ? rewindable_block(:decrement, by, val, &block) : val
+      end
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
@@ -78,8 +92,10 @@ class Redis
     # counter will automatically be incremented to its previous value.  This
     # method is aliased as decr() for brevity.
     def decrement(by=1, &block)
-      val = redis.decrby(key, by).to_i
-      block_given? ? rewindable_block(:increment, by, val, &block) : val
+      redis.with do |conn|
+        val = conn.decrby(key, by).to_i
+        block_given? ? rewindable_block(:increment, by, val, &block) : val
+      end
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -87,15 +103,19 @@ class Redis
     # Increment a floating point counter atomically.
     # Redis uses separate API's to interact with integers vs floats.
     def incrbyfloat(by=1.0, &block)
-      val = redis.incrbyfloat(key, by).to_f
-      block_given? ? rewindable_block(:decrbyfloat, by, val, &block) : val
+      redis.with do |conn|
+        val = conn.incrbyfloat(key, by).to_f
+        block_given? ? rewindable_block(:decrbyfloat, by, val, &block) : val
+      end
     end
 
     # Decrement a floating point counter atomically.
     # Redis uses separate API's to interact with integers vs floats.
     def decrbyfloat(by=1.0, &block)
-      val = redis.incrbyfloat(key, -by).to_f
-      block_given? ? rewindable_block(:incrbyfloat, -by, val, &block) : val
+      redis.with do |conn|
+        val = conn.incrbyfloat(key, -by).to_f
+        block_given? ? rewindable_block(:incrbyfloat, -by, val, &block) : val
+      end
     end
 
     ##

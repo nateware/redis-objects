@@ -114,9 +114,11 @@ describe Redis::Objects do
     @roster_1.outfielders.clear
     @roster_2.outfielders.clear
     @roster_3.outfielders.clear
-    @roster.redis.del(UNIONSTORE_KEY)
-    @roster.redis.del(INTERSTORE_KEY)
-    @roster.redis.del(DIFFSTORE_KEY)
+    @roster.redis do |conn| 
+      conn.del(UNIONSTORE_KEY)
+      conn.del(INTERSTORE_KEY)
+      conn.del(DIFFSTORE_KEY)
+    end
 
     Roster.total_players_online.reset
     Roster.all_player_stats.clear
@@ -135,29 +137,44 @@ describe Redis::Objects do
     @custom_roster.special.reset
   end
 
-  it "should provide a connection method" do
-    Roster.redis.should == Redis::Objects.redis
-    # Roster.redis.should.be.kind_of(Redis)
+  it "should provide a connection pool method" do
+    Roster.redis.should.be.kind_of(ConnectionPool)
   end
 
   it "should support interpolation of key names" do
-    @roster.player_totals.incr
-    @roster.redis.get('players/user1/total').should == '1'
-    @roster.redis.get('players/#{username}/total').should.be.nil
-    @roster.all_player_stats << 'a'
-    @roster.redis.lindex('players:all_stats', 0).should == 'a'
-    @roster.total_wins << 'a'
-    # test for interpolation of key names
-    @roster.redis.smembers('players:#{id}:all_stats').should == []
-    @roster.redis.smembers('players:1:all_stats').should == ['a']
-    @roster.my_rank = 'a'
-    @roster.redis.get('players:my_rank:user1').should == 'a'
-    Roster.weird_key = 'tuka'
-    Roster.redis.get("players:weird_key:#{Roster.jimmyhat}").should == 'tuka'
+    total, user_total, all_stats, id_all_stats, _1_all_stats, my_rank, weird_key, _k = nil
 
-    k = "Roster:#{Time.now.strftime('%Y-%m-%dT%H')}:daily"
-    @roster.daily.incr
-    @roster.redis.get(k).should == '1'
+    @roster.player_totals.incr
+    @roster.redis do |conn|
+      total = conn.get('players/user1/total')
+      user_total = conn.get('players/#{username}/total')
+      @roster.all_player_stats << 'a'
+      all_stats = conn.lindex('players:all_stats', 0)
+      @roster.total_wins << 'a'
+      # test for interpolation of key names
+      id_all_stats = conn.smembers('players:#{id}:all_stats')
+      _1_all_stats = conn.smembers('players:1:all_stats')
+      @roster.my_rank = 'a'
+      my_rank = conn.get('players:my_rank:user1')
+
+      Roster.weird_key = 'tuka'
+      Roster.redis do |conn2|
+        weird_key = conn2.get("players:weird_key:#{Roster.jimmyhat}")
+      end
+
+      k = "Roster:#{Time.now.strftime('%Y-%m-%dT%H')}:daily"
+      @roster.daily.incr
+      _k = conn.get(k)
+    end
+
+    #total.should == '1'
+    user_total.should.be.nil
+    all_stats.should == 'a'
+    id_all_stats.should == []
+    _1_all_stats.should == ['a']
+    my_rank.should == 'a'
+    weird_key.should == 'tuka'
+    _k.should == '1'
   end
 
   it "should be able to get/set contact info" do
@@ -455,13 +472,17 @@ describe Redis::Objects do
     error = nil
     begin
       Roster.obtain_lock(:resort, 2) do
-        Roster.redis.get("roster:2:resort_lock").should.not.be.nil
+        Roster.redis do |conn|
+          conn.get("roster:2:resort_lock").should.not.be.nil
+        end
       end
     rescue => error
     end
 
     error.should.be.nil
-    Roster.redis.get("roster:2:resort_lock").should.be.nil
+    Roster.redis do |conn|
+      conn.get("roster:2:resort_lock").should.be.nil
+    end
   end
 
   it "should handle simple values" do
@@ -610,21 +631,23 @@ describe Redis::Objects do
     @roster_1.outfielders.inter(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['d']
 
     @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders).should == 3
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['c','d','e']
+    @roster_1.redis do |conn|
+      conn.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['c','d','e']
 
-    @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 1
-    @roster_1.redis.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['d']
+      @roster_1.outfielders.interstore(INTERSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 1
+      conn.smembers(INTERSTORE_KEY).sort.map{|v| Marshal.restore(v)}.should == ['d']
 
-    (@roster_1.outfielders | @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
-    (@roster_1.outfielders + @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
-    @roster_1.outfielders.union(@roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
-    @roster_1.outfielders.union(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['a','b','c','d','e','f','g','l','m']
+      (@roster_1.outfielders | @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+      (@roster_1.outfielders + @roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+      @roster_1.outfielders.union(@roster_2.outfielders).sort.should == ['a','b','c','d','e','f','g']
+      @roster_1.outfielders.union(@roster_2.outfielders, @roster_3.outfielders).sort.should == ['a','b','c','d','e','f','g','l','m']
 
-    @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders).should == 7
-    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g']
+      @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders).should == 7
+      conn.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g']
 
-    @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
-    @roster_1.redis.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g','l','m']
+      @roster_1.outfielders.unionstore(UNIONSTORE_KEY, @roster_2.outfielders, @roster_3.outfielders).should == 9
+      conn.smembers(UNIONSTORE_KEY).map{|v| Marshal.restore(v)}.sort.should == ['a','b','c','d','e','f','g','l','m']
+    end
   end
 
   it "should handle class-level global lists of simple values" do
@@ -813,11 +836,15 @@ describe Redis::Objects do
   end
 
   it "should raise an exception if the timeout is exceeded" do
-    @roster.redis.set(@roster.resort_lock.key, 1)
     error = nil
-    begin
-      @roster.resort_lock.lock {}
-    rescue => error
+    @roster.redis do |conn|
+      conn.set(conn.resort_lock.key, 1)
+      begin
+        conn.resort_lock.lock {}
+      rescue => ex
+        ap ex
+        error = ex
+      end
     end
     error.should.not.be.nil
     error.should.be.kind_of(Redis::Lock::LockTimeout)
