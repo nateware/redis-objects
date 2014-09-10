@@ -30,8 +30,8 @@ class Redis
     end
 
     # return a random member.  Redis: SRANDMEMBER
-    def randmember
-      unmarshal redis.srandmember(key)
+    def randmember(count = nil)
+      unmarshal redis.srandmember(key, count)
     end
 
     # Adds the specified values to the set. Only works on redis > 2.4
