@@ -68,7 +68,13 @@ class Redis
         if value.nil?
           nil
         elsif options[:marshal] || domarshal
-          Marshal.load(value) 
+          if value.is_a?(Array)
+            value.map{|v| unmarshal(v, domarshal)}
+          elsif !value.is_a?(String)
+            value
+          else
+            Marshal.load(value) 
+          end
         else
           value
         end
