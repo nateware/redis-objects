@@ -1,5 +1,13 @@
 = Changelog for Redis::Objects
 
+== 1.0.1 (14 Oct 2014)
+
+* Array handling for unmarshal [dreyks]
+
+* Test against Ruby 2.1 / 2.2 on Travis CI [tricknotes]
+
+* Redis::Set#randmember method accept count as optional parameter [xeviknal]
+
 == 1.0.0 (25 Jul 2014)
 
 * Fix expiration filter to handle atomic blocks, remove method aliasing [nateware]
