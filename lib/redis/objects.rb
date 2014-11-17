@@ -148,7 +148,13 @@ class Redis
       end
 
       def redis_id_field(id=nil)
-        @redis_id_field = id || @redis_id_field || :id
+        @redis_id_field = id || @redis_id_field
+
+        if superclass && superclass.respond_to?(:redis_id_field)
+          @redis_id_field ||= superclass.redis_id_field
+        end
+
+        @redis_id_field ||= :id
       end
     end
 
