@@ -114,6 +114,11 @@ class Redis
           downcase
       end
 
+      def redis_options(name)
+        klass = first_ancestor_with(name)
+        return klass.redis_objects[name.to_sym] || {}
+      end
+
       def redis_field_redis(name) #:nodoc:
         klass = first_ancestor_with(name)
         return klass.redis_objects[name.to_sym][:redis] || self.redis
@@ -148,7 +153,13 @@ class Redis
       end
 
       def redis_id_field(id=nil)
-        @redis_id_field = id || @redis_id_field || :id
+        @redis_id_field = id || @redis_id_field
+
+        if superclass && superclass.respond_to?(:redis_id_field)
+          @redis_id_field ||= superclass.redis_id_field
+        end
+
+        @redis_id_field ||= :id
       end
     end
 
@@ -157,6 +168,10 @@ class Redis
       # Map up one level to make modular extend/include approach sane
       def redis()         self.class.redis end
       def redis_objects() self.class.redis_objects end
+
+      def redis_options(name) #:nodoc:
+        return self.class.redis_options(name)
+      end
 
       def redis_field_redis(name) #:nodoc:
         return self.class.redis_field_redis(name)

@@ -97,7 +97,7 @@ user.id  # 1
 user.my_posts.increment
 user.my_posts.increment
 user.my_posts.increment
-puts user.my_posts  # 3
+puts user.my_posts.value # 3
 user.my_posts.reset
 puts user.my_posts.value # 0
 user.my_posts.reset 5

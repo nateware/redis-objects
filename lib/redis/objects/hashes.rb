@@ -21,7 +21,7 @@ class Redis
               instance_variable_get("@#{name}") or
                 instance_variable_set("@#{name}",
                   Redis::HashKey.new(
-                    redis_field_key(name), redis_field_redis(name), redis_objects[name.to_sym]
+                    redis_field_key(name), redis_field_redis(name), redis_options(name)
                   )
                 )
             end

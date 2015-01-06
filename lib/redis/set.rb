@@ -34,9 +34,9 @@ class Redis
     end
 
     # return a random member.  Redis: SRANDMEMBER
-    def randmember
+    def randmember(count = nil)
       redis.with do |conn|
-        unmarshal conn.srandmember(key)
+        unmarshal conn.srandmember(key, count)
       end
     end
 
