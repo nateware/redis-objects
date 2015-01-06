@@ -11,20 +11,26 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
-      redis.setnx(key, marshal(@options[:default])) if !@options[:default].nil?
+      redis.with do |conn|
+        conn.setnx(key, marshal(@options[:default])) if !@options[:default].nil?
+      end
     end
 
     def value=(val)
       if val.nil?
         delete
       else
-        redis.set key, marshal(val)
+        redis.with do |conn|
+          conn.set key, marshal(val)
+        end
       end
     end
     alias_method :set, :value=
 
     def value
-      unmarshal redis.get(key)
+      redis.with do |conn|
+        unmarshal conn.get(key)
+      end
     end
     alias_method :get, :value
 

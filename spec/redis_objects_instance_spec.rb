@@ -2,6 +2,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/objects'
+require 'active_support/time'
 
 describe Redis::Value do
   before do
@@ -317,11 +318,15 @@ describe Redis::List do
       @list.key.should == 'spec/list'
       @list.rename('spec/list3', false)  # can't test result; switched from true to "OK"
       @list.key.should == 'spec/list'
-      @list.redis.del('spec/list3')
+      @list.redis do |conn|
+        conn.del('spec/list3')
+      end
       @list << 'a' << 'b' << 'a' << 3
       @list.rename('spec/list2')  # can't test result; switched from true to "OK"
       @list.key.should == 'spec/list2'
-      @list.redis.lrange(@list.key, 0, 3).should == ['a','b','a','3']
+      @list.redis do |conn|
+        conn.lrange(@list.key, 0, 3).should == ['a','b','a','3']
+      end
       old = Redis::List.new('spec/list')
       old.should.be.empty
       old << 'Tuff'
@@ -331,7 +336,9 @@ describe Redis::List do
       @list.renamenx('spec/foo').should.be.true
       old.values.should == ['Tuff']
       @list.clear
-      @list.redis.del('spec/list2')
+      @list.redis do |conn|
+        conn.del('spec/list2')
+      end
     end
 
     after do
@@ -491,7 +498,9 @@ end
 
 describe Redis::Lock do
   before do
-    REDIS_HANDLE.flushall
+    REDIS_HANDLE.with do |conn|
+      conn.flushall
+    end
   end
 
   it "should set the value to the expiration" do
@@ -499,7 +508,10 @@ describe Redis::Lock do
     expiry = 15
     lock = Redis::Lock.new(:test_lock, :expiration => expiry)
     lock.lock do
-      expiration = REDIS_HANDLE.get("test_lock").to_f
+      expiration = nil
+      REDIS_HANDLE.with do |conn|
+        expiration = conn.get("test_lock").to_f
+      end
 
       # The expiration stored in redis should be 15 seconds from when we started
       # or a little more
@@ -507,17 +519,23 @@ describe Redis::Lock do
     end
 
     # key should have been cleaned up
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    REDIS_HANDLE.with do |conn|
+      conn.get("test_lock").should.be.nil
+    end
   end
 
   it "should set value to 1 when no expiration is set" do
     lock = Redis::Lock.new(:test_lock)
     lock.lock do
-      REDIS_HANDLE.get('test_lock').should == '1'
+      REDIS_HANDLE.with do |conn|
+        conn.get('test_lock').should == '1'
+      end
     end
 
     # key should have been cleaned up
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    REDIS_HANDLE.with do |conn|
+      conn.get("test_lock").should.be.nil
+    end
   end
 
   it "should let lock be gettable when lock is expired" do
@@ -525,7 +543,9 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock in the past
-    REDIS_HANDLE.set("test_lock", Time.now-(expiry + 60))
+    REDIS_HANDLE.with do |conn|
+      conn.set("test_lock", Time.now-(expiry + 60))
+    end
 
     gotit = false
     lock.lock do
@@ -534,7 +554,9 @@ describe Redis::Lock do
 
     # should get the lock because it has expired
     gotit.should.be.true
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    REDIS_HANDLE.with do |conn|
+      conn.get("test_lock").should.be.nil
+    end
   end
 
   it "should not let non-expired locks be gettable" do
@@ -542,7 +564,9 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
     # create a fake lock
-    REDIS_HANDLE.set("test_lock", (Time.now + expiry).to_f)
+    REDIS_HANDLE.with do |conn|
+      conn.set("test_lock", (Time.now + expiry).to_f)
+    end
 
     gotit = false
     error = nil
@@ -559,7 +583,9 @@ describe Redis::Lock do
     gotit.should.not.be.true
 
     # lock value should still be set
-    REDIS_HANDLE.get("test_lock").should.not.be.nil
+    REDIS_HANDLE.with do |conn|
+      conn.get("test_lock").should.not.be.nil
+    end
   end
 
   it "should not remove the key if lock is held past expiration" do
@@ -570,7 +596,9 @@ describe Redis::Lock do
     end
 
     # lock value should still be set since the lock was held for more than the expiry
-    REDIS_HANDLE.get("test_lock").should.not.be.nil
+    REDIS_HANDLE.with do |conn|
+      conn.get("test_lock").should.not.be.nil
+    end
   end
 end
 
@@ -905,18 +933,22 @@ describe Redis::Set do
     @set_1.intersect(@set_2).sort.should == ['c','d','e']
     @set_1.inter(@set_2, @set_3).sort.should == ['d']
     @set_1.interstore(INTERSTORE_KEY, @set_2).should == 3
-    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
-    @set_1.interstore(INTERSTORE_KEY, @set_2, @set_3).should == 1
-    @set_1.redis.smembers(INTERSTORE_KEY).sort.should == ['d']
+    @set_1.redis do |conn| 
+      conn.smembers(INTERSTORE_KEY).sort.should == ['c','d','e']
+      @set_1.interstore(INTERSTORE_KEY, @set_2, @set_3).should == 1
+      conn.smembers(INTERSTORE_KEY).sort.should == ['d']
+    end
 
     (@set_1 | @set_2).sort.should == ['a','b','c','d','e','f','g']
     (@set_1 + @set_2).sort.should == ['a','b','c','d','e','f','g']
     @set_1.union(@set_2).sort.should == ['a','b','c','d','e','f','g']
     @set_1.union(@set_2, @set_3).sort.should == ['a','b','c','d','e','f','g','l','m']
     @set_1.unionstore(UNIONSTORE_KEY, @set_2).should == 7
-    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
-    @set_1.unionstore(UNIONSTORE_KEY, @set_2, @set_3).should == 9
-    @set_1.redis.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+    @set_1.redis do |conn| 
+      conn.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g']
+      @set_1.unionstore(UNIONSTORE_KEY, @set_2, @set_3).should == 9
+      conn.smembers(UNIONSTORE_KEY).sort.should == ['a','b','c','d','e','f','g','l','m']
+    end
 
     (@set_1 ^ @set_2).sort.should == ["a", "b"]
     (@set_1 - @set_2).sort.should == ["a", "b"]
@@ -925,9 +957,11 @@ describe Redis::Set do
     @set_1.diff(@set_2).sort.should == ["a", "b"]
     @set_1.difference(@set_2, @set_3).sort.should == ['b']
     @set_1.diffstore(DIFFSTORE_KEY, @set_2).should == 2
-    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
-    @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
-    @set_1.redis.smembers(DIFFSTORE_KEY).sort.should == ['b']
+    @set_1.redis do |conn|
+      conn.smembers(DIFFSTORE_KEY).sort.should == ['a','b']
+      @set_1.diffstore(DIFFSTORE_KEY, @set_2, @set_3).should == 1
+      conn.smembers(DIFFSTORE_KEY).sort.should == ['b']
+    end
   end
 
   it "should support renaming sets" do
@@ -944,7 +978,9 @@ describe Redis::Set do
     @set.renamenx(old).should.be.false
     @set.renamenx('spec/foo').should.be.true
     @set.clear
-    @set.redis.del('spec/set2')
+    @set.redis do |conn|
+      conn.del('spec/set2')
+    end
   end
 
   it "should handle variadic sadd operations" do
@@ -983,12 +1019,16 @@ describe Redis::Set do
 
     @set_2.sort(SORT_GET).should == ['val3', 'val4']
     @set_2.sort(SORT_STORE).should == 2
-    @set_2.redis.type(SORT_STORE[:store]).should == 'list'
-    @set_2.redis.lrange(SORT_STORE[:store], 0, -1).should == ['val3', 'val4']
+    @set_2.redis do |conn| 
+      conn.type(SORT_STORE[:store]).should == 'list'
+      conn.lrange(SORT_STORE[:store], 0, -1).should == ['val3', 'val4']
+    end
 
-    @set_1.redis.del val1.key
-    @set_1.redis.del val2.key
-    @set_1.redis.del SORT_STORE[:store]
+    @set_1.redis do |conn| 
+      conn.del val1.key
+      conn.del val2.key
+      conn.del SORT_STORE[:store]
+    end
   end
 
   it 'should set time to live in seconds when expiration option assigned' do
@@ -1170,7 +1210,9 @@ describe Redis::SortedSet do
     @set.renamenx(old).should.be.false
     @set.renamenx('spec/zfoo').should.be.true
     @set.clear
-    @set.redis.del('spec/zset2')
+    @set.redis do |conn|
+      conn.del('spec/zset2')
+    end
   end
 
   it "should handle unions" do

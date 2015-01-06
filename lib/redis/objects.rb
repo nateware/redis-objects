@@ -59,12 +59,17 @@ class Redis
     class NilObjectId  < StandardError; end
 
     class << self
-      def redis=(conn)
-        @redis = conn
+      def redis=(hash)
+        @redis = if hash.is_a?(ConnectionPool)
+          hash
+        elsif hash
+          RedisObjects::RedisConnection.create(hash)
+        else
+          hash
+        end
       end
       def redis
-        @redis || $redis || Redis.current ||
-          raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
+        @redis || $redis || Redis.current || raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
       def included(klass)

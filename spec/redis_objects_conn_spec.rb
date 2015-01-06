@@ -18,7 +18,7 @@ describe 'Connection tests' do
         return 1
       end
 
-      redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 31)
+      redis_handle = ConnectionPool.new(:timeout => 1, :size => 5){ Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 31) }
       value :redis_value, :redis => redis_handle, :key => 'rval'
       value :default_redis_value, :key => 'rval'
     end
@@ -44,7 +44,7 @@ describe 'Connection tests' do
   it "should support local handles" do
     Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
-    @redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+    @redis_handle = ConnectionPool.new(:timeout => 1, :size => 5){ Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
 
     # Redis.current is lazily auto-populated to touch 6379
     # This why we choose the weird 9212 port to avoid
@@ -87,7 +87,7 @@ describe 'Connection tests' do
   end
 
   it "should support Redis.current" do
-    Redis.current = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+    Redis.current = ConnectionPool.new(:timeout => 1, :size => 5){ Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
 
     Redis::Value.new('conn/value').should == 'yay'
     Redis::HashKey.new('conn/hash').keys.should == ['k']
@@ -98,7 +98,7 @@ describe 'Connection tests' do
   end
 
   it "should support Redis::Objects.redis=" do
-    @redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+    @redis_handle = ConnectionPool.new(:timeout => 1, :size => 5){ Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
 
     # Redis.current is lazily auto-populated to touch 6379
     # This why we choose the weird 9212 port to avoid

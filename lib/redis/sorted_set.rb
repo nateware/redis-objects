@@ -23,7 +23,9 @@ class Redis
     # arguments to this are flipped; the member comes first rather than
     # the score, since the member is the unique item (not the score).
     def add(member, score)
-      redis.zadd(key, score, marshal(member))
+      redis.with do |conn|
+        conn.zadd(key, score, marshal(member))
+      end
     end
 
     # Add a list of members and their corresponding value (or a hash mapping
@@ -31,8 +33,10 @@ class Redis
     # the member comes first rather than the score, since the member is the unique
     # item (not the score).
     def merge(values)
-      vals = values.map{|v,s| [s, marshal(v)] }
-      redis.zadd(key, vals)
+      redis.with do |conn|
+        vals = values.map{|v,s| [s, marshal(v)] }
+        conn.zadd(key, vals)
+      end
     end
     alias_method :add_all, :merge
 
@@ -58,9 +62,11 @@ class Redis
     # specified element does not exist in the sorted set, or the key does not exist
     # at all, nil is returned. Redis: ZSCORE.
     def score(member)
-      result = redis.zscore(key, marshal(member))
+      redis.with do |conn|
+        result = conn.zscore(key, marshal(member))
 
-      result.to_f unless result.nil?
+        result.to_f unless result.nil?
+      end
     end
 
     # Return the rank of the member in the sorted set, with scores ordered from
@@ -68,18 +74,22 @@ class Redis
     # When the given member does not exist in the sorted set, nil is returned.
     # The returned rank (or index) of the member is 0-based for both commands
     def rank(member)
-      if n = redis.zrank(key, marshal(member))
-        n.to_i
-      else
-        nil
+      redis.with do |conn|
+        if n = conn.zrank(key, marshal(member))
+          n.to_i
+        else
+          nil
+        end
       end
     end
 
     def revrank(member)
-      if n = redis.zrevrank(key, marshal(member))
-        n.to_i
-      else
-        nil
+      redis.with do |conn|
+        if n = conn.zrevrank(key, marshal(member))
+          n.to_i
+        else
+          nil
+        end
       end
     end
 
@@ -92,19 +102,23 @@ class Redis
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE
     def range(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        redis.zrange(key, start_index, end_index, :with_scores => true).map{|v,s| [unmarshal(v), s] }
-      else
-        redis.zrange(key, start_index, end_index).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        if options[:withscores] || options[:with_scores]
+          conn.zrange(key, start_index, end_index, :with_scores => true).map{|v,s| [unmarshal(v), s] }
+        else
+          conn.zrange(key, start_index, end_index).map{|v| unmarshal(v) }
+        end
       end
     end
 
     # Return a range of values from +start_index+ to +end_index+ in reverse order. Redis: ZREVRANGE
     def revrange(start_index, end_index, options={})
-      if options[:withscores] || options[:with_scores]
-        redis.zrevrange(key, start_index, end_index, :with_scores => true).map{|v,s| [unmarshal(v), s] }
-      else
-        redis.zrevrange(key, start_index, end_index).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        if options[:withscores] || options[:with_scores]
+          conn.zrevrange(key, start_index, end_index, :with_scores => true).map{|v,s| [unmarshal(v), s] }
+        else
+          conn.zrevrange(key, start_index, end_index).map{|v| unmarshal(v) }
+        end
       end
     end
 
@@ -119,7 +133,9 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      redis.zrangebyscore(key, min, max, args).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.zrangebyscore(key, min, max, args).map{|v| unmarshal(v) }
+      end
     end
 
     # Returns all the elements in the sorted set at key with a score between max and min
@@ -135,7 +151,9 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      redis.zrevrangebyscore(key, max, min, args).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.zrevrangebyscore(key, max, min, args).map{|v| unmarshal(v) }
+      end
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -144,27 +162,35 @@ class Redis
     # -1 is the element with the highest score, -2 the element with the second highest score and so forth.
     # Redis: ZREMRANGEBYRANK
     def remrangebyrank(min, max)
-      redis.zremrangebyrank(key, min, max)
+      redis.with do |conn|
+        conn.zremrangebyrank(key, min, max)
+      end
     end
 
     # Remove all the elements in the sorted set at key with a score between min and max (including
     # elements with score equal to min or max). Redis: ZREMRANGEBYSCORE
     def remrangebyscore(min, max)
-      redis.zremrangebyscore(key, min, max)
+      redis.with do |conn|
+        conn.zremrangebyscore(key, min, max)
+      end
     end
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
-      redis.zrem(key, marshal(value))
+      redis.with do |conn|
+        conn.zrem(key, marshal(value))
+      end
     end
 
     # Delete element if it matches block
     def delete_if(&block)
       raise ArgumentError, "Missing block to SortedSet#delete_if" unless block_given?
       res = false
-      redis.zrange(key, 0, -1).each do |m|
-        if block.call(unmarshal(m))
-          res = redis.zrem(key, m)
+      redis.with do |conn|
+        conn.zrange(key, 0, -1).each do |m|
+          if block.call(unmarshal(m))
+            res = conn.zrem(key, m)
+          end
         end
       end
       res
@@ -173,14 +199,18 @@ class Redis
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
     def increment(member, by=1)
-      redis.zincrby(key, by, marshal(member)).to_i
+      redis.with do |conn|
+        conn.zincrby(key, by, marshal(member)).to_i
+      end
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
     def decrement(member, by=1)
-      redis.zincrby(key, -by, marshal(member)).to_i
+      redis.with do |conn|
+        conn.zincrby(key, -by, marshal(member)).to_i
+      end
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -197,7 +227,9 @@ class Redis
     #
     # Redis: SINTER
     def intersection(*sets)
-      redis.zinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.zinter(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      end
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -207,7 +239,9 @@ class Redis
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
       opts = sets.last.is_a?(Hash) ? sets.pop : {}
-      redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      redis.with do |conn|
+        conn.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      end
     end
 
     # Return the union with another set.  Can pass it either another set
@@ -222,7 +256,9 @@ class Redis
     #
     # Redis: SUNION
     def union(*sets)
-      redis.zunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.zunion(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      end
     end
     alias_method :|, :union
     alias_method :+, :union
@@ -230,8 +266,10 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      opts = sets.last.is_a?(Hash) ? sets.pop : {}
-      redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      redis.with do |conn|
+        opts = sets.last.is_a?(Hash) ? sets.pop : {}
+        conn.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      end
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -247,7 +285,9 @@ class Redis
     #
     # Redis: SDIFF
     def difference(*sets)
-      redis.zdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      redis.with do |conn|
+        conn.zdiff(key, *keys_from_objects(sets)).map{|v| unmarshal(v) }
+      end
     end
     alias_method :diff, :difference
     alias_method :^, :difference
@@ -256,7 +296,9 @@ class Redis
     # Calculate the diff and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SDIFFSTORE
     def diffstore(name, *sets)
-      redis.zdiffstore(name, key, *keys_from_objects(sets))
+      redis.with do |conn|
+        conn.zdiffstore(name, key, *keys_from_objects(sets))
+      end
     end
 
     # Returns true if the set has no members. Redis: SCARD == 0
@@ -290,18 +332,24 @@ class Redis
 
     # The number of members in the set. Aliased as size. Redis: ZCARD
     def length
-      redis.zcard(key)
+      redis.with do |conn|
+        conn.zcard(key)
+      end
     end
     alias_method :size, :length
 
     # The number of members within a range of scores. Redis: ZCOUNT
     def range_size(min, max)
-      redis.zcount(key, min, max)
+      redis.with do |conn|
+        conn.zcount(key, min, max)
+      end
     end
 
     # Return a boolean indicating whether +value+ is a member.
     def member?(value)
-      !redis.zscore(key, marshal(value)).nil?
+      redis.with do |conn|
+        !conn.zscore(key, marshal(value)).nil?
+      end
     end
 
     expiration_filter :[]=, :add, :merge, :delete,

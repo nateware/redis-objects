@@ -15,10 +15,12 @@ class Redis
     alias :inspect :to_s  # Ruby 1.9.2
 
     def set_expiration
-      if !@options[:expiration].nil?
-        redis.expire(@key, @options[:expiration]) if redis.ttl(@key) < 0
-      elsif !@options[:expireat].nil?
-        redis.expireat(@key, @options[:expireat].to_i) if redis.ttl(@key) < 0
+      redis.with do |conn|
+        if !@options[:expiration].nil?
+          conn.expire(@key, @options[:expiration]) if conn.ttl(@key) < 0
+        elsif !@options[:expireat].nil?
+          conn.expireat(@key, @options[:expireat].to_i) if conn.ttl(@key) < 0
+        end
       end
     end
 

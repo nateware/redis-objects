@@ -1,4 +1,5 @@
 require 'rubygems'  # poor people still on 1.8
+require 'connection_pool'
 gem 'redis', '>= 3.0.0'
 require 'redis'
 
@@ -56,7 +57,7 @@ def raises_exception(&block)
 end
 
 # Grab a global handle
-REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+REDIS_HANDLE = ConnectionPool.new(:timeout => 1, :size => 5){ Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
 #$redis = REDIS_HANDLE
 Redis.current = REDIS_HANDLE
 
