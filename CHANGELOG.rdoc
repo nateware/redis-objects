@@ -1,5 +1,15 @@
 = Changelog for Redis::Objects
 
+== 1.1.0 (21 Jan 2015)
+
+* Support connection_pool useage via a proxy object [Jared Jenkins]
+
+* Fix typo on :counter usage [Kevin Bongart]
+
+* Use parent redis_id_field if present [Arnaud Lavrard]
+
+* Fetch the objects options through a redis_options method [Arnaud Lavrard]
+
 == 1.0.1 (14 Oct 2014)
 
 * Array handling for unmarshal [dreyks]
