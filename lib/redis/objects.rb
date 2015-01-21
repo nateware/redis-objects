@@ -1,6 +1,7 @@
 # Redis::Objects - Lightweight object layer around redis-rb
 # See README.rdoc for usage and approach.
 require 'redis'
+require 'redis/objects/connection_pool_proxy'
 
 class Redis
   autoload :Counter,   'redis/counter'
@@ -60,7 +61,7 @@ class Redis
 
     class << self
       def redis=(conn)
-        @redis = conn
+        @redis = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
       end
       def redis
         @redis || $redis || Redis.current ||
@@ -88,7 +89,10 @@ class Redis
     # Class methods that appear in your class when you include Redis::Objects.
     module ClassMethods
       # Enable per-class connections (eg, User and Post can use diff redis-server)
-      attr_writer :redis
+      def redis=(conn)
+        @redis = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
+      end
+
       def redis
         @redis || Objects.redis
       end
@@ -116,7 +120,12 @@ class Redis
 
       def redis_field_redis(name) #:nodoc:
         klass = first_ancestor_with(name)
-        return klass.redis_objects[name.to_sym][:redis] || self.redis
+        override_redis = klass.redis_objects[name.to_sym][:redis]
+        if override_redis
+          Objects::ConnectionPoolProxy.proxy_if_needed(override_redis)
+        else
+          self.redis
+        end
       end
 
       def redis_field_key(name, id=nil, context=self) #:nodoc:

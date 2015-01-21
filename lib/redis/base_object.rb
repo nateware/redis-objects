@@ -4,7 +4,7 @@ class Redis
     def initialize(key, *args)
       @key     = key.is_a?(Array) ? key.flatten.join(':') : key
       @options = args.last.is_a?(Hash) ? args.pop : {}
-      @myredis = args.first
+      @myredis = Objects::ConnectionPoolProxy.proxy_if_needed(args.first)
     end
 
     # Dynamically query the handle to enable resetting midstream
