@@ -36,10 +36,17 @@ Add it to your Gemfile as:
 gem 'redis-objects'
 ~~~
 
-Redis::Objects needs a handle created by `Redis.new`. The recommended approach
-is to set `Redis.current` to point to your server, which Redis::Objects will
-pick up automatically.
+Redis::Objects needs a handle created by `Redis.new` or a [ConnectionPool](https://github.com/mperham/connection_pool):
 
+The recommended approach is to use a `ConnectionPool` since this guarantees that most timeouts in the `redis` client
+do not pollute your existing connection. However, you need to make sure that both `:timeout` and `:size` are set appropriately
+in a multithreaded environment.
+~~~ruby
+require 'connection_pool'
+Redis::Objects.redis = ConnectionPool.new(size: 5, timeout: 5) { Redis.new(:host => '127.0.0.1', :port => 6379) }
+~~~
+
+Redis::Objects can also default to `Redis.current` if `Redis::Objects.redis` is not set.
 ~~~ruby
 Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 ~~~
@@ -64,6 +71,7 @@ class Post
   include Redis::Objects
 end
 
+# you can also use a ConnectionPool here as well
 User.redis = Redis.new(:host => '1.2.3.4')
 Post.redis = Redis.new(:host => '5.6.7.8')
 ~~~
