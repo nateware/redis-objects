@@ -37,8 +37,8 @@ class Redis
     alias_method :key?, :has_key?
     alias_method :member?, :has_key?
 
-    # Delete field. Redis: HDEL
-    def delete(field)
+    # Delete fields. Redis: HDEL
+    def delete(*field)
       redis.hdel(key, field)
     end
 
