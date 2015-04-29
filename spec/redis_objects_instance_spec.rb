@@ -794,19 +794,29 @@ describe Redis::HashKey do
     block.should == "oops: missing_key"
   end
 
-  #[:[]=, :store, :bulk_set, :fill,
   describe 'with expiration' do
-    [:incrby, :incr, :incrbyfloat, :decrby, :decr, :decrbyfloat].each do |meth|
+    {
+      :incrby      => 'somekey',
+      :incr        => 'somekey',
+      :incrbyfloat => 'somekey',
+      :decrby      => 'somekey',
+      :decr        => 'somekey',
+      :decrbyfloat => 'somekey',
+      :store       => ['somekey', 'somevalue'],
+      :[]=         => ['somekey', 'somevalue'],
+      :bulk_set    => [{ 'somekey' => 'somevalue' }],
+      :fill        => [{ 'somekey' => 'somevalue' }]
+    }.each do |meth, args|
       describe meth do
         it "expiration: option" do
           @hash = Redis::HashKey.new('spec/hash_exp', :expiration => 10)
-          @hash.send(meth, 'somekey')
+          @hash.send(meth, *args)
           @hash.ttl.should > 0
           @hash.ttl.should <= 10
         end
         it "expireat: option" do
           @hash = Redis::HashKey.new('spec/hash_exp', :expireat => Time.now + 10.seconds)
-          @hash.send(meth, 'somekey')
+          @hash.send(meth, *args)
           @hash.ttl.should > 0
           @hash.ttl.should <= 10
         end
