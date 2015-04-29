@@ -169,7 +169,8 @@ class Redis
       incrbyfloat(field, -by)
     end
 
-    expiration_filter :[]=, :store, :bulk_set, :fill,
+    expiration_filter :[]=, :store,
+                      :bulk_set, :update, :fill,
                       :incrby, :incr, :incrbyfloat,
                       :decrby, :decr, :decrbyfloat
   end

@@ -805,6 +805,7 @@ describe Redis::HashKey do
       :store       => ['somekey', 'somevalue'],
       :[]=         => ['somekey', 'somevalue'],
       :bulk_set    => [{ 'somekey' => 'somevalue' }],
+      :update      => [{ 'somekey' => 'somevalue' }],
       :fill        => [{ 'somekey' => 'somevalue' }]
     }.each do |meth, args|
       it "#{meth} expiration: option" do
