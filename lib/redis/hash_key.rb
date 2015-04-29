@@ -106,17 +106,21 @@ class Redis
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
     def bulk_set(*args)
       raise ArgumentError, "Argument to bulk_set must be hash of key/value pairs" unless args.last.is_a?(::Hash)
-      redis.hmset(key, *args.last.inject([]){ |arr,kv|
-        arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
-      })
+      allow_expiration do
+        redis.hmset(key, *args.last.inject([]){ |arr,kv|
+          arr + [kv[0], marshal(kv[1], options[:marshal_keys][kv[0]])]
+        })
+      end
     end
     alias_method :update, :bulk_set
 
     # Set keys in bulk if they do not exist. Takes a hash of field/values {'field1' => 'val1'}. Redis: HSETNX
     def fill(pairs={})
       raise ArgumentError, "Arugment to fill must be a hash of key/value pairs" unless pairs.is_a?(::Hash)
-      pairs.each do |field, value|
-        redis.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
+      allow_expiration do
+        pairs.each do |field, value|
+          redis.hsetnx(key, field, marshal(value, options[:marshal_keys][field]))
+        end
       end
     end
 
@@ -139,11 +143,13 @@ class Redis
 
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, by=1)
-      ret = redis.hincrby(key, field, by)
-      unless ret.is_a? Array
-        ret.to_i
-      else
-        nil
+      allow_expiration do
+        ret = redis.hincrby(key, field, by)
+        unless ret.is_a? Array
+          ret.to_i
+        else
+          nil
+        end
       end
     end
     alias_method :incr, :incrby
@@ -156,11 +162,13 @@ class Redis
 
     # Increment value by float at field. Redis: HINCRBYFLOAT
     def incrbyfloat(field, by=1.0)
-      ret = redis.hincrbyfloat(key, field, by)
-      unless ret.is_a? Array
-        ret.to_f
-      else
-        nil
+      allow_expiration do
+        ret = redis.hincrbyfloat(key, field, by)
+        unless ret.is_a? Array
+          ret.to_f
+        else
+          nil
+        end
       end
     end
 
@@ -168,10 +176,5 @@ class Redis
     def decrbyfloat(field, by=1.0)
       incrbyfloat(field, -by)
     end
-
-    expiration_filter :[]=, :store, :bulk_set, :fill,
-                      :incrby, :incr, :incrbyfloat,
-                      :decrby, :decr, :decrbyfloat
   end
 end
-

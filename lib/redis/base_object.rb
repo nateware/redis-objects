@@ -22,6 +22,10 @@ class Redis
       end
     end
 
+    def allow_expiration(&block)
+      block.call.tap { set_expiration }
+    end
+
     class << self
       def expiration_filter(*names)
         names.each do |name|
