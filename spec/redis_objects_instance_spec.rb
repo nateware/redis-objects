@@ -807,25 +807,22 @@ describe Redis::HashKey do
       :bulk_set    => [{ 'somekey' => 'somevalue' }],
       :fill        => [{ 'somekey' => 'somevalue' }]
     }.each do |meth, args|
-      describe meth do
-        it "expiration: option" do
-          @hash = Redis::HashKey.new('spec/hash_exp', :expiration => 10)
-          @hash.send(meth, *args)
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        it "expireat: option" do
-          @hash = Redis::HashKey.new('spec/hash_exp', :expireat => Time.now + 10.seconds)
-          @hash.send(meth, *args)
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        after do
-          @hash.clear
-        end
+      it "#{meth} expiration: option" do
+        @hash = Redis::HashKey.new('spec/hash_expiration', :expiration => 10)
+        @hash.clear
+        @hash.send(meth, *args)
+        @hash.ttl.should > 0
+        @hash.ttl.should <= 10
       end
-    end 
-  end 
+      it "#{meth} expireat: option" do
+        @hash = Redis::HashKey.new('spec/hash_expireat', :expireat => Time.now + 10.seconds)
+        @hash.clear
+        @hash.send(meth, *args)
+        @hash.ttl.should > 0
+        @hash.ttl.should <= 10
+      end
+    end
+  end
 
   after do
     @hash.clear
@@ -1285,7 +1282,7 @@ describe Redis::SortedSet do
         end
       end
     end
-  end 
+  end
 
   after do
     @set.clear
