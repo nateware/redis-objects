@@ -18,7 +18,9 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
+      allow_expiration do
+        redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
+      end
     end
     alias_method :[]=, :store
 
