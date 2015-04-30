@@ -1295,23 +1295,77 @@ describe Redis::SortedSet do
 
   describe "with expiration" do
     [:[]=, :add, :increment, :incr, :incrby, :decrement, :decr, :decrby].each do |meth|
-      describe meth do
-        it "expiration: option" do
-          @hash = Redis::SortedSet.new('spec/zset_exp', :expiration => 10)
-          @hash.send(meth, 'somekey', 12)
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        it "expireat: option" do
-          @hash = Redis::SortedSet.new('spec/zset_exp', :expireat => Time.now + 10.seconds)
-          @hash.send(meth, 'somekey', 12)
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        after do
-          @hash.clear
-        end
+      it "#{meth} expiration: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expiration => 10)
+        @set.clear
+        @set.send(meth, 'somekey', 12)
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
       end
+      it "#{meth} expireat: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expireat => Time.now + 10.seconds)
+        @set.clear
+        @set.send(meth, 'somekey', 12)
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+    end
+
+    [:merge, :add_all].each do |meth|
+      it "#{meth} expiration: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expiration => 10)
+        @set.clear
+        @set.send(meth, 'somekey' => 12)
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+      it "#{meth} expireat: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expireat => Time.now + 10.seconds)
+        @set.clear
+        @set.send(meth, 'somekey' => 12)
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+    end
+
+    [:unionstore, :interstore].each do |meth|
+      it "#{meth} expiration: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expiration => 10)
+        @set.clear
+        @set.redis.zadd(@set.key, 1, "1")
+        @set.send(meth, 'sets', Redis::SortedSet.new('other'))
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+
+      it "#{meth} expireat: option" do
+        @set = Redis::SortedSet.new('spec/zset_exp', :expireat => Time.now + 10.seconds)
+        @set.clear
+        @set.redis.zadd(@set.key, 1, "1")
+        @set.send(meth, 'sets', Redis::SortedSet.new('other'))
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+    end
+
+    it "delete expiration: option" do
+      @set = Redis::SortedSet.new('spec/zset_exp', :expiration => 10)
+      @set.clear
+      @set.redis.zadd(@set.key, 1, "1")
+      @set.redis.zadd(@set.key, 2, "2")
+      @set.delete("2")
+      @set.ttl.should > 0
+      @set.ttl.should <= 10
+    end
+
+    it "delete expireat: option" do
+      @set = Redis::SortedSet.new('spec/zset_exp', :expireat => Time.now + 10.seconds)
+      @set.clear
+      @set.redis.zadd(@set.key, 1, "1")
+      @set.redis.zadd(@set.key, 2, "2")
+      @set.delete("2")
+      @set.ttl.should > 0
+      @set.ttl.should <= 10
     end
   end
 
