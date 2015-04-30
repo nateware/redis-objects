@@ -18,7 +18,7 @@ describe Redis::Value do
     @value = Redis::Value.new('spec/value', :default => false, :marshal => true)
     @value.value.should == false
   end
-  
+
   it "should handle simple values" do
     @value.should == nil
     @value.value = 'Trevor Hoffman'
@@ -109,17 +109,21 @@ describe Redis::Value do
     @value.nil?.should == true
   end
 
-  it 'should set time to live in seconds when expiration option assigned' do
-    @value = Redis::Value.new('spec/value', :expiration => 10)
-    @value.value = 'monkey'
-    @value.ttl.should > 0
-    @value.ttl.should <= 10
-  end
+  describe "with expiration" do
+    [:value=, :set].each do |meth|
+      it "should set time to live in seconds when expiration option assigned" do
+        @value = Redis::Value.new('spec/value', :expiration => 10)
+        @value.send(meth, 'monkey')
+        @value.ttl.should > 0
+        @value.ttl.should <= 10
+      end
 
-  it 'should set expiration when expireat option assigned' do
-    @value = Redis::Value.new('spec/value', :expireat => Time.now + 10.seconds)
-    @value.value = 'monkey'
-    @value.ttl.should > 0
+      it "should set expiration when expireat option assigned" do
+        @value = Redis::Value.new('spec/value', :expireat => Time.now + 10.seconds)
+        @value.send(meth, 'monkey')
+        @value.ttl.should > 0
+      end
+    end
   end
 
   after do

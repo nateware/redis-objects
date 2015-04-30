@@ -15,10 +15,12 @@ class Redis
     end
 
     def value=(val)
-      if val.nil?
-        delete
-      else
-        redis.set key, marshal(val)
+      allow_expiration do
+        if val.nil?
+          delete
+        else
+          redis.set key, marshal(val)
+        end
       end
     end
     alias_method :set, :value=
@@ -40,7 +42,5 @@ class Redis
     def method_missing(*args)
       self.value.send *args
     end
-
-    expiration_filter :value=
   end
 end
