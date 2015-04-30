@@ -21,7 +21,9 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
+      allow_expiration do
+        redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
+      end
     end
 
     # Remove and return a random member.  Redis: SPOP
@@ -180,14 +182,11 @@ class Redis
       members.join(', ')
     end
 
-    expiration_filter :add
-
     private
 
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::Set) ? set.key : set}
     end
-
   end
 end

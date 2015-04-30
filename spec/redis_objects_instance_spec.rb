@@ -1025,18 +1025,22 @@ describe Redis::Set do
     @set_1.redis.del SORT_STORE[:store]
   end
 
-  it 'should set time to live in seconds when expiration option assigned' do
-    @set = Redis::Set.new('spec/set', :expiration => 10)
-    @set << 'val'
-    @set.ttl.should > 0
-    @set.ttl.should <= 10
-  end
+  describe "with expiration" do
+    [:<<, :add].each do |meth|
+      it "should set time to live in seconds when expiration option assigned" do
+        @set = Redis::Set.new('spec/set', :expiration => 10)
+        @set.send(meth, 'val')
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
 
-  it 'should set expiration when expireat option assigned' do
-    @set = Redis::Set.new('spec/set', :expireat => Time.now + 10.seconds)
-    @set << 'val'
-    @set.ttl.should > 0
-    @set.ttl.should <= 10
+      it "should set expiration when expireat option assigned" do
+        @set = Redis::Set.new('spec/set', :expireat => Time.now + 10.seconds)
+        @set.send(meth, 'val')
+        @set.ttl.should > 0
+        @set.ttl.should <= 10
+      end
+    end
   end
 
   after do
