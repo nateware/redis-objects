@@ -25,20 +25,5 @@ class Redis
     def allow_expiration(&block)
       block.call.tap { set_expiration }
     end
-
-    class << self
-      def expiration_filter(*names)
-        names.each do |name|
-          # http://blog.jayfields.com/2006/12/ruby-alias-method-alternative.html
-          bind_method = instance_method(name)
-
-          define_method(name) do |*args, &block|
-            result = bind_method.bind(self).call(*args, &block)
-            set_expiration
-            result
-          end
-        end
-      end
-    end
   end
 end
