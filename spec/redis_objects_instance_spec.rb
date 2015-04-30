@@ -340,26 +340,58 @@ describe Redis::List do
   end
 
   describe 'with expiration' do
-    [:[]=, :push, :<<, :insert, :unshift].each do |meth|
-      describe meth do
-        it 'expiration: option' do
-          @list = Redis::List.new('spec/list_exp', :expiration => 10)
-          @list << 'val'
-          @list.ttl.should > 0
-          @list.ttl.should <= 10
-        end
-
-        it 'expireat: option' do
-          @list = Redis::List.new('spec/list_exp', :expireat => Time.now + 10.seconds)
-          @list << 'val'
-          @list.ttl.should > 0
-          @list.ttl.should <= 10
-        end
-      end
-
-      after do
+    [:push, :<<, :unshift].each do |meth, args|
+      it "#{meth} expiration: option" do
+        @list = Redis::List.new('spec/list_exp', :expiration => 10)
         @list.clear
+        @list.send(meth, 'val')
+        @list.ttl.should > 0
+        @list.ttl.should <= 10
       end
+
+      it "#{meth} expireat: option" do
+        @list = Redis::List.new('spec/list_exp', :expireat => Time.now + 10.seconds)
+        @list.clear
+        @list.send(meth, 'val')
+        @list.ttl.should > 0
+        @list.ttl.should <= 10
+      end
+    end
+
+    it "[]= expiration: option" do
+      @list = Redis::List.new('spec/list_exp', :expiration => 10)
+      @list.clear
+      @list.redis.rpush(@list.key, 'hello')
+      @list[0] = 'world'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
+    it "[]= expireat: option" do
+      @list = Redis::List.new('spec/list_exp', :expireat => Time.now + 10.seconds)
+      @list.clear
+      @list.redis.rpush(@list.key, 'hello')
+      @list[0] = 'world'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
+    it "insert expiration: option" do
+      @list = Redis::List.new('spec/list_exp', :expiration => 10)
+      @list.clear
+      @list.redis.rpush(@list.key, 'hello')
+      @list.insert 'BEFORE', 'hello', 'world'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
+    end
+
+    it "insert expireat: option" do
+      @list = Redis::List.new('spec/list_exp', :expireat => Time.now + 10.seconds)
+      @list.clear
+      @list.redis.rpush(@list.key, 'hello')
+      @list.insert 'BEFORE', 'hello', 'world'
+      @list.ttl.should > 0
+      @list.ttl.should <= 10
     end
   end
 
