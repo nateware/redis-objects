@@ -21,13 +21,17 @@ class Redis
 
     # Add a member before or after pivot in the list. Redis: LINSERT
     def insert(where,pivot,value)
-      redis.linsert(key,where,marshal(pivot),marshal(value))
+      allow_expiration do
+        redis.linsert(key,where,marshal(pivot),marshal(value))
+      end
     end
 
     # Add a member to the end of the list. Redis: RPUSH
     def push(*values)
-      redis.rpush(key, values.map{|v| marshal(v) })
-      redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+      allow_expiration do
+        redis.rpush(key, values.map{|v| marshal(v) })
+        redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+      end
     end
 
     # Remove a member from the end of the list. Redis: RPOP
@@ -49,8 +53,10 @@ class Redis
 
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(*values)
-      redis.lpush(key, values.map{|v| marshal(v) })
-      redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+      allow_expiration do
+        redis.lpush(key, values.map{|v| marshal(v) })
+        redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+      end
     end
 
     # Remove a member from the start of the list. Redis: LPOP
@@ -85,7 +91,9 @@ class Redis
 
     # Same functionality as Ruby arrays.
     def []=(index, value)
-      redis.lset(key, index, marshal(value))
+      allow_expiration do
+        redis.lset(key, index, marshal(value))
+      end
     end
 
     # Delete the element(s) from the list that match name. If count is specified,
@@ -142,7 +150,5 @@ class Redis
     def to_s
       values.join(', ')
     end
-
-    expiration_filter :[]=, :push, :<<, :insert, :unshift
   end
 end

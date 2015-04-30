@@ -127,7 +127,6 @@ describe Redis::Value do
   end
 end
 
-
 describe Redis::List do
   describe "as a bounded list" do
     before do
@@ -472,7 +471,7 @@ describe Redis::Counter do
       @counter.ttl.should <= 10
     end
 
-   [:increment, :incr, :incrby, :incrbyfloat, 
+   [:increment, :incr, :incrby, :incrbyfloat,
     :decrement, :decr, :decrby, :decrbyfloat, :reset].each do |meth|
       describe meth do
         it "expiration: option" do
@@ -605,7 +604,6 @@ describe Redis::Lock do
     REDIS_HANDLE.get("test_lock").should.not.be.nil
   end
 end
-
 
 describe Redis::HashKey do
   describe "With Marshal" do
@@ -846,8 +844,8 @@ describe Redis::HashKey do
           @hash.clear
         end
       end
-    end 
-  end 
+    end
+  end
 
   after do
     @hash.clear
@@ -1307,7 +1305,7 @@ describe Redis::SortedSet do
         end
       end
     end
-  end 
+  end
 
   after do
     @set.clear
