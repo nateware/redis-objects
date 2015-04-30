@@ -188,6 +188,5 @@ class Redis
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::Set) ? set.key : set}
     end
-
   end
 end
