@@ -30,14 +30,11 @@ class Redis
     # (on any server) will spin waiting for the lock up to the :timeout
     # that was specified when the lock was defined.
     def lock(&block)
-      start = Time.now
-      gotit = false
       expiration = nil
-      while Time.now - start < @options[:timeout]
+      try_until_timeout do
         expiration = generate_expiration
         # Use the expiration as the value of the lock.
-        gotit = redis.setnx(key, expiration)
-        break if gotit
+        break if redis.setnx(key, expiration)
 
         # Lock is being held.  Now check to see if it's expired (if we're using
         # lock expiration).
@@ -53,16 +50,10 @@ class Redis
             # Since GETSET returns the old value of the lock, if the old expiration
             # is still in the past, we know no one else has expired the locked
             # and we now have it.
-            if old_expiration < Time.now.to_f
-              gotit = true
-              break
-            end
+            break if old_expiration < Time.now.to_f
           end
         end
-
-        sleep 0.1
       end
-      raise LockTimeout, "Timeout on lock #{key} exceeded #{@options[:timeout]} sec" unless gotit
       begin
         yield
       ensure
@@ -79,6 +70,21 @@ class Redis
 
     def generate_expiration
       @options[:expiration].nil? ? 1 : (Time.now + @options[:expiration].to_f + 1).to_f
+    end
+
+    private
+
+    def try_until_timeout
+      if @options[:timeout] == 0
+        yield
+      else
+        start = Time.now
+        while Time.now - start < @options[:timeout]
+          yield
+          sleep 0.1
+        end
+      end
+      raise LockTimeout, "Timeout on lock #{key} exceeded #{@options[:timeout]} sec"
     end
   end
 end
