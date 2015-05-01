@@ -794,28 +794,36 @@ describe Redis::HashKey do
     block.should == "oops: missing_key"
   end
 
-  #[:[]=, :store, :bulk_set, :fill,
   describe 'with expiration' do
-    [:incrby, :incr, :incrbyfloat, :decrby, :decr, :decrbyfloat].each do |meth|
-      describe meth do
-        it "expiration: option" do
-          @hash = Redis::HashKey.new('spec/hash_exp', :expiration => 10)
-          @hash.send(meth, 'somekey')
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        it "expireat: option" do
-          @hash = Redis::HashKey.new('spec/hash_exp', :expireat => Time.now + 10.seconds)
-          @hash.send(meth, 'somekey')
-          @hash.ttl.should > 0
-          @hash.ttl.should <= 10
-        end
-        after do
-          @hash.clear
-        end
+    {
+      :incrby      => 'somekey',
+      :incr        => 'somekey',
+      :incrbyfloat => 'somekey',
+      :decrby      => 'somekey',
+      :decr        => 'somekey',
+      :decrbyfloat => 'somekey',
+      :store       => ['somekey', 'somevalue'],
+      :[]=         => ['somekey', 'somevalue'],
+      :bulk_set    => [{ 'somekey' => 'somevalue' }],
+      :update      => [{ 'somekey' => 'somevalue' }],
+      :fill        => [{ 'somekey' => 'somevalue' }]
+    }.each do |meth, args|
+      it "#{meth} expiration: option" do
+        @hash = Redis::HashKey.new('spec/hash_expiration', :expiration => 10)
+        @hash.clear
+        @hash.send(meth, *args)
+        @hash.ttl.should > 0
+        @hash.ttl.should <= 10
       end
-    end 
-  end 
+      it "#{meth} expireat: option" do
+        @hash = Redis::HashKey.new('spec/hash_expireat', :expireat => Time.now + 10.seconds)
+        @hash.clear
+        @hash.send(meth, *args)
+        @hash.ttl.should > 0
+        @hash.ttl.should <= 10
+      end
+    end
+  end
 
   after do
     @hash.clear
@@ -1275,7 +1283,7 @@ describe Redis::SortedSet do
         end
       end
     end
-  end 
+  end
 
   after do
     @set.clear
