@@ -1,5 +1,16 @@
 = Changelog for Redis::Objects
 
+== 1.2.0 (30 Apr 2015)
+
+
+* New expiration implementation to address edge cases and missing methods [Ross Kaffenberger]
+
+* Add support for expiration/expireat on HashKey#update [Ross Kaffenberger]
+
+* Make locks with 0 timeout possible  Jean Boussier]
+
+* Update hdel methods to support deleting multiple keys [Star]
+
 == 1.1.0 (21 Jan 2015)
 
 * Support connection_pool usage via a proxy object [Jared Jenkins]
