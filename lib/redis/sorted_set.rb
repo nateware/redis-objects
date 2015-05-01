@@ -304,7 +304,7 @@ class Redis
       !redis.zscore(key, marshal(value)).nil?
     end
 
-    expiration_filter :[]=, :add, :merge, :delete,
+    expiration_filter :[]=, :add, :merge, :add_all, :delete,
                       :increment, :incr, :incrby, :decrement, :decr, :decrby,
                       :intersection, :interstore, :unionstore, :diffstore
 
