@@ -23,7 +23,9 @@ class Redis
     # arguments to this are flipped; the member comes first rather than
     # the score, since the member is the unique item (not the score).
     def add(member, score)
-      redis.zadd(key, score, marshal(member))
+      allow_expiration do
+        redis.zadd(key, score, marshal(member))
+      end
     end
 
     # Add a list of members and their corresponding value (or a hash mapping
@@ -31,8 +33,10 @@ class Redis
     # the member comes first rather than the score, since the member is the unique
     # item (not the score).
     def merge(values)
-      vals = values.map{|v,s| [s, marshal(v)] }
-      redis.zadd(key, vals)
+      allow_expiration do
+        vals = values.map{|v,s| [s, marshal(v)] }
+        redis.zadd(key, vals)
+      end
     end
     alias_method :add_all, :merge
 
@@ -155,7 +159,9 @@ class Redis
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
-      redis.zrem(key, marshal(value))
+      allow_expiration do
+        redis.zrem(key, marshal(value))
+      end
     end
 
     # Delete element if it matches block
@@ -173,14 +179,18 @@ class Redis
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
     def increment(member, by=1)
-      redis.zincrby(key, by, marshal(member)).to_i
+      allow_expiration do
+        zincrby(member, by)
+      end
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
     def decrement(member, by=1)
-      redis.zincrby(key, -by, marshal(member)).to_i
+      allow_expiration do
+        zincrby(member, -by)
+      end
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -206,8 +216,10 @@ class Redis
     # Calculate the intersection and store it in Redis as +name+. Returns the number
     # of elements in the stored intersection. Redis: SUNIONSTORE
     def interstore(name, *sets)
-      opts = sets.last.is_a?(Hash) ? sets.pop : {}
-      redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      allow_expiration do
+        opts = sets.last.is_a?(Hash) ? sets.pop : {}
+        redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      end
     end
 
     # Return the union with another set.  Can pass it either another set
@@ -230,8 +242,10 @@ class Redis
     # Calculate the union and store it in Redis as +name+. Returns the number
     # of elements in the stored union. Redis: SUNIONSTORE
     def unionstore(name, *sets)
-      opts = sets.last.is_a?(Hash) ? sets.pop : {}
-      redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      allow_expiration do
+        opts = sets.last.is_a?(Hash) ? sets.pop : {}
+        redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+      end
     end
 
     # Return the difference vs another set.  Can pass it either another set
@@ -304,10 +318,6 @@ class Redis
       !redis.zscore(key, marshal(value)).nil?
     end
 
-    expiration_filter :[]=, :add, :merge, :add_all, :delete,
-                      :increment, :incr, :incrby, :decrement, :decr, :decrby,
-                      :intersection, :interstore, :unionstore, :diffstore
-
     private
     def key_from_object(set)
       set.is_a?(Redis::SortedSet) ? set.key : set
@@ -316,6 +326,10 @@ class Redis
     def keys_from_objects(sets)
       raise ArgumentError, "Must pass in one or more set names" if sets.empty?
       sets.collect{|set| set.is_a?(Redis::SortedSet) || set.is_a?(Redis::Set) ? set.key : set}
+    end
+
+    def zincrby(member, by)
+      redis.zincrby(key, by, marshal(member)).to_i
     end
   end
 end
