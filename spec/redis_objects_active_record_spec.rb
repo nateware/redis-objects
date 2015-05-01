@@ -16,7 +16,7 @@ begin
       create_table :blogs do |t|
         t.string :name
         t.integer :posts_count, :default => 0
-        t.timestamps
+        t.timestamps null: true
       end
     end
 
@@ -37,7 +37,7 @@ begin
         t.string :description, :length => 200
         t.integer :total
         t.integer :blog_id
-        t.timestamps
+        t.timestamps null: true
       end
     end
 
@@ -58,11 +58,11 @@ begin
       create_table :comments do |t|
         t.string :body
         t.integer :post_id
-        t.timestamps
+        t.timestamps null: true
       end
     end
 
-    def self.down
+   def self.down
       drop_table :comments
     end
   end
