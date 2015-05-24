@@ -15,15 +15,22 @@ class Redis
     alias :inspect :to_s  # Ruby 1.9.2
 
     def set_expiration
-      if !@options[:expiration].nil?
-        redis.expire(@key, @options[:expiration]) if redis.ttl(@key) < 0
-      elsif !@options[:expireat].nil?
-        redis.expireat(@key, @options[:expireat].to_i) if redis.ttl(@key) < 0
+      if overwrite_ttl? || redis.ttl(@key) < 0
+        if !@options[:expiration].nil?
+          redis.expire(@key, @options[:expiration])
+        elsif !@options[:expireat].nil?
+          redis.expireat(@key, @options[:expireat].to_i)
+        end
       end
     end
 
     def allow_expiration(&block)
       block.call.tap { set_expiration }
+    end
+
+    private
+    def overwrite_ttl?
+      @options[:overwrite_ttl].present?
     end
   end
 end
