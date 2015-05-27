@@ -1035,7 +1035,7 @@ describe Redis::Set do
   end
 
   describe "with expiration" do
-    [:<<, :add].each do |meth|
+    [:<<, :add, :merge].each do |meth|
       it "should set time to live in seconds when expiration option assigned" do
         @set = Redis::Set.new('spec/set', :expiration => 10)
         @set.send(meth, 'val')

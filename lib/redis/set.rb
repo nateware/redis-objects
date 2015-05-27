@@ -39,7 +39,9 @@ class Redis
     # Adds the specified values to the set. Only works on redis > 2.4
     # Redis: SADD
     def merge(*values)
-      redis.sadd(key, values.flatten.map{|v| marshal(v)})
+      allow_expiration do
+        redis.sadd(key, values.flatten.map{|v| marshal(v)})
+      end
     end
 
     # Return all members in the set.  Redis: SMEMBERS
