@@ -114,7 +114,7 @@ class Redis
       end
 
       def prefix_model(options)
-        "#{options[:prefix_model]}:#{self.send(self.class.reflections[options[:prefix_model]])}:" if options[:prefix_model].present?
+        "#{options[:prefix_model]}:#{self.send(options[:prefix_model].to_s.capitalize.constantize.reflections[options[:prefix_model]])}:" if options[:prefix_model].present?
       end
 
       def redis_options(name)
