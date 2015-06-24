@@ -114,7 +114,7 @@ class Redis
       end
 
       def prefix_model(options)
-        "#{options[:prefix_model]}:#{self.send(options[:prefix_model].to_s.capitalize.constantize.reflections[options[:prefix_model]])}:" if options[:prefix_model].present?
+        "#{options[:prefix_model]}:#{options[:model_id]}}:" if options[:prefix_model].present?
       end
 
       def redis_options(name)
@@ -187,7 +187,8 @@ class Redis
 
       def redis_field_key(name, options={}) #:nodoc:
         id = send(self.class.redis_id_field)
-        self.class.redis_field_key(name, id, self, options)
+        model_id = send(options[:prefix_model].to_s.capitalize.constantize.reflections[options[:prefix_model]])
+        self.class.redis_field_key(name, id, self, options.merge(model_id: model_id))
       end
     end
   end
