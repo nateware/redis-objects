@@ -187,7 +187,7 @@ class Redis
 
       def redis_field_key(name, options={}) #:nodoc:
         id = send(self.class.redis_id_field)
-        model_id = send(options[:prefix_model].to_s.capitalize.constantize.reflections[options[:prefix_model]])
+        model_id = send(self.class.reflections[options[:prefix_model]].foreign_key)
         self.class.redis_field_key(name, id, self, options.merge(model_id: model_id))
       end
     end
