@@ -114,7 +114,7 @@ class Redis
       end
 
       def prefix_model(options)
-        "#{options[:prefix_model]}:#{options[:model_id]}:" if options[:prefix_model].present?
+        "#{options[:prefix_model]}:#{options[:model_id]}:" if options[:prefix_model].present? && options[:model_id].present?
       end
 
       def redis_options(name)
