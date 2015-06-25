@@ -187,8 +187,8 @@ class Redis
 
       def redis_field_key(name, options={}) #:nodoc:
         id = send(self.class.redis_id_field)
-        model_id = send(self.class.reflections[options[:prefix_model]].foreign_key)
-        self.class.redis_field_key(name, id, self, options.merge(model_id: model_id))
+        options.merge!(model_id: send(self.class.reflections[options[:prefix_model]].foreign_key) if options[:prefix_model].present?
+        self.class.redis_field_key(name, id, self, options)
       end
     end
   end
