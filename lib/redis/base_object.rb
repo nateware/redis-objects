@@ -23,7 +23,9 @@ class Redis
     end
 
     def allow_expiration(&block)
-      block.call.tap { set_expiration }
+      result = block.call
+      set_expiration
+      result
     end
   end
 end
