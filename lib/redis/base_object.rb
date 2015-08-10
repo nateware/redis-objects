@@ -30,7 +30,7 @@ class Redis
 
     private
     def overwrite_ttl?
-      !@options[:overwrite_ttl].nil?
+      @options[:overwrite_ttl]
     end
   end
 end
