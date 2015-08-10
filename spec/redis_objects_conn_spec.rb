@@ -240,4 +240,15 @@ describe 'Connection tests' do
     # Fix for future tests
     Redis.current = @redis_handle
   end
+
+  it "should support pipelined changes" do
+    list = Redis::List.new('pipelined/list')
+    key = Redis::HashKey.new('pipelined/hash')
+    Redis::Objects.redis.pipelined do
+      key['foo'] = 'bar'
+      list.push 1, 2
+    end
+    key.all.should == { 'foo' => 'bar' }
+    list.values.should == %w[1 2]
+  end
 end
