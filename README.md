@@ -289,7 +289,7 @@ You can bound the size of the list to only hold N elements like so:
 @list = Redis::List.new('list_name', :maxlength => 10)
 ~~~
 
-Complex data types are now handled with :marshal => true:
+Complex data types are serialized with :marshal => true:
 
 ~~~ruby
 @list = Redis::List.new('list_name', :marshal => true)
@@ -299,6 +299,8 @@ Complex data types are now handled with :marshal => true:
   puts "#{el[:name]} lives in #{el[:city]}"
 end
 ~~~
+
+Note: If you run into issues, with Marshal errors, refer to the fix in [Issue #176](https://github.com/nateware/redis-objects/issues/176).
 
 Hashes
 ------
