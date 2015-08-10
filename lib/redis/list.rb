@@ -70,6 +70,7 @@ class Redis
       vals.nil? ? [] : vals
     end
     alias_method :get, :values
+    alias_method :value, :values
 
     # Same functionality as Ruby arrays.  If a single number is given, return
     # just the element at that index using Redis: LINDEX. Otherwise, return

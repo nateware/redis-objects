@@ -27,5 +27,9 @@ class Redis
       set_expiration
       result
     end
+
+    def to_json(options = {})
+      { "key" => @key, "options" => @options, "value" => value }.to_json(options)
+    end
   end
 end

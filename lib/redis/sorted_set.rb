@@ -92,6 +92,7 @@ class Redis
     def members(options={})
       range(0, -1, options) || []
     end
+    alias_method :value, :members
 
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: ZRANGE

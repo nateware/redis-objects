@@ -72,6 +72,7 @@ class Redis
       h
     end
     alias_method :clone, :all
+    alias_method :value, :all
 
     # Enumerate through all fields. Redis: HGETALL
     def each(&block)
