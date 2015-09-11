@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bacon"
   spec.add_development_dependency "connection_pool"
 
-  # compatability testing
+  # compatibility testing
   spec.add_development_dependency "redis-namespace"
   spec.add_development_dependency "activerecord", "~> 3.2"
 end
