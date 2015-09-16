@@ -28,7 +28,7 @@ class Redis
   #     set :player_ids
   #   end
   #
-  # The, you can use these counters both for bookeeping and as atomic actions:
+  # The, you can use these counters both for bookkeeping and as atomic actions:
   #
   #   @game = Game.find(id)
   #   @game_user = @game.joined_players.increment do |val|
