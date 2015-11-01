@@ -1,13 +1,16 @@
 = Changelog for Redis::Objects
 
-== 1.2.0 (30 Apr 2015)
+== 1.2.1 (1 Nov 2015)
 
+* Fixed use of #tap which caused issues with pipelined calls [Ross Kaffenberger]
+
+== 1.2.0 (30 Apr 2015)
 
 * New expiration implementation to address edge cases and missing methods [Ross Kaffenberger]
 
 * Add support for expiration/expireat on HashKey#update [Ross Kaffenberger]
 
-* Make locks with 0 timeout possible  Jean Boussier]
+* Make locks with 0 timeout possible [Jean Boussier]
 
 * Update hdel methods to support deleting multiple keys [Star]
 
