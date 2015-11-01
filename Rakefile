@@ -5,6 +5,7 @@ task :test do
   sh "bacon spec/*_spec.rb"
 end
 task :default => :test
+task :spec => :test
 
 desc "show changelog"
 task :changelog do
