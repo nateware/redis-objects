@@ -348,6 +348,11 @@ describe Redis::List do
       JSON.parse(@list.to_json)['value'].should == ['a']
     end
 
+    it "should support as_json" do
+      @list << 'a'
+      @list.as_json['value'].should == ['a']
+    end
+
     after do
       @list.clear
     end
@@ -480,6 +485,11 @@ describe Redis::Counter do
   it "should support #to_json" do
     @counter.increment
     JSON.parse(@counter.to_json)['value'].should == 1
+  end
+
+  it "should support #as_json" do
+    @counter.increment
+    @counter.as_json['value'].should == 1
   end
 
   describe 'with expiration' do
@@ -625,6 +635,10 @@ describe Redis::Lock do
 
   it "should respond to #to_json" do
     Redis::Lock.new(:test_lock).to_json.should.be.kind_of(String)
+  end
+
+  it "should respond to #as_json" do
+    Redis::Lock.new(:test_lock).as_json.should.be.kind_of(Hash)
   end
 end
 
@@ -858,6 +872,11 @@ describe Redis::HashKey do
     JSON.parse(@hash.to_json)['value'].should == { "abc" => "123" }
   end
 
+  it "should respond to #as_json" do
+    @hash['abc'] = "123"
+    @hash.as_json['value'].should == { "abc" => "123" }
+  end
+
   describe 'with expiration' do
     {
       :incrby      => 'somekey',
@@ -1073,6 +1092,11 @@ describe Redis::Set do
   it "should respond to #to_json" do
     @set_1 << 'a'
     JSON.parse(@set_1.to_json)['value'].should == ['a']
+  end
+
+  it "should respond to #as_json" do
+    @set_1 << 'a'
+    @set_1.as_json['value'].should == ['a']
   end
 
   describe "with expiration" do
@@ -1352,6 +1376,11 @@ describe Redis::SortedSet do
   it "should respond to #to_json" do
     @set['val'] = 1
     JSON.parse(@set.to_json)['value'].should == ['val']
+  end
+
+  it "should respond to #as_json" do
+    @set['val'] = 1
+    @set.as_json['value'].should == ['val']
   end
 
   describe "with expiration" do

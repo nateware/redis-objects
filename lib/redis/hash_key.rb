@@ -179,5 +179,9 @@ class Redis
     def decrbyfloat(field, by=1.0)
       incrbyfloat(field, -by)
     end
+
+    def as_json(*)
+      to_hash
+    end
   end
 end

@@ -151,5 +151,9 @@ class Redis
     def to_s
       values.join(', ')
     end
+
+    def as_json(*)
+      to_hash
+    end
   end
 end

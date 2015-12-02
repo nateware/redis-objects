@@ -185,6 +185,10 @@ class Redis
       members.join(', ')
     end
 
+    def as_json(*)
+      to_hash
+    end
+
     private
 
     def keys_from_objects(sets)
