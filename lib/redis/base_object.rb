@@ -28,8 +28,18 @@ class Redis
       result
     end
 
-    def to_json(options = {})
-      { "key" => @key, "options" => @options, "value" => value }.to_json(options)
+    def to_json(*args)
+      to_hash.to_json(*args)
+    rescue NoMethodError => e
+      raise e.class, "The current runtime does not provide a `to_json` implementation. Require 'json' or another JSON library and try again."
+    end
+
+    def as_json(*)
+      to_hash
+    end
+
+    def to_hash
+      { "key" => @key, "options" => @options, "value" => value }
     end
   end
 end
