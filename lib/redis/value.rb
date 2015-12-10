@@ -9,10 +9,6 @@ class Redis
     include Redis::Helpers::CoreCommands
 
     attr_reader :key, :options
-    def initialize(key, *args)
-      super(key, *args)
-      redis.setnx(key, marshal(@options[:default])) if !@options[:default].nil?
-    end
 
     def value=(val)
       allow_expiration do
@@ -26,7 +22,12 @@ class Redis
     alias_method :set, :value=
 
     def value
-      unmarshal redis.get(key)
+      value = unmarshal(redis.get(key))
+      if value.nil? && !@options[:default].nil?
+        @options[:default]
+      else
+        value
+      end
     end
     alias_method :get, :value
 
