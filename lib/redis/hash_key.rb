@@ -72,6 +72,7 @@ class Redis
       h
     end
     alias_method :clone, :all
+    alias_method :value, :all
 
     # Enumerate through all fields. Redis: HGETALL
     def each(&block)
@@ -177,6 +178,10 @@ class Redis
     # Decrement value by float at field. Redis: HINCRBYFLOAT
     def decrbyfloat(field, by=1.0)
       incrbyfloat(field, -by)
+    end
+
+    def as_json(*)
+      to_hash
     end
   end
 end

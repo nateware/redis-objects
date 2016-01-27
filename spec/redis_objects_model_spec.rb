@@ -194,7 +194,6 @@ describe Redis::Objects do
     @roster.contact_information['updated_at'].class.should == Time
   end
 
-
   it "should create counter accessors" do
     [:available_slots, :pitchers, :basic].each do |m|
        @roster.respond_to?(m).should == true
@@ -877,6 +876,13 @@ describe Redis::Objects do
     @custom_method_roster.basic.reset.should.be.true
     @custom_method_roster.basic.should == 0
     @custom_method_roster.basic.should.be.kind_of(Redis::Counter)
+  end
+
+  it "should respond to #to_json" do
+    @roster = Roster.new
+    @roster.player_totals.increment
+    json = JSON.parse(@roster.player_totals.to_json)
+    json['value'].should == 1
   end
 
   it "should persist object with custom id field name" do

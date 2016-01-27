@@ -337,6 +337,22 @@ describe Redis::List do
       @list.redis.del('spec/list2')
     end
 
+    it "responds to #value" do
+      @list << 'a'
+      @list.value.should == @list.get
+      @list.value.should == ['a']
+    end
+
+    it "should support to_json" do
+      @list << 'a'
+      JSON.parse(@list.to_json)['value'].should == ['a']
+    end
+
+    it "should support as_json" do
+      @list << 'a'
+      @list.as_json['value'].should == ['a']
+    end
+
     after do
       @list.clear
     end
@@ -397,7 +413,6 @@ describe Redis::List do
       @list.ttl.should <= 10
     end
   end
-
 end
 
 describe Redis::Counter do
@@ -465,6 +480,16 @@ describe Redis::Counter do
       end
     @updated.should == 'yep'
     @counter.should == 2
+  end
+
+  it "should support #to_json" do
+    @counter.increment
+    JSON.parse(@counter.to_json)['value'].should == 1
+  end
+
+  it "should support #as_json" do
+    @counter.increment
+    @counter.as_json['value'].should == 1
   end
 
   describe 'with expiration' do
@@ -606,6 +631,14 @@ describe Redis::Lock do
 
     # lock value should still be set since the lock was held for more than the expiry
     REDIS_HANDLE.get("test_lock").should.not.be.nil
+  end
+
+  it "should respond to #to_json" do
+    Redis::Lock.new(:test_lock).to_json.should.be.kind_of(String)
+  end
+
+  it "should respond to #as_json" do
+    Redis::Lock.new(:test_lock).as_json.should.be.kind_of(Hash)
   end
 end
 
@@ -828,6 +861,22 @@ describe Redis::HashKey do
     block.should == "oops: missing_key"
   end
 
+  it "should respond to #value" do
+    @hash['abc'] = "123"
+    @hash.value.should == @hash.all
+    @hash.value.should == { "abc" => "123" }
+  end
+
+  it "should respond to #to_json" do
+    @hash['abc'] = "123"
+    JSON.parse(@hash.to_json)['value'].should == { "abc" => "123" }
+  end
+
+  it "should respond to #as_json" do
+    @hash['abc'] = "123"
+    @hash.as_json['value'].should == { "abc" => "123" }
+  end
+
   describe 'with expiration' do
     {
       :incrby      => 'somekey',
@@ -1032,6 +1081,22 @@ describe Redis::Set do
     @set_1.redis.del val1.key
     @set_1.redis.del val2.key
     @set_1.redis.del SORT_STORE[:store]
+  end
+
+  it "should respond to #value" do
+    @set_1 << 'a'
+    @set_1.value.should == @set_1.members
+    @set_1.value.should == ['a']
+  end
+
+  it "should respond to #to_json" do
+    @set_1 << 'a'
+    JSON.parse(@set_1.to_json)['value'].should == ['a']
+  end
+
+  it "should respond to #as_json" do
+    @set_1 << 'a'
+    @set_1.as_json['value'].should == ['a']
   end
 
   describe "with expiration" do
@@ -1300,6 +1365,22 @@ describe Redis::SortedSet do
     @set['val'] = 1
     @set.ttl.should > 0
     @set.ttl.should <= 10
+  end
+
+  it "should respond to #value" do
+    @set['val'] = 1
+    @set.value.should == @set.members
+    @set.value.should == ['val']
+  end
+
+  it "should respond to #to_json" do
+    @set['val'] = 1
+    JSON.parse(@set.to_json)['value'].should == ['val']
+  end
+
+  it "should respond to #as_json" do
+    @set['val'] = 1
+    @set.as_json['value'].should == ['val']
   end
 
   describe "with expiration" do

@@ -50,6 +50,7 @@ class Redis
       vals.nil? ? [] : vals.map{|v| unmarshal(v) }
     end
     alias_method :get, :members
+    alias_method :value, :members
 
     # Returns true if the specified value is in the set.  Redis: SISMEMBER
     def member?(value)
@@ -182,6 +183,10 @@ class Redis
 
     def to_s
       members.join(', ')
+    end
+
+    def as_json(*)
+      to_hash
     end
 
     private
