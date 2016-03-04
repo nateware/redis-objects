@@ -92,6 +92,10 @@ class Redis
           redis.getset(redis_field_key(name, id), to.to_i).to_i
         end
 
+        def counter_defined?(name) #:nodoc:
+          redis_objects && redis_objects.has_key?(name.to_sym)
+        end
+
         private
 
         def verify_counter_defined!(name, id) #:nodoc:
@@ -99,10 +103,6 @@ class Redis
           if id.nil? and !redis_objects[name][:global]
             raise Redis::Objects::MissingID, "Missing ID for non-global counter #{self.name}##{name}"
           end
-        end
-
-        def counter_defined?(name) #:nodoc:
-          redis_objects && redis_objects.has_key?(name)
         end
 
         def initialize_counter!(name, id) #:nodoc:
@@ -131,25 +131,21 @@ class Redis
 
       # Instance methods that appear in your class when you include Redis::Objects.
       module InstanceMethods
-        # Increment a counter.
-        # It is more efficient to use increment_[counter_name] directly.
-        # This is mainly just for completeness to override ActiveRecord.
+        # Increment a counter. Called mainly in the context of :counter_cache
         def increment(name, by=1)
-          if self.class.send("counter_defined?", name)
+          if self.class.counter_defined?(name)
             send(name).increment(by)
           else
-            super
+            super # ActiveRecord
           end
         end
 
-        # Decrement a counter.
-        # It is more efficient to use increment_[counter_name] directly.
-        # This is mainly just for completeness to override ActiveRecord.
+        # Decrement a counter. Called mainly in the context of :counter_cache
         def decrement(name, by=1)
-          if self.class.send("counter_defined?", name)
+          if self.class.counter_defined?(name)
             send(name).decrement(by)
           else
-            super
+            super # ActiveRecord
           end
         end
       end
