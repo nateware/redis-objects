@@ -35,8 +35,16 @@ class Redis
     end
 
     # Remove a member from the end of the list. Redis: RPOP
-    def pop
-      unmarshal redis.rpop(key)
+    def pop(n=nil)
+      if n
+        result, = redis.multi do
+          redis.lrange(key, -n, -1)
+          redis.ltrim(key, 0, -n - 1)
+        end
+        unmarshal result
+      else
+        unmarshal redis.rpop(key)
+      end
     end
 
     # Atomically pops a value from one list, pushes to another and returns the
@@ -60,8 +68,16 @@ class Redis
     end
 
     # Remove a member from the start of the list. Redis: LPOP
-    def shift
-      unmarshal redis.lpop(key)
+    def shift(n=nil)
+      if n
+        result, = redis.multi do
+          redis.lrange(key, 0, n - 1)
+          redis.ltrim(key, n, -1)
+        end
+        unmarshal result
+      else
+        unmarshal redis.lpop(key)
+      end
     end
 
     # Return all values in the list. Redis: LRANGE(0,-1)

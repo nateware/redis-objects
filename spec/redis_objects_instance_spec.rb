@@ -257,6 +257,20 @@ describe Redis::List do
       @list.get.should == ['a','c','f','j','h','i','a']
     end
 
+    it "should support popping & shifting multiple values" do
+      @list.should.be.empty
+
+      @list << 'a' << 'b' << 'c'
+      @list.shift(2).should == ['a', 'b']
+      @list.shift(2).should == ['c']
+      @list.shift(2).should == []
+
+      @list << 'a' << 'b' << 'c'
+      @list.pop(2).should == ['b', 'c']
+      @list.pop(2).should == ['a']
+      @list.pop(2).should == []
+    end
+
     it "should handle rpoplpush" do
       list2 = Redis::List.new("spec/list2")
       list2.clear
