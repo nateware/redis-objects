@@ -992,4 +992,10 @@ describe Redis::Objects do
     @roster.sorted_set_with_expireat.ttl.should > 0
     @roster.sorted_set_with_expireat.ttl.should <= 10
   end
+
+  it "should allow deleting the entire object" do
+    @roster.redis.keys.select { |key| key.match(/^roster:/)}.count.should > 0
+    @roster.delete!.should > 0
+    @roster.redis.keys.select { |key| key.match(/^roster:/)}.count.should == 0
+  end
 end
