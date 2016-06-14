@@ -56,8 +56,11 @@ describe 'Connection tests' do
     obj = CustomConnectionObject.new
 
     obj.redis_value.value = 'foo'
+
     obj.class.mget(:redis_value, []).should == []
     obj.class.mget(:redis_value, [obj]).should == ['foo']
+
+    obj.redis_value.clear
   end
 
   it "should support overriding object handles with a connection_pool" do
