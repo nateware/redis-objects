@@ -44,6 +44,14 @@ class Redis
             include mod
           end
         end
+
+        def mget(name, objects = [])
+          return [] if objects.nil? || objects.empty?
+
+          keys = objects.map(&:redis_field_key)
+
+          self.redis.mget keys
+        end
       end
 
       # Instance methods that appear in your class when you include Redis::Objects.
