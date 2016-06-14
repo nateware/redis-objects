@@ -47,8 +47,9 @@ class Redis
 
         def mget(name, objects = [])
           return [] if objects.nil? || objects.empty?
+          raise "Field name Error" if redis_objects.keys.include?(name.to_sym)
 
-          keys = objects.map{ |obj| obj.redis_field_key name }
+          keys = objects.map{ |obj| obj.redis_field_key name.to_sym }
 
           self.redis.mget keys
         end
