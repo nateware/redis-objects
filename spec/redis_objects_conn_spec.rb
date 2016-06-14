@@ -39,6 +39,7 @@ describe 'Connection tests' do
 
     obj.redis_value.value = 'foo'
     obj.class.mget(:redis_value, []).should == []
+    p obj.redis_field_key :redis_value
     obj.class.mget(:redis_value, [obj]).should == ['foo']
 
     obj.redis_value.clear
