@@ -37,7 +37,9 @@ describe 'Connection tests' do
     obj.redis_value.value.should == 'foo'
     obj.default_redis_value.value.should == nil
 
+    obj.redis_value.value = 'foo'
     obj.class.mget(:redis_value, []).should == []
+    obj.class.mget(:redis_value, [obj]).should == ['foo']
 
     obj.redis_value.clear
     obj.default_redis_value.clear
