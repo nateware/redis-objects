@@ -48,7 +48,7 @@ class Redis
         def mget(name, objects = [])
           return [] if objects.nil? || objects.empty?
 
-          keys = objects.map(&:redis_field_key)
+          keys = objects.map{ |obj| obj.redis_field_key name }
 
           self.redis.mget keys
         end
