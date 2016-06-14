@@ -50,7 +50,7 @@ describe 'Connection tests' do
       end
 
       redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 31)
-      value :redis_value, :redis => redis_handle, :key => 'rval'
+      value :redis_value, :key => 'rval'
     end
 
     obj = CustomConnectionObject.new
