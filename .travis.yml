@@ -1,5 +1,6 @@
 language: ruby
 
+# This intended to fix bundler bug in Ruby 1.9.3 (see https://github.com/travis-ci/travis-ci/issues/5239)
 before_install:
   - gem install bundler
 
