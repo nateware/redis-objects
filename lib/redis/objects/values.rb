@@ -50,11 +50,6 @@ class Redis
           raise "Field name Error" if !redis_objects.keys.include?(name.to_sym)
 
           keys = objects.map{ |obj| obj.redis_field_key name.to_sym }
-          p "---->redis"
-          p redis
-          p "---->keys"
-          p keys
-
           self.redis.mget keys
         end
       end
