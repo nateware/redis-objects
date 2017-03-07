@@ -41,6 +41,28 @@ describe 'Connection tests' do
     obj.default_redis_value.clear
   end
 
+  it "should support mget" do
+    class CustomConnectionObject
+      include Redis::Objects
+
+      def id
+        return 1
+      end
+
+      redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 31)
+      value :redis_value, :key => 'rval'
+    end
+
+    obj = CustomConnectionObject.new
+
+    obj.redis_value.value = 'foo'
+
+    obj.class.mget(:redis_value, []).should == []
+    obj.class.mget(:redis_value, [obj]).should == ['foo']
+
+    obj.redis_value.clear
+  end
+
   it "should support overriding object handles with a connection_pool" do
     class CustomConnectionObject
       include Redis::Objects
