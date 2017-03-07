@@ -3,6 +3,7 @@
 == 1.2.1 (1 Nov 2015)
 
 * Fixed use of #tap which caused issues with pipelined calls [Ross Kaffenberger]
+* Removed setnx on get some value with default option [Ilya Kamenko]
 
 == 1.2.0 (30 Apr 2015)
 
