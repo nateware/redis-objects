@@ -18,14 +18,16 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
+  # Only fix this one version or else tests break
   spec.add_dependency "redis", "~> 3.3"
 
-  spec.add_development_dependency "bundler", "~> 1.14"
-  # spec.add_development_dependency "rspec", "~> 3.5" # Jul 2016
-  spec.add_development_dependency "bacon", "~> 1.2" # Dec 2012
-  spec.add_development_dependency "connection_pool", "~> 2.2" # Nov 2016
+  # Ignore gemspec warnings on these.  Trying to fix them to versions breaks TravisCI
+  spec.add_development_dependency "bundler"
+  spec.add_development_dependency "rake"
+  spec.add_development_dependency "bacon"
+  spec.add_development_dependency "connection_pool"
 
-  # compatibility testing
-  spec.add_development_dependency "redis-namespace", "~> 1.5" # Feb 2017
-  spec.add_development_dependency "activerecord", "~> 5.0" # Mar 2017
+  # Compatibility testing
+  spec.add_development_dependency "redis-namespace"
+  spec.add_development_dependency "activerecord"
 end
