@@ -10,5 +10,5 @@ task :spec => :test
 desc "show changelog"
 task :changelog do
   latest = `git tag |tail -1`.chomp
-  system "git log --pretty=format:'* %s %b [%an]' #{latest}..HEAD"
+  sh "git log --pretty=format:'* %s %b [%an]' #{latest}..HEAD"
 end

@@ -1,8 +1,43 @@
 = Changelog for Redis::Objects
 
+== 1.3.0 (11 Mar 2017)
+
+* handle two Redis::Counter objects adding/subtracting  [Nate Wiger]
+
+* Merge pull request #193 from Galathius/Galathius-patch-1 Doesn't set default value to redis when just try read [Galathius]
+
+* Merge pull request #194 from oggy/pop-shift-n Add support for popping/shifting multiple elements from a List. [oggy]
+
+* Merge pull request #199 from bf4/fix_hashkey_hmget_empty_collection Fixes case of hmget empty collection [bf4]
+
+* Merge pull request #200 from liukgg/master Add method "mget" to improve efficiency for fetching values of  multiple objects  [liukgg]
+
+* Fixes case of hmget empty collection to return nil or raise the appropriate error [Benjamin Fleischer]
+
+* Merge pull request #189 from mneumark/add_delete_whole_object_method Add @object.delete! whole object delete method [mneumark]
+
+* fix some tests for changes in AR 4.2  [nateware]
+
+* Add support for popping/shifting multiple elements from a List like ruby's array [George Ogata]
+
+* Merge pull request #187 from rossta/bug_fix_to_json Add more complete #to_json and #as_json to also address recursion bugs [Ross Kaffenberger]
+
+* Doesn't set default value to redis if just try to read  [Ilya Kamenko]
+
+* Add specs for #as_json  [Ross Kaffenberger]
+
+* Implement BaseObject#as_json and #to_json in terms of #to_hash  [Ross Kaffenberger]
+
+* Add delete! method to Redis::Objects [Micah Neumark]
+
+* Implement #value, #to_json for Redis::BaseObject to fix previous situations where #to_json would hang [Ross Kaffenberger]
+
+* Reproduce blocking #to_json call issue #134 When using ActiveSupport's Object#to_json [Ross Kaffenberger]
+
 == 1.2.1 (1 Nov 2015)
 
 * Fixed use of #tap which caused issues with pipelined calls [Ross Kaffenberger]
+
 * Removed setnx on get some value with default option [Ilya Kamenko]
 
 == 1.2.0 (30 Apr 2015)
@@ -226,4 +261,3 @@
 == 0.2.1 (27 Nov 2009)
 
 * First worthwhile public release, with good spec coverage and functionality. [Nate Wiger]
-
