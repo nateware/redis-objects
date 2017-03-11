@@ -41,5 +41,14 @@ class Redis
     def to_hash
       { "key" => @key, "options" => @options, "value" => value }
     end
+
+    # Math ops - delegate to value method
+    %w(== < > <= >=).each do |m|
+      class_eval <<-EndOverload
+        def #{m}(what)
+          value #{m} what
+        end
+      EndOverload
+    end
   end
 end

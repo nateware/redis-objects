@@ -30,4 +30,5 @@ Gem::Specification.new do |spec|
   # Compatibility testing
   spec.add_development_dependency "redis-namespace"
   spec.add_development_dependency "activerecord"
+  spec.add_development_dependency "sqlite3"
 end
