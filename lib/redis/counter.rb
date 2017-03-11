@@ -116,6 +116,14 @@ class Redis
     alias_method :to_i, :value
     def nil?; value.nil? end
 
+    # This needs to handle +/- either actual integers or other Redis::Counters
+    def -(what)
+      value.to_i - what.to_i
+    end
+    def +(what)
+      value.to_i - what.to_i
+    end
+
     # Math ops
     %w(== < > <= >=).each do |m|
       class_eval <<-EndOverload
@@ -142,4 +150,3 @@ class Redis
     end
   end
 end
-
