@@ -105,12 +105,16 @@ class Redis
 
       # Set the Redis redis_prefix to use. Defaults to model_name
       def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
-      def redis_prefix(klass = self) #:nodoc:
-        @redis_prefix ||= klass.name.to_s.
-          sub(%r{(.*::)}, '').
-          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-          gsub(/([a-z\d])([A-Z])/,'\1_\2').
-          downcase
+      def redis_prefix(klass = self, options = {}) #:nodoc:
+        @redis_prefix ||= "#{prefix_model(options)}#{klass.name.to_s.
+                          sub(%r{(.*::)}, '').
+                          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+                          gsub(/([a-z\d])([A-Z])/,'\1_\2').
+                          downcase}"
+      end
+
+      def prefix_model(options)
+        "#{options[:prefix_model]}:#{options[:model_id]}:" if options[:prefix_model].present? && options[:model_id].present?
       end
 
       def redis_options(name)
@@ -128,7 +132,7 @@ class Redis
         end
       end
 
-      def redis_field_key(name, id=nil, context=self) #:nodoc:
+      def redis_field_key(name, id=nil, context=self, options) #:nodoc:
         klass = first_ancestor_with(name)
         # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
         # I don't think people were using Proc as keys before (that would create a weird key). Should be ok
@@ -144,7 +148,7 @@ class Redis
               "[#{klass.redis_objects[name.to_sym]}] Attempt to address redis-object " +
               ":#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
           end
-          "#{redis_prefix(klass)}:#{id}:#{name}"
+          "#{redis_prefix(klass, options)}:#{id}:#{name}"
         end
       end
 
@@ -185,9 +189,10 @@ class Redis
         return self.class.redis_field_redis(name)
       end
 
-      def redis_field_key(name) #:nodoc:
+      def redis_field_key(name, options={}) #:nodoc:
         id = send(self.class.redis_id_field)
-        self.class.redis_field_key(name, id, self)
+        options.merge!(model_id: send(self.class.reflections[options[:prefix_model]].foreign_key) if options[:prefix_model].present?
+        self.class.redis_field_key(name, id, self, options)
       end
     end
   end
