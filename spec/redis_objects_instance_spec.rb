@@ -891,6 +891,14 @@ describe Redis::HashKey do
     @hash.as_json['value'].should == { "abc" => "123" }
   end
 
+  it "should return empty object with bulk_get and bulk_value" do
+    h = @hash.bulk_get
+    h.should == {}
+
+    v = @hash.bulk_values
+    v.should == []
+  end
+
   describe 'with expiration' do
     {
       :incrby      => 'somekey',
