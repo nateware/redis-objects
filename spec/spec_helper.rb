@@ -9,6 +9,8 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+require 'byebug'
+
 REDIS_CLASS_NAMES = [:Counter, :HashKey, :List, :Lock, :Set, :SortedSet, :Value]
 
 UNIONSTORE_KEY = 'test:unionstore'
@@ -63,10 +65,6 @@ def raises_exception(&block)
   end
   e.should.be.is_a?(StandardError)
 end
-
-#
-# TODO: Add another server
-#
 
 # Grab a global handle
 REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
