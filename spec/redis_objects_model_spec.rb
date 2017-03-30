@@ -822,6 +822,26 @@ describe Redis::Objects do
     error.should.be.kind_of(Redis::Lock::LockTimeout)
   end
 
+  describe "migrating Locks to new Redis server" do
+    it "should write the lock key to the new DB" do
+      Redis.next.set("dennis", "great")
+      puts "Redis.current" 
+      puts Redis.current.info
+      puts "&&&&&&&&&&&&&&&&&&&&"
+
+      puts "Redis.next"
+      puts Redis.next.info
+
+      false.should.equal true
+    end
+    it "should not write to the old DB" do
+      false.should.equal true
+    end
+    it "should check for the lock in both DBs" do
+      false.should.equal true
+    end
+  end
+
   it "should pick up objects from superclass automatically" do
     @vanilla_roster.available_slots.should.be.kind_of(Redis::Counter)
     @vanilla_roster.pitchers.should.be.kind_of(Redis::Counter)

@@ -64,10 +64,18 @@ def raises_exception(&block)
   e.should.be.is_a?(StandardError)
 end
 
+#
+# TODO: Add another server
+#
+
 # Grab a global handle
 REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
 #$redis = REDIS_HANDLE
 Redis.current = REDIS_HANDLE
+
+# Grab another global handle for Next DB
+require 'redis/objects'
+Redis.next = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 12)
 
 SORT_ORDER = {:order => 'desc alpha'}
 SORT_LIMIT = {:limit => [2, 2]}
