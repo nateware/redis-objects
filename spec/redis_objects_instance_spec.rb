@@ -573,7 +573,7 @@ describe Redis::Lock do
     expiry = 15
     lock = Redis::Lock.new(:test_lock, :expiration => expiry)
     lock.lock do
-      expiration = REDIS_HANDLE.get("test_lock").to_f
+      expiration = Redis.next.get("test_lock").to_f
 
       # The expiration stored in redis should be 15 seconds from when we started
       # or a little more
@@ -581,17 +581,17 @@ describe Redis::Lock do
     end
 
     # key should have been cleaned up
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    Redis.next.get("test_lock").should.be.nil
   end
 
   it "should set value to 1 when no expiration is set" do
     lock = Redis::Lock.new(:test_lock)
     lock.lock do
-      REDIS_HANDLE.get('test_lock').should == '1'
+      Redis.next.get('test_lock').should == '1'
     end
 
     # key should have been cleaned up
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    Redis.next.get("test_lock").should.be.nil
   end
 
   it "should let lock be gettable when lock is expired" do
@@ -644,7 +644,7 @@ describe Redis::Lock do
     end
 
     # lock value should still be set since the lock was held for more than the expiry
-    REDIS_HANDLE.get("test_lock").should.not.be.nil
+    Redis.next.get("test_lock").should.not.be.nil
   end
 
   it "should respond to #to_json" do

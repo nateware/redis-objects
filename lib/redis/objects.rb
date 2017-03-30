@@ -12,6 +12,15 @@ class Redis
   autoload :Value,     'redis/value'
   autoload :HashKey,   'redis/hash_key'
 
+  # Monkey patching Redis to hold the migrating to DB called next
+  def self.next
+    raise "next Redis server connection needs to be explicitly set" unless @next
+    @next # ||= Redis.new
+  end
+
+  def self.next=(redis)
+    @next = redis
+  end
   #
   # Redis::Objects enables high-performance atomic operations in your app
   # by leveraging the atomic features of the Redis server.  To use Redis::Objects,
@@ -66,6 +75,16 @@ class Redis
       def redis
         @redis || $redis || Redis.current ||
           raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
+      end
+
+      # These are dependent on a monkey patch of Redis to include next. See above...
+      def redis_next=(conn)
+        raise "Explicit migrator Redis Connection required." unless conn
+        @redis_next = conn
+      end
+      def redis_next
+        @redis_next || Redis.next ||
+          raise(NotConnected, "Redis::Objects.redis_next not set to a Redis.new connection")
       end
 
       def included(klass)

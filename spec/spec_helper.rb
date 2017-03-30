@@ -9,6 +9,8 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+require 'byebug'
+
 REDIS_CLASS_NAMES = [:Counter, :HashKey, :List, :Lock, :Set, :SortedSet, :Value]
 
 UNIONSTORE_KEY = 'test:unionstore'
@@ -68,6 +70,10 @@ end
 REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
 #$redis = REDIS_HANDLE
 Redis.current = REDIS_HANDLE
+
+# Grab another global handle for Next DB
+require 'redis/objects'
+Redis.next = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 12)
 
 SORT_ORDER = {:order => 'desc alpha'}
 SORT_LIMIT = {:limit => [2, 2]}
