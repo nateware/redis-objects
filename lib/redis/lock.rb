@@ -38,18 +38,19 @@ class Redis
       try_until_timeout do
         expiration = generate_expiration
         # Use the expiration as the value of the lock.
-        break if redis.setnx(key, expiration)
+        break if !redis.get(key) && Redis.next.setnx(key, expiration)
 
         # Lock is being held.  Now check to see if it's expired (if we're using
         # lock expiration).
         # See "Handling Deadlocks" section on http://redis.io/commands/setnx
         if !@options[:expiration].nil?
-          old_expiration = redis.get(key).to_f
+          old_expiration = (Redis.next.get(key) || redis.get(key)).to_f
 
           if old_expiration < Time.now.to_f
             # If it's expired, use GETSET to update it.
             expiration = generate_expiration
-            old_expiration = redis.getset(key, expiration).to_f
+            old_expiration = (Redis.next.getset(key, expiration).to_f || redis.getset(key, expiration).to_f)
+
 
             # Since GETSET returns the old value of the lock, if the old expiration
             # is still in the past, we know no one else has expired the locked
@@ -67,7 +68,7 @@ class Redis
         # wrote the lock key and only delete it if it hasn't expired (or we're not using
         # lock expiration)
         if @options[:expiration].nil? || expiration > Time.now.to_f
-          redis.del(key)
+          redis.del(key) && Redis.next.del(key)
         end
       end
     end
