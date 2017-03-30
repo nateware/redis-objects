@@ -454,7 +454,8 @@ describe Redis::Objects do
     error = nil
     begin
       Roster.obtain_lock(:resort, 2) do
-        Roster.redis.get("roster:2:resort_lock").should.not.be.nil
+        Redis.next.get("roster:2:resort_lock").should.not.be.nil
+        # Roster.redis.get("roster:2:resort_lock").should.not.be.nil
       end
     rescue => error
     end
@@ -823,22 +824,51 @@ describe Redis::Objects do
   end
 
   describe "migrating Locks to new Redis server" do
-    it "should write the lock key to the new DB" do
-      Redis.next.set("dennis", "great")
-      puts "Redis.current" 
-      puts Redis.current.info
-      puts "&&&&&&&&&&&&&&&&&&&&"
+    before do
 
-      puts "Redis.next"
-      puts Redis.next.info
+      class Team # < ActiveRecord::Base
+        def id # an ID method is required
+          1
+        end
+        include Redis::Objects
+        lock :reorder, :timeout => 2 # declare a lock
+      end
 
-      false.should.equal true
+      @team = Team.new
     end
-    it "should not write to the old DB" do
-      false.should.equal true
+
+    it "should write new locks to new DB" do
+      @team.reorder_lock.lock do
+        Redis.next.get(@team.reorder_lock.key).should == "1"
+        Redis.current.get(@team.reorder_lock.key).should == nil
+      end
     end
-    it "should check for the lock in both DBs" do
-      false.should.equal true
+
+    it "should remove locks from both DBs" do
+      @team.reorder_lock.lock { sleep 0.1 }
+      Redis.current.get(@team.reorder_lock.key).should == nil
+      Redis.next.get(@team.reorder_lock.key).should == nil
+    end
+
+    describe "should timeout if lock is in" do
+      def lock_failure_verify
+        begin
+          @team.reorder_lock.lock {}
+        rescue => error
+        end
+        error.should.not.be.nil
+        error.should.be.kind_of(Redis::Lock::LockTimeout)
+      end
+        
+      it "old DB" do
+        Redis.current.set(@team.reorder_lock.key, 3)
+        lock_failure_verify
+      end
+
+      it "new DB" do
+        Redis.new.set(@team.reorder_lock.key, 3)  
+        lock_failure_verify
+      end
     end
   end
 
