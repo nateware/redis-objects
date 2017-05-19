@@ -11,7 +11,13 @@ begin
     :database => File.expand_path(File.dirname(__FILE__) + '/redis_objects_test.sqlite3')
   )
 
-  class CreateBlogs < ActiveRecord::Migration
+  migration_class = if ActiveRecord.gem_version < Gem::Version.create('5.1.0')
+                      ActiveRecord::Migration
+                    else
+                      ActiveRecord::Migration[5.1]
+                    end
+
+  class CreateBlogs < migration_class
     def self.up
       create_table :blogs do |t|
         t.string :name
@@ -31,7 +37,7 @@ begin
     counter :num_posts
   end
 
-  class CreatePosts < ActiveRecord::Migration
+  class CreatePosts < migration_class
     def self.up
       create_table :posts do |t|
         t.string :title
@@ -57,7 +63,7 @@ begin
     has_many :comments
   end
 
-  class CreateComments < ActiveRecord::Migration
+  class CreateComments < migration_class
     def self.up
       create_table :comments do |t|
         t.string :body
