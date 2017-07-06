@@ -11,6 +11,15 @@ begin
     :database => File.expand_path(File.dirname(__FILE__) + '/redis_objects_test.sqlite3')
   )
 
+  # monkey patch to use migrations both in Rails 4.x and 5.x
+  class ActiveRecord::Migration
+    class << self
+      def [](version)
+        self
+      end
+    end
+  end unless ActiveRecord::Migration.respond_to?(:[])
+
   class CreateBlogs < ActiveRecord::Migration[4.2]
     def self.up
       create_table :blogs do |t|
