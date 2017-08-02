@@ -114,7 +114,10 @@ class Redis
     # Proxy methods to help make @object.counter == 10 work
     def to_s; value.to_s; end
     alias_method :to_i, :value
-    def nil?; value.nil? end
+
+    def nil?
+      !redis.exists(key)
+    end
 
     ##
     # Math ops
