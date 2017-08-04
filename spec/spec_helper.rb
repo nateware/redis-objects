@@ -9,6 +9,9 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+require "active_support/testing/time_helpers"
+include ActiveSupport::Testing::TimeHelpers
+
 REDIS_CLASS_NAMES = [:Counter, :HashKey, :List, :Lock, :Set, :SortedSet, :Value]
 
 UNIONSTORE_KEY = 'test:unionstore'

@@ -47,6 +47,8 @@ class Roster
   sorted_set :sorted_set_with_expiration,:expiration => 10
   sorted_set :sorted_set_with_expireat, :expireat => Time.now + 10.seconds
 
+  value :value_with_expireat_with_lambda, :expireat => lambda { Time.now + 10.seconds }
+
   def initialize(id=1) @id = id end
   def id; @id; end
   def username; "user#{id}"; end
@@ -991,6 +993,19 @@ describe Redis::Objects do
     @roster.sorted_set_with_expireat[:foo] = 1
     @roster.sorted_set_with_expireat.ttl.should > 0
     @roster.sorted_set_with_expireat.ttl.should <= 10
+  end
+
+  it "should set expiration when expireat option assigned with lambda" do
+    travel(1.minute) do
+      # non-proc expireat is not affected by time travel
+      @roster.value_with_expireat.value = 'val'
+      @roster.value_with_expireat.ttl.should > 0
+      @roster.value_with_expireat.ttl.should <= 10
+
+      @roster.value_with_expireat_with_lambda.value = 'val'
+      @roster.value_with_expireat_with_lambda.ttl.should > 60
+      @roster.value_with_expireat_with_lambda.ttl.should <= 70
+    end
   end
 
   it "should allow deleting the entire object" do
