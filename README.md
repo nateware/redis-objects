@@ -541,6 +541,15 @@ value :value_with_expiration, :expiration => 1.hour
 value :value_with_expireat, :expireat => Time.now + 1.hour
 ~~~
 
+:warning: `expireat` is evaluated at class load time.
+In this example, it will be one hour after evaluating class, not after one hour after setting value.
+
+If you want to expire one hour after setting the value. please use `lambda`.
+
+~~~ruby
+value :value_with_expireat, :expireat => lambda { Time.now + 1.hour }
+~~~
+
 Author
 =======
 Copyright (c) 2009-2013 [Nate Wiger](http://nateware.com).  All Rights Reserved.
