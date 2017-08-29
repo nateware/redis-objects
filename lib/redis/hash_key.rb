@@ -13,7 +13,7 @@ class Redis
     attr_reader :key, :options
     def initialize(key, *args)
       super
-      @options[:marshal_keys] ||= {} 
+      @options[:marshal_keys] ||= {}
     end
 
     # Redis: HSET
@@ -133,7 +133,7 @@ class Redis
       get_fields = *fields.flatten
       get_fields << nil if get_fields.empty?
       res = redis.hmget(key, get_fields)
-      fields.each do |k|
+      get_fields.each do |k|
         hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
       end
       hsh
@@ -145,7 +145,7 @@ class Redis
       get_keys = *keys.flatten
       get_keys << nil if get_keys.empty?
       res = redis.hmget(key, get_keys)
-      keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
+      get_keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
     end
 
     # Increment value by integer at field. Redis: HINCRBY
