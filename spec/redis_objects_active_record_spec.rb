@@ -11,7 +11,7 @@ begin
     :database => File.expand_path(File.dirname(__FILE__) + '/redis_objects_test.sqlite3')
   )
 
-  class CreateBlogs < ActiveRecord::Migration
+  class CreateBlogs < ActiveRecord::Migration[4.2]
     def self.up
       create_table :blogs do |t|
         t.string :name
@@ -31,7 +31,7 @@ begin
     counter :num_posts
   end
 
-  class CreatePosts < ActiveRecord::Migration
+  class CreatePosts < ActiveRecord::Migration[4.2]
     def self.up
       create_table :posts do |t|
         t.string :title
@@ -57,7 +57,7 @@ begin
     has_many :comments
   end
 
-  class CreateComments < ActiveRecord::Migration
+  class CreateComments < ActiveRecord::Migration[4.2]
     def self.up
       create_table :comments do |t|
         t.string :body
