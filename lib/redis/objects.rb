@@ -70,8 +70,8 @@ class Redis
 
       def included(klass)
         # Core (this file)
-        klass.instance_variable_set('@redis', nil)
-        klass.instance_variable_set('@redis_objects', {})
+        klass.instance_variable_set(:@redis, nil)
+        klass.instance_variable_set(:@redis_objects, {})
         klass.send :include, InstanceMethods
         klass.extend ClassMethods
 

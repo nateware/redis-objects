@@ -18,11 +18,12 @@ class Redis
           options[:timeout] ||= 5  # seconds
           lock_name = "#{name}_lock"
           redis_objects[lock_name.to_sym] = options.merge(:type => :lock)
+          ivar_name = :"@#{lock_name}"
 
           mod = Module.new do
             define_method(lock_name) do |&block|
-              instance_variable_get("@#{lock_name}") or
-                instance_variable_set("@#{lock_name}",
+              instance_variable_get(ivar_name) or
+                instance_variable_set(ivar_name,
                   Redis::Lock.new(
                     redis_field_key(lock_name), redis_field_redis(lock_name), redis_objects[lock_name.to_sym]
                   )

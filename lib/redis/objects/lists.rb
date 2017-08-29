@@ -15,11 +15,12 @@ class Redis
         # method, so it can be used alongside ActiveRecord, DataMapper, etc.
         def list(name, options={})
           redis_objects[name.to_sym] = options.merge(:type => :list)
+          ivar_name = :"@#{name}"
 
           mod = Module.new do
             define_method(name) do
-              instance_variable_get("@#{name}") or
-                instance_variable_set("@#{name}",
+              instance_variable_get(ivar_name) or
+                instance_variable_set(ivar_name,
                   Redis::List.new(
                     redis_field_key(name), redis_field_redis(name), redis_options(name)
                   )
