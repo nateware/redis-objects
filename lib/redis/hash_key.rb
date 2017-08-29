@@ -131,7 +131,7 @@ class Redis
     def bulk_get(*fields)
       hsh = {}
       get_fields = *fields.flatten
-      get_fields << nil if get_fields.empty?
+      return hsh if get_fields.empty?
       res = redis.hmget(key, get_fields)
       get_fields.each do |k|
         hsh[k] = unmarshal(res.shift, options[:marshal_keys][k])
@@ -143,7 +143,7 @@ class Redis
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
     def bulk_values(*keys)
       get_keys = *keys.flatten
-      get_keys << nil if get_keys.empty?
+      return [] if get_keys.empty?
       res = redis.hmget(key, get_keys)
       get_keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
     end
