@@ -29,8 +29,9 @@ class Redis
     # Add a member to the end of the list. Redis: RPUSH
     def push(*values)
       allow_expiration do
-        redis.rpush(key, values.map{|v| marshal(v) })
+        count = redis.rpush(key, values.map{|v| marshal(v) })
         redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+        count
       end
     end
 
@@ -62,8 +63,9 @@ class Redis
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(*values)
       allow_expiration do
-        redis.lpush(key, values.map{|v| marshal(v) })
+        count = redis.lpush(key, values.map{|v| marshal(v) })
         redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+        count
       end
     end
 
