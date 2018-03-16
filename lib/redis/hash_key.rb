@@ -26,7 +26,8 @@ class Redis
 
     # Redis: HGET
     def hget(field)
-      unmarshal redis.hget(key, field), options[:marshal_keys][field] || options[:default] || nil
+      return options[:default] if !key?(field) && !options[:default].nil?
+      unmarshal redis.hget(key, field), options[:marshal_keys][field]
     end
     alias_method :get, :hget
     alias_method :[],  :hget
