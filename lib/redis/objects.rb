@@ -61,10 +61,11 @@ class Redis
 
     class << self
       def redis=(conn)
-        @redis = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
+        Thread.current[:__redis_objects_redis] = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
       end
+
       def redis
-        @redis || $redis || Redis.current ||
+        Thread.current[:__redis_objects_redis] || $redis || Redis.current ||
           raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
@@ -90,11 +91,11 @@ class Redis
     module ClassMethods
       # Enable per-class connections (eg, User and Post can use diff redis-server)
       def redis=(conn)
-        @redis = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
+        Thread.current[:__redis_objects_redis] = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
       end
 
       def redis
-        @redis || Objects.redis
+        Thread.current[:__redis_objects_redis] || Objects.redis
       end
 
       # Internal list of objects
