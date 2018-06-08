@@ -19,6 +19,28 @@ describe Redis::Value do
     @value.value.should == false
   end
 
+  it "should compress non marshaled values" do
+    @value = Redis::Value.new('spec/value', compress: true)
+    @value.value = 'Trevor Hoffman'
+    @value.value.should == 'Trevor Hoffman'
+    @value.redis.get(@value.key).should.not == 'Trevor Hoffman'
+    @value.value = nil
+    @value.value.should == nil
+    @value.value = ''
+    @value.value.should == ''
+  end
+
+  it "should compress marshaled values" do
+    @value = Redis::Value.new('spec/value', marshal: true, compress: true)
+    @value.value = 'Trevor Hoffman'
+    @value.value.should == 'Trevor Hoffman'
+    @value.redis.get(@value.key).should.not == Marshal.dump('Trevor Hoffman')
+    @value.value = nil
+    @value.value.should == nil
+    @value.value = ''
+    @value.value.should == ''
+  end
+
   it "should handle simple values" do
     @value.should == nil
     @value.value = 'Trevor Hoffman'

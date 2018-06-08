@@ -261,6 +261,18 @@ Complex data is no problem with :marshal => true:
 puts @newest.value['username']
 ~~~
 
+Compress data to save memory usage on Redis with :compress => true:
+
+~~~ruby
+@account = Account.create!(params[:account])
+@marshaled_value = Redis::Value.new('marshaled', :marshal => true, :compress => true)
+@marshaled_value.value = @account.attributes
+@unmarshaled_value = Redis::Value.new('unmarshaled', :compress => true)
+@unmarshaled_value = 'Really Long String'
+puts @marshaled_value.value['username']
+puts @unmarshaled_value.value
+~~~
+
 Lists
 -----
 Lists work just like Ruby arrays:
