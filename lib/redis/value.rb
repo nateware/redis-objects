@@ -34,7 +34,7 @@ class Redis
 
     def marshal(value, *args)
       if !value.nil? && options[:compress]
-        deflate(super)
+        compress(super)
       else
         super
       end
@@ -42,17 +42,17 @@ class Redis
 
     def unmarshal(value, *args)
       if !value.nil? && options[:compress]
-        super(inflate(value), *args)
+        super(decompress(value), *args)
       else
         super
       end
     end
 
-    def inflate(value)
+    def decompress(value)
       Zlib::Inflate.inflate(value)
     end
 
-    def deflate(value)
+    def compress(value)
       Zlib::Deflate.deflate(value)
     end
 
