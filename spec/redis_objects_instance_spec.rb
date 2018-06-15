@@ -1316,6 +1316,8 @@ describe Redis::SortedSet do
     @set_2.add('c', 1)
     @set_2.add('d', 0)
 
+    @set_1.union(@set_2).should == ['d', 'a', 'c', 'b']
+
     @set_1.unionstore(@set.key, @set_2)
     # @set is now: [[d, 0], [a, 1], [c, 4], [b, 6]]
     @set.members.should == ['d', 'a', 'c', 'b']
@@ -1354,6 +1356,8 @@ describe Redis::SortedSet do
     @set_2.add('b', 2)
     @set_2.add('c', 1)
     @set_2.add('d', 0)
+
+    @set_1.intersection(@set_2).should == ['c', 'b']
 
     @set_1.interstore(@set.key, @set_2)
     # @set is now: [[c, 4], [b, 6]]
