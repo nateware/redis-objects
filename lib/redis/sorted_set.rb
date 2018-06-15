@@ -8,7 +8,6 @@ class Redis
     # require 'enumerator'
     # include Enumerable
     require 'redis/helpers/core_commands'
-    require 'securerandom'
     include Redis::Helpers::CoreCommands
 
     attr_reader :key, :options
@@ -210,7 +209,7 @@ class Redis
     # Redis: SINTER
     def intersection(*sets)
       result = nil
-      temp_key = :"#{key}:intersection:#{SecureRandom.hex(2)}"
+      temp_key = :"#{key}:intersection:#{Time.current.to_i + rand}"
 
       redis.pipelined do
         interstore(temp_key, *sets)
@@ -247,7 +246,7 @@ class Redis
     # Redis: SUNION
     def union(*sets)
       result = nil
-      temp_key = :"#{key}:union:#{SecureRandom.hex(2)}"
+      temp_key = :"#{key}:union:#{Time.current.to_i + rand}"
 
       redis.pipelined do
         unionstore(temp_key, *sets)
