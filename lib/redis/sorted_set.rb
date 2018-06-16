@@ -211,7 +211,7 @@ class Redis
       result = nil
       temp_key = :"#{key}:intersection:#{Time.current.to_i + rand}"
 
-      redis.pipelined do
+      redis.multi do
         interstore(temp_key, *sets)
         redis.expire(temp_key, 1)
 
@@ -248,7 +248,7 @@ class Redis
       result = nil
       temp_key = :"#{key}:union:#{Time.current.to_i + rand}"
 
-      redis.pipelined do
+      redis.multi do
         unionstore(temp_key, *sets)
         redis.expire(temp_key, 1)
 
