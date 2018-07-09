@@ -568,16 +568,15 @@ describe Redis::Lock do
     REDIS_HANDLE.flushall
   end
 
-  it "should set the value to the expiration" do
-    start = Time.now
+  it "should ttl to the expiration" do
     expiry = 15
     lock = Redis::Lock.new(:test_lock, :expiration => expiry)
     lock.lock do
-      expiration = REDIS_HANDLE.get("test_lock").to_f
+      expiration = REDIS_HANDLE.ttl("test_lock")
 
       # The expiration stored in redis should be 15 seconds from when we started
       # or a little more
-      expiration.should.be.close((start + expiry).to_f, 2.0)
+      expiration.should.be.close(expiration, 2.0)
     end
 
     # key should have been cleaned up
@@ -587,27 +586,10 @@ describe Redis::Lock do
   it "should set value to 1 when no expiration is set" do
     lock = Redis::Lock.new(:test_lock)
     lock.lock do
-      REDIS_HANDLE.get('test_lock').should == '1'
+      REDIS_HANDLE.ttl('test_lock').should == 1
     end
 
     # key should have been cleaned up
-    REDIS_HANDLE.get("test_lock").should.be.nil
-  end
-
-  it "should let lock be gettable when lock is expired" do
-    expiry = 15
-    lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
-
-    # create a fake lock in the past
-    REDIS_HANDLE.set("test_lock", Time.now-(expiry + 60))
-
-    gotit = false
-    lock.lock do
-      gotit = true
-    end
-
-    # should get the lock because it has expired
-    gotit.should.be.true
     REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
@@ -636,15 +618,15 @@ describe Redis::Lock do
     REDIS_HANDLE.get("test_lock").should.not.be.nil
   end
 
-  it "should not remove the key if lock is held past expiration" do
-    lock = Redis::Lock.new(:test_lock, :expiration => 0.0)
+  it "Redis should remove the key if lock is held past expiration" do
+    lock = Redis::Lock.new(:test_lock, :expiration => 0.1)
 
     lock.lock do
-      sleep 1.1
+      sleep 0.2
     end
 
     # lock value should still be set since the lock was held for more than the expiry
-    REDIS_HANDLE.get("test_lock").should.not.be.nil
+    REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
   it "should respond to #to_json" do
