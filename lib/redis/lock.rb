@@ -39,7 +39,7 @@ class Redis
       end_time = nil
       try_until_timeout do
         end_time = Time.now.to_i + expiration
-        # Set a NX record and expiration in one request.
+        # Set a NX record and use the Redis expiration mechanism.
         # Empty value because the presence of it is enough to lock
         # `px` only except an Integer in millisecond
         break if redis.set(key, nil, px: expiration, nx: true)
