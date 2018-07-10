@@ -43,6 +43,20 @@ class Redis
         # Empty value because the presence of it is enough to lock
         # `px` only except an Integer in millisecond
         break if redis.set(key, nil, px: expiration, nx: true)
+
+        # Backward compatibility code
+        # TODO: remove at the next major release for performance
+        unless @options[:expiration].nil?
+          old_expiration = redis.get(key).to_f
+
+          # Check it was not an empty string with `zero?` and
+          # the expiration time is passed.
+          if !old_expiration.zero? && old_expiration < Time.now.to_f
+            expiration = generate_expiration
+            end_time = Time.now.to_i + expiration
+            break if redis.set(key, nil, px: expiration)
+          end
+        end
       end
       begin
         yield

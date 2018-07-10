@@ -636,6 +636,26 @@ describe Redis::Lock do
   it "should respond to #as_json" do
     Redis::Lock.new(:test_lock).as_json.should.be.kind_of(Hash)
   end
+
+  it "should deal with old lock format" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, expiration: expiry, timeout: 0.1)
+
+    # create a fake lock in the past
+    REDIS_HANDLE.set("test_lock", (Time.now - expiry).to_f)
+
+    gotit = false
+    lock.lock do
+      gotit = true
+    end
+
+    # should have the lock
+    gotit.should.be.true
+
+    # lock value should be unset
+    REDIS_HANDLE.get("test_lock").should.be.nil
+  end
+
 end
 
 describe Redis::HashKey do
