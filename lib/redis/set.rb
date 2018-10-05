@@ -165,7 +165,7 @@ class Redis
       redis.smove(key, destination.is_a?(Redis::Set) ? destination.key : destination.to_s, value)
     end
 
-    # The number of members in the set. Aliased as size. Redis: SCARD
+    # The number of members in the set. Aliased as size or count. Redis: SCARD
     def length
       redis.scard(key)
     end
