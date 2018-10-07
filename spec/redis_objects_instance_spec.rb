@@ -644,33 +644,45 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock, :expiration => 0.1)
 
     lock.lock do
-      sleep 0.2
+      REDIS_HANDLE.exists("test_lock").should.be.true
+      sleep 0.3
+      # technically undefined behavior because we don't have a BG thread
+      # running and deleting lock keys - that is only triggered on block exit
+      #REDIS_HANDLE.exists("test_lock").should.be.false
     end
 
-    # lock value should still be set since the lock was held for more than the expiry
+    # lock value should not be set since the lock was held for more than the expiry
     REDIS_HANDLE.exists("test_lock").should.be.false
+  end
+
+
+  it "should not manually delete a key with a 'lock' name if finished after expiration" do
+    lock = Redis::Lock.new(:test_lock2, :expiration => 0.1)
+
+    lock.lock do
+      REDIS_HANDLE.exists("test_lock2").should.be.true
+      sleep 0.3 # expired, key is deleted
+      REDIS_HANDLE.exists("test_lock2").should.be.false
+      REDIS_HANDLE.set("test_lock2", "foo") # this is no longer a lock key, name is a coincidence
+    end
+
+    REDIS_HANDLE.get("test_lock2").should == "foo"
   end
 
   it "should manually delete the key if finished before expiration" do
-    lock = Redis::Lock.new(:test_lock, :expiration => 0.2)
+    lock = Redis::Lock.new(:test_lock3, :expiration => 0.5)
 
     lock.lock do
+      REDIS_HANDLE.exists("test_lock3").should.be.true
       sleep 0.1
+      REDIS_HANDLE.exists("test_lock3").should.be.true
     end
 
-    REDIS_HANDLE.exists("test_lock").should.be.false
+    # should delete the key because the lock block is done, regardless of time
+    # for some strange reason, I have seen this test fail randomly, which is worrisome.
+    REDIS_HANDLE.exists("test_lock3").should.be.false
   end
 
-  it "should not manually delete the key if finished after expiration" do
-    lock = Redis::Lock.new(:test_lock, :expiration => 0.1)
-
-    lock.lock do
-      sleep 0.2 # expired
-      REDIS_HANDLE.set("test_lock", "foo")
-    end
-
-    REDIS_HANDLE.get("test_lock").should == "foo"
-  end
 
   it "should respond to #to_json" do
     Redis::Lock.new(:test_lock).to_json.should.be.kind_of(String)
