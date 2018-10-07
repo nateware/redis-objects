@@ -1,5 +1,47 @@
 = Changelog for Redis::Objects
 
+== 1.4.3 (7 Oct 2018)
+
+* Merge pull request #235 from johnc219/fix/end-time-expiration Add expiration in seconds to obtain end_time [Nate Wiger]
+
+* Merge pull request #223 from artinboghosian/compress-redis-value Allow compression of value stored in Redis::Value to save memory on R… [Nate Wiger]
+
+* Merge pull request #224 from artinboghosian/sorted-set-missing-operations Fix set operation methods on SortedSets [Nate Wiger]
+
+* Merge pull request #233 from tmattia/master Add SortedSet#count alias so it's consistent with Set#count [Nate Wiger]
+
+* Merge pull request #236 from nateware/revert-220-threadsafe Revert "Make Redis::Objects.connection thread-safe" [Nate Wiger]
+
+* Revert "Make Redis::Objects.connection thread-safe"  [Nate Wiger]
+
+== 1.4.2 (29 Aug 2018)
+
+* Merge pull request #227 from D-system/optimise_lock Optimise lock [Nate Wiger]
+
+* Merge pull request #228 from D-system/travis_ruby_2.5 Travis: test against ruby 2.5 [Nate Wiger]
+
+* Travis: test against ruby 2.5  [Thomas Brennetot]
+
+* Lock: update comment  [Thomas Brennetot]
+
+* Lock: add backward compatibility  [Thomas Brennetot]
+
+* Use SET with the NX and the expiration option in a single request  [Thomas Brennetot]
+
+* Merge pull request #218 from edwardbako/list_pushed_count Return count of lpush & rpush commands [Nate Wiger]
+
+* Merge pull request #220 from gammons/threadsafe Make Redis::Objects.connection thread-safe [Nate Wiger]
+
+* Make Redis::Objects.connection threadsafe  [Grant Ammons]
+
+* Return count of lpush & rpush commands  [Edward Bako]
+
+* Removed support for versions of Ruby < 2.2  [Nate Wiger]
+
+== 1.4.1 (Unreleased)
+
+* Buggy release that was removed
+
 == 1.4.0 (7 Dec 2017)
 
 * Bumped dependency to redis.rb 4.0 [Nate Wiger]
