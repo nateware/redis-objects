@@ -30,7 +30,7 @@ class Redis
               instance_variable_get(ivar_name) or
                 instance_variable_set(ivar_name,
                   Redis::Counter.new(
-                    redis_field_key(name), redis_field_redis(name), redis_options(name)
+                    redis_field_key(name, options), redis_field_redis(name), redis_options(name)
                   )
                 )
             end
