@@ -41,21 +41,6 @@ describe 'Connection tests' do
     obj.default_redis_value.clear
   end
 
-  it "should be thread-safe when setting Redis::Objects.redis connection" do
-    Redis::Objects.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 23)
-
-    thr = Thread.new do
-      Redis::Objects.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT, :db => 24)
-      Redis::Objects.redis.connection[:id].ends_with?("/24").should == true
-    end
-
-    Redis::Objects.redis.connection[:id].ends_with?("/23").should == true
-
-    thr.join
-
-    Redis::Objects.redis.connection[:id].ends_with?("/23").should == true
-  end
-
   it "should support mget" do
     class CustomConnectionObject
       include Redis::Objects
