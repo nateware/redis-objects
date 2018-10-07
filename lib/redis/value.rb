@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/base_object'
+require 'zlib'
 
 class Redis
   #
@@ -30,6 +31,30 @@ class Redis
       end
     end
     alias_method :get, :value
+
+    def marshal(value, *args)
+      if !value.nil? && options[:compress]
+        compress(super)
+      else
+        super
+      end
+    end
+
+    def unmarshal(value, *args)
+      if !value.nil? && options[:compress]
+        super(decompress(value), *args)
+      else
+        super
+      end
+    end
+
+    def decompress(value)
+      Zlib::Inflate.inflate(value)
+    end
+
+    def compress(value)
+      Zlib::Deflate.deflate(value)
+    end
 
     def inspect
       "#<Redis::Value #{value.inspect}>"
