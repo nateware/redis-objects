@@ -35,14 +35,15 @@ class Redis
     # that was specified when the lock was defined.
     def lock
       raise ArgumentError, 'Block not given' unless block_given?
-      expiration = generate_expiration
+      expiration_ms = generate_expiration
+      expiration_s  = expiration_ms / 1000.0
       end_time = nil
       try_until_timeout do
-        end_time = Time.now.to_i + expiration
+        end_time = Time.now.to_i + expiration_s
         # Set a NX record and use the Redis expiration mechanism.
         # Empty value because the presence of it is enough to lock
         # `px` only except an Integer in millisecond
-        break if redis.set(key, nil, px: expiration, nx: true)
+        break if redis.set(key, nil, px: expiration_ms, nx: true)
 
         # Backward compatibility code
         # TODO: remove at the next major release for performance
@@ -52,9 +53,10 @@ class Redis
           # Check it was not an empty string with `zero?` and
           # the expiration time is passed.
           if !old_expiration.zero? && old_expiration < Time.now.to_f
-            expiration = generate_expiration
-            end_time = Time.now.to_i + expiration
-            break if redis.set(key, nil, px: expiration)
+            expiration_ms = generate_expiration
+            expiration_s  = expiration_ms / 1000.0
+            end_time = Time.now.to_i + expiration_s
+            break if redis.set(key, nil, px: expiration_ms)
           end
         end
       end

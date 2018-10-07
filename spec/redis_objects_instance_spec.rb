@@ -648,7 +648,28 @@ describe Redis::Lock do
     end
 
     # lock value should still be set since the lock was held for more than the expiry
-    REDIS_HANDLE.get("test_lock").should.be.nil
+    REDIS_HANDLE.exists("test_lock").should.be.false
+  end
+
+  it "should manually delete the key if finished before expiration" do
+    lock = Redis::Lock.new(:test_lock, :expiration => 0.2)
+
+    lock.lock do
+      sleep 0.1
+    end
+
+    REDIS_HANDLE.exists("test_lock").should.be.false
+  end
+
+  it "should not manually delete the key if finished after expiration" do
+    lock = Redis::Lock.new(:test_lock, :expiration => 0.1)
+
+    lock.lock do
+      sleep 0.2 # expired
+      REDIS_HANDLE.set("test_lock", "foo")
+    end
+
+    REDIS_HANDLE.get("test_lock").should == "foo"
   end
 
   it "should respond to #to_json" do
