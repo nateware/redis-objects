@@ -303,11 +303,12 @@ class Redis
       at(-1)
     end
 
-    # The number of members in the set. Aliased as size. Redis: ZCARD
+    # The number of members in the set. Aliased as size or count. Redis: ZCARD
     def length
       redis.zcard(key)
     end
     alias_method :size, :length
+    alias_method :count, :length
 
     # The number of members within a range of scores. Redis: ZCOUNT
     def range_size(min, max)

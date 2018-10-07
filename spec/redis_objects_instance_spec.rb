@@ -1253,6 +1253,7 @@ describe Redis::SortedSet do
     @set.delete('c')
     @set.length.should == 4
     @set.size.should == 4
+    @set.count.should == 4
 
     @set.range_size(100, 120).should == 0
     @set.range_size(0, 100).should == 2
