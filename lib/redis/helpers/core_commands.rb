@@ -56,9 +56,14 @@ class Redis
         val.is_a?(Array) ? val.map{|v| unmarshal(v)} : val
       end
 
+      def serializer
+        options[:serializer] || Marshal
+      end
+
       def marshal(value, domarshal=false)
         if options[:marshal] || domarshal
-          Marshal.dump(value)
+          dump_args = options[:marshal_dump_args] || []
+          serializer.dump(value, *(dump_args.is_a?(Array) ? dump_args : [dump_args]))
         else
           value
         end
@@ -73,7 +78,8 @@ class Redis
           elsif !value.is_a?(String)
             value
           else
-            Marshal.load(value) 
+            load_args = options[:marshal_load_args] || []
+            serializer.load(value, *(load_args.is_a?(Array) ? load_args : [load_args]))
           end
         else
           value
