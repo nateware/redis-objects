@@ -1,12 +1,10 @@
-require File.dirname(__FILE__) + '/base_object'
+require File.dirname(__FILE__) + '/enumerable_object'
 
 class Redis
   #
   # Class representing a sorted set.
   #
-  class SortedSet < BaseObject
-    # require 'enumerator'
-    # include Enumerable
+  class SortedSet < EnumerableObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
