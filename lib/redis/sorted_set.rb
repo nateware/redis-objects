@@ -5,9 +5,6 @@ class Redis
   # Class representing a sorted set.
   #
   class SortedSet < EnumerableObject
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
     #    num_posts['Peter'] = 163

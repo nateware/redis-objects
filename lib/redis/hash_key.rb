@@ -5,9 +5,6 @@ class Redis
   # Class representing a Redis hash.
   #
   class HashKey < EnumerableObject
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
     def initialize(key, *args)
       super
       @options[:marshal_keys] ||= {}
@@ -91,11 +88,6 @@ class Redis
     # Returns true if dict is empty
     def empty?
       true if size == 0
-    end
-
-    # Clears the dict of all keys/values. Redis: DEL
-    def clear
-      redis.del(key)
     end
 
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET

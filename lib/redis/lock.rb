@@ -10,19 +10,13 @@ class Redis
   #
   class Lock < BaseObject
     class LockTimeout < StandardError; end #:nodoc:
+
     def initialize(key, *args)
       super(key, *args)
       @options[:timeout] ||= 5
       @options[:init] = false if @options[:init].nil? # default :init to false
       redis.setnx(key, @options[:start]) unless @options[:start] == 0 || @options[:init] === false
     end
-
-    # Clear the lock.  Should only be needed if there's a server crash
-    # or some other event that gets locks in a stuck state.
-    def clear
-      redis.del(key)
-    end
-    alias_method :delete, :clear
 
     def value
       nil

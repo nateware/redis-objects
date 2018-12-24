@@ -6,6 +6,7 @@ class Redis
         redis.exists key
       end
       
+      # Delete key. Redis: DEL
       def delete
         redis.del key
       end

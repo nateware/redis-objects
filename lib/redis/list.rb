@@ -6,9 +6,6 @@ class Redis
   # behave as much like Ruby arrays as possible.
   #
   class List < EnumerableObject
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
     # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)
       push(value) # marshal in push()

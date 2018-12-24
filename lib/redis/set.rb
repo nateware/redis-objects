@@ -5,9 +5,6 @@ class Redis
   # Class representing a set.
   #
   class Set < EnumerableObject
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
     # Works like add.  Can chain together: list << 'a' << 'b'
     def <<(value)
       add(value)
