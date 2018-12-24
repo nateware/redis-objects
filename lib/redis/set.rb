@@ -10,8 +10,6 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options
-
     # Works like add.  Can chain together: list << 'a' << 'b'
     def <<(value)
       add(value)

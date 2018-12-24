@@ -10,8 +10,6 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options
-
     # How to add values using a sorted set.  The key is the member, eg,
     # "Peter", and the value is the score, eg, 163.  So:
     #    num_posts['Peter'] = 163

@@ -12,7 +12,6 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
       @options[:start] ||= @options[:default] || 0

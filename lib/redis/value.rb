@@ -9,8 +9,6 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options
-
     def value=(val)
       allow_expiration do
         if val.nil?

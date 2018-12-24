@@ -11,8 +11,6 @@ class Redis
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
-    attr_reader :key, :options
-
     # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)
       push(value) # marshal in push()

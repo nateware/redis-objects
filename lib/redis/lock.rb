@@ -10,8 +10,6 @@ class Redis
   #
   class Lock < BaseObject
     class LockTimeout < StandardError; end #:nodoc:
-
-    attr_reader :key, :options
     def initialize(key, *args)
       super(key, *args)
       @options[:timeout] ||= 5
