@@ -1,12 +1,10 @@
-require File.dirname(__FILE__) + '/base_object'
+require File.dirname(__FILE__) + '/enumerable_object'
 
 class Redis
   #
   # Class representing a set.
   #
-  class Set < BaseObject
-    require 'enumerator'
-    include Enumerable
+  class Set < EnumerableObject
     require 'redis/helpers/core_commands'
     include Redis::Helpers::CoreCommands
 
@@ -72,12 +70,6 @@ class Redis
         end
       end
       res
-    end
-
-    # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
-    # so you can also use familiar methods like +collect+, +detect+, and so forth.
-    def each(&block)
-      members.each(&block)
     end
 
     # Return the intersection with another set.  Can pass it either another set
@@ -183,10 +175,6 @@ class Redis
 
     def to_s
       members.join(', ')
-    end
-
-    def as_json(*)
-      to_hash
     end
 
     private
