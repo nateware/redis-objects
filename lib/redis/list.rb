@@ -84,8 +84,7 @@ class Redis
 
     # Return all values in the list. Redis: LRANGE(0,-1)
     def values
-      vals = range(0, -1)
-      vals.nil? ? [] : vals
+      range(0, -1)
     end
     alias_method :get, :values
     alias_method :value, :values
