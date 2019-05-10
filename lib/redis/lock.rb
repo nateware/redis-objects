@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/base_object'
+require 'securerandom'
 
 class Redis
   #
@@ -10,6 +11,8 @@ class Redis
   #
   class Lock < BaseObject
     class LockTimeout < StandardError; end #:nodoc:
+
+    RELEASE_LOCK_SCRIPT = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end".freeze
 
     attr_reader :key, :options
     def initialize(key, *args)
@@ -38,12 +41,13 @@ class Redis
       expiration_ms = generate_expiration
       expiration_s  = expiration_ms / 1000.0
       end_time = nil
+      lock_id = SecureRandom.uuid
       try_until_timeout do
         end_time = Time.now.to_i + expiration_s
         # Set a NX record and use the Redis expiration mechanism.
         # Empty value because the presence of it is enough to lock
         # `px` only except an Integer in millisecond
-        break if redis.set(key, nil, px: expiration_ms, nx: true)
+        break if redis.set(key, lock_id, px: expiration_ms, nx: true)
 
         # Backward compatibility code
         # TODO: remove at the next major release for performance
@@ -56,21 +60,14 @@ class Redis
             expiration_ms = generate_expiration
             expiration_s  = expiration_ms / 1000.0
             end_time = Time.now.to_i + expiration_s
-            break if redis.set(key, nil, px: expiration_ms)
+            break if redis.set(key, lock_id, px: expiration_ms)
           end
         end
       end
       begin
         yield
       ensure
-        # We need to be careful when cleaning up the lock key.  If we took a really long
-        # time for some reason, and the lock expired, someone else may have it, and
-        # it's not safe for us to remove it.  Check how much time has passed since we
-        # wrote the lock key and only delete it if it hasn't expired (or we're not using
-        # lock expiration)
-        if @options[:expiration].nil? || end_time > Time.now.to_f
-          redis.del(key)
-        end
+        release_lock(key, lock_id, end_time)
       end
     end
 
@@ -92,6 +89,11 @@ class Redis
         end
       end
       raise LockTimeout, "Timeout on lock #{key} exceeded #{@options[:timeout]} sec"
+    end
+
+    def release_lock(key, lock_id, end_time)
+      return unless @options[:expiration].nil? || end_time > Time.now.to_f
+      redis.eval(RELEASE_LOCK_SCRIPT, [key], [lock_id])
     end
   end
 end
