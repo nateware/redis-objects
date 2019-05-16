@@ -173,8 +173,15 @@ class Redis
       def redis()         self.class.redis end
       def redis_objects() self.class.redis_objects end
 
-      def delete!
-        redis.del(redis_objects.keys.map { |k| send(k) }.reject(&:nil?).map { |obj| obj.key })
+      def redis_delete_objects
+        redis.del(redis_instance_keys)
+      end
+
+      def redis_instance_keys
+        redis_objects
+          .reject { |_, value| value[:global] }
+          .keys
+          .collect { |name| redis_field_key(name) }
       end
 
       def redis_options(name) #:nodoc:
