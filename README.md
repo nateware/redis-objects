@@ -562,6 +562,32 @@ If you want to expire one hour after setting the value. please use `lambda`.
 value :value_with_expireat, :expireat => lambda { Time.now + 1.hour }
 ~~~
 
+Custom serialization
+--------------------
+
+You can customize how values are serialized by setting `serializer: CustomSerializer`.
+The default is `Marshal` from the standard lib, but it can be anything that responds to `dump` and
+`load`. `JSON` and `YAML` are popular options.
+
+If you need to pass extra arguments to `dump` or `load`, you can set
+`marshal_dump_args: { foo: 'bar' }` and `marshal_load_args: { foo: 'bar' }` respectively.
+
+~~~ruby
+class CustomSerializer
+  def self.dump(value)
+    # custom code for serializing
+  end
+
+  def self.load(value)
+    # custom code for deserializing
+  end
+end
+
+@account = Account.create!(params[:account])
+@newest  = Redis::Value.new('custom_serializer', marshal: true, serializer: CustomSerializer)
+@newest.value = @account.attributes
+~~~
+
 Author
 =======
 Copyright (c) 2009-2013 [Nate Wiger](http://nateware.com).  All Rights Reserved.
