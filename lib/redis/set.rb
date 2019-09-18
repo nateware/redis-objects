@@ -20,8 +20,8 @@ class Redis
     end
 
     # Remove and return a random member.  Redis: SPOP
-    def pop
-      unmarshal redis.spop(key)
+    def pop(count = nil)
+      unmarshal redis.spop(key, count)
     end
 
     # return a random member.  Redis: SRANDMEMBER
