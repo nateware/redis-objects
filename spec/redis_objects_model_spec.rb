@@ -1009,8 +1009,15 @@ describe Redis::Objects do
   end
 
   it "should allow deleting the entire object" do
-    @roster.redis.keys.select { |key| key.match(/^roster:/)}.count.should > 0
-    @roster.delete!.should > 0
-    @roster.redis.keys.select { |key| key.match(/^roster:/)}.count.should == 0
+    (@roster.redis.keys & @roster.redis_instance_keys).count.should > 0
+    @roster.redis_delete_objects.should > 0
+    (@roster.redis.keys & @roster.redis_instance_keys).count.should == 0
+  end
+
+  it "should be able to return all instance keys" do
+    @roster.redis_instance_keys.include?('roster:1:player_stats').should == true
+    @roster.redis_instance_keys.include?('players:my_rank:user1').should == true
+    @roster.redis_instance_keys.include?('roster:1:player_stats').should == true
+    @roster.redis_instance_keys.include?('players:all_stats').should == false
   end
 end
