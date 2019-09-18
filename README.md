@@ -9,7 +9,7 @@ This is **not** an ORM. People that are wrapping ORM’s around Redis are missin
 The killer feature of Redis is that it allows you to perform _atomic_ operations
 on _individual_ data structures, like counters, lists, and sets.  The **atomic** part is HUGE.
 Using an ORM wrapper that retrieves a "record", updates values, then sends those values back,
-_removes_ the atomicity, cutting the nuts off the major advantage of Redis.  Just use MySQL, k?
+_removes_ the atomicity, and thus the major advantage of Redis.  Just use MySQL, k?
 
 This gem provides a Rubyish interface to Redis, by mapping [Redis data types](http://redis.io/commands)
 to Ruby objects, via a thin layer over the `redis` gem.  It offers several advantages
