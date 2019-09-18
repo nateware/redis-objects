@@ -1,5 +1,25 @@
 = Changelog for Redis::Objects
 
+== 1.5.0 (18 Sep 2019)
+
+* updated README on expireat  [Nate Wiger]
+
+* Add option for using a custom serializer [Tomás Rojas]
+
+* DRY up objects to enable custom prefixing when desired [Tomás Rojas]
+
+* Allow spop to return multiple members  [Evan Paul]
+
+* Rename #delete! to #redis_delete_objects [Mattias Pfeiffer]
+
+* Make deletion simpler with just 1 call to Redis [Mattias Pfeiffer]
+
+* Move `CoreCommands` inclusion to `BaseObject`  [Tomás Rojas]
+
+* Move `Enumerable` functionality to `EnumerableObject`  [Tomás Rojas]
+
+* Move `attr_reader`s to `Redis::BaseObject` [Tomás Rojas]
+
 == 1.4.3 (7 Oct 2018)
 
 * Merge pull request #235 from johnc219/fix/end-time-expiration Add expiration in seconds to obtain end_time [Nate Wiger]
