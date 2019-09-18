@@ -550,21 +550,16 @@ Use :expiration and :expireat options to set default expiration.
 
 ~~~ruby
 value :value_with_expiration, :expiration => 1.hour
-value :value_with_expireat, :expireat => Time.now + 1.hour
-~~~
-
-:warning: `expireat` is evaluated at class load time.
-In this example, it will be one hour after evaluating class, not after one hour after setting value.
-
-If you want to expire one hour after setting the value. please use `lambda`.
-
-~~~ruby
 value :value_with_expireat, :expireat => lambda { Time.now + 1.hour }
 ~~~
 
+:warning: In the above example, `expiration` is evaluated at class load time.
+In this example, it will be one hour after loading the class, not after one hour
+after setting a value. If you want to expire one hour after setting the value,
+please use `:expireat` with `lambda`.
+
 Custom serialization
 --------------------
-
 You can customize how values are serialized by setting `serializer: CustomSerializer`.
 The default is `Marshal` from the standard lib, but it can be anything that responds to `dump` and
 `load`. `JSON` and `YAML` are popular options.
@@ -590,6 +585,5 @@ end
 
 Author
 =======
-Copyright (c) 2009-2013 [Nate Wiger](http://nateware.com).  All Rights Reserved.
+Copyright (c) 2009-2019 [Nate Wiger](http://nateware.com).  All Rights Reserved.
 Released under the [Artistic License](http://www.opensource.org/licenses/artistic-license-2.0.php).
-
