@@ -1,6 +1,12 @@
+require 'redis/helpers/core_commands'
+
 class Redis
   # Defines base functionality for all redis-objects.
   class BaseObject
+    include Redis::Helpers::CoreCommands
+
+    attr_reader :key, :options
+
     def initialize(key, *args)
       @key     = key.is_a?(Array) ? key.flatten.join(':') : key
       @options = args.last.is_a?(Hash) ? args.pop : {}

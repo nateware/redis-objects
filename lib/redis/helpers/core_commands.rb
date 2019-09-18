@@ -6,6 +6,7 @@ class Redis
         redis.exists key
       end
       
+      # Delete key. Redis: DEL
       def delete
         redis.del key
       end
@@ -48,12 +49,6 @@ class Redis
 
       def move(dbindex)
         redis.move key, dbindex
-      end
-
-      def sort(options={})
-        options[:order] = "asc alpha" if options.keys.count == 0  # compat with Ruby
-        val = redis.sort(key, options)
-        val.is_a?(Array) ? val.map{|v| unmarshal(v)} : val
       end
 
       def marshal(value, domarshal=false)

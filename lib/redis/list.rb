@@ -1,18 +1,11 @@
-require File.dirname(__FILE__) + '/base_object'
+require File.dirname(__FILE__) + '/enumerable_object'
 
 class Redis
   #
   # Class representing a Redis list.  Instances of Redis::List are designed to
   # behave as much like Ruby arrays as possible.
   #
-  class List < BaseObject
-    require 'enumerator'
-    include Enumerable
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
-    attr_reader :key, :options
-
+  class List < EnumerableObject
     # Works like push.  Can chain together: list << 'a' << 'b'
     def <<(value)
       push(value) # marshal in push()
@@ -123,12 +116,6 @@ class Redis
       redis.lrem(key, count, marshal(name))  # weird api
     end
 
-    # Iterate through each member of the set.  Redis::Objects mixes in Enumerable,
-    # so you can also use familiar methods like +collect+, +detect+, and so forth.
-    def each(&block)
-      values.each(&block)
-    end
-
     # Return a range of values from +start_index+ to +end_index+.  Can also use
     # the familiar list[start,end] Ruby syntax. Redis: LRANGE
     def range(start_index, end_index)
@@ -168,10 +155,6 @@ class Redis
 
     def to_s
       values.join(', ')
-    end
-
-    def as_json(*)
-      to_hash
     end
   end
 end

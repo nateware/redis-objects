@@ -6,11 +6,6 @@ class Redis
   # Class representing a simple value.  You can use standard Ruby operations on it.
   #
   class Value < BaseObject
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
-    attr_reader :key, :options
-
     def value=(val)
       allow_expiration do
         if val.nil?

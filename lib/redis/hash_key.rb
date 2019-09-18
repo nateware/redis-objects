@@ -1,16 +1,10 @@
-require File.dirname(__FILE__) + '/base_object'
+require File.dirname(__FILE__) + '/enumerable_object'
 
 class Redis
   #
   # Class representing a Redis hash.
   #
-  class HashKey < BaseObject
-    require 'enumerator'
-    include Enumerable
-    require 'redis/helpers/core_commands'
-    include Redis::Helpers::CoreCommands
-
-    attr_reader :key, :options
+  class HashKey < EnumerableObject
     def initialize(key, *args)
       super
       @options[:marshal_keys] ||= {}
@@ -74,11 +68,6 @@ class Redis
     alias_method :clone, :all
     alias_method :value, :all
 
-    # Enumerate through all fields. Redis: HGETALL
-    def each(&block)
-      all.each(&block)
-    end
-
     # Enumerate through each keys. Redis: HKEYS
     def each_key(&block)
       keys.each(&block)
@@ -99,11 +88,6 @@ class Redis
     # Returns true if dict is empty
     def empty?
       true if size == 0
-    end
-
-    # Clears the dict of all keys/values. Redis: DEL
-    def clear
-      redis.del(key)
     end
 
     # Set keys in bulk, takes a hash of field/values {'field1' => 'val1'}. Redis: HMSET
@@ -182,10 +166,6 @@ class Redis
     # Decrement value by float at field. Redis: HINCRBYFLOAT
     def decrbyfloat(field, by=1.0)
       incrbyfloat(field, -by)
-    end
-
-    def as_json(*)
-      to_hash
     end
   end
 end
