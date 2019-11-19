@@ -144,6 +144,7 @@ Familiar Ruby array operations Just Work (TM):
 @team.on_base.shift
 @team.on_base.length  # 1
 @team.on_base.delete('player2')
+@team.on_base = ['player1', 'player2']  # ['player1', 'player2']
 ~~~
 
 Sets work too:
@@ -157,6 +158,15 @@ Sets work too:
   puts player
 end
 player = @team.outfielders.detect{|of| of == 'outfielder2'}
+@team.outfielders = ['outfielder1', 'outfielder3']  # ['outfielder1', 'outfielder3']
+~~~
+
+Hashes work too:
+
+~~~ruby
+@team.pitchers_faced['player1'] = 'pitcher2'
+@team.pitchers_faced['player2'] = 'pitcher1'
+@team.pitchers_faced = { 'player1' => 'pitcher2', 'player2' => 'pitcher1' }
 ~~~
 
 And you can do unions and intersections between objects (kinda cool):
