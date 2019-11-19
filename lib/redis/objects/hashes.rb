@@ -26,6 +26,15 @@ class Redis
                   )
                 )
             end
+
+            define_method(:"#{name}=") do |values|
+              hash_key = public_send(name)
+
+              redis.pipelined do
+                hash_key.clear
+                hash_key.bulk_set(values)
+              end
+            end
           end
 
           if options[:global]
