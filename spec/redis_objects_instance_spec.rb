@@ -505,15 +505,44 @@ describe Redis::Counter do
     @counter = Redis::Counter.new("spec/block_counter")
     @counter.should == 0
     @counter.increment(1)
-    # The block is never executed.
-    @updated =
-      @counter.increment(1) do |updated|
-        if updated == 2
-          'yep'
-        else
-          raise("test failed")
-        end
-      end
+
+    # successfully increments
+    @updated = @counter.increment(1) { |updated| updated == 2 ? 'yep' : nil }
+    @updated.should == 'yep'
+    @counter.should == 2
+
+    # fails to increment
+    @updated = @counter.increment(1) { |updated| updated == 2 ? 'yep' : nil }
+    @updated.should == nil
+    @counter.should == 2
+
+    # successfully increments by float
+    @updated = @counter.incrbyfloat(1.5) { |updated| updated == 3.5 ? 'yep' : nil }
+    @updated.should == 'yep'
+    @counter.should == 3.5
+
+    # fails to increment by float
+    @updated = @counter.incrbyfloat(2.5) { |updated| updated == 5 ? 'yep' : nil }
+    @updated.should == nil
+    @counter.should == 3.5
+
+    # fails to decrement by float
+    @updated = @counter.decrbyfloat(0.5) { |updated| updated == 5 ? 'yep' : nil }
+    @updated.should == nil
+    @counter.should == 3.5
+
+    # successfully decrements by float
+    @updated = @counter.decrbyfloat(0.5) { |updated| updated == 3 ? 'yep' : nil }
+    @updated.should == 'yep'
+    @counter.should == 3
+
+    # fails to decrement
+    @updated = @counter.decrement(1) { |updated| updated == 3 ? 'yep' : nil }
+    @updated.should == nil
+    @counter.should == 3
+
+    # successfully decrements
+    @updated = @counter.decrement(1) { |updated| updated == 2 ? 'yep' : nil }
     @updated.should == 'yep'
     @counter.should == 2
   end

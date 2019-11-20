@@ -102,7 +102,7 @@ class Redis
     def decrbyfloat(by=1.0, &block)
       allow_expiration do
         val = redis.incrbyfloat(key, -by).to_f
-        block_given? ? rewindable_block(:incrbyfloat, -by, val, &block) : val
+        block_given? ? rewindable_block(:incrbyfloat, by, val, &block) : val
       end
     end
 
