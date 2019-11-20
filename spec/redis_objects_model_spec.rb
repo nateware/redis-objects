@@ -162,6 +162,14 @@ describe Redis::Objects do
     @roster.redis.get(k).should == '1'
   end
 
+  it "should be able to directly assign value of hash" do
+    @roster.contact_information['John_Name'] = 'John Doe'
+    @roster.contact_information = { 'John_Phone' => '12345678', 'John_Address' => '321 LANE' }
+    @roster.contact_information['John_Phone'].should == '12345678'
+    @roster.contact_information['John_Address'].should == '321 LANE'
+    @roster.contact_information['John_Name'].should.be.nil
+  end
+
   it "should be able to get/set contact info" do
     @roster.contact_information['John_Phone'] = '123415352'
     @roster.contact_information['John_Address'] = '123 LANE'
@@ -485,6 +493,12 @@ describe Redis::Objects do
     @roster.starting_pitcher.should.be.nil
   end
 
+  it "should be able to directly assign value of list" do
+    @roster.player_stats << 'c'
+    @roster.player_stats = ['a', 'b']
+    @roster.player_stats.get.should == ['a', 'b']
+  end
+
   it "should handle lists of simple values" do
     @roster.player_stats.should.be.empty
     @roster.player_stats << 'a'
@@ -557,6 +571,14 @@ describe Redis::Objects do
     coll.should == ['a','a']
     @roster.player_stats.should == ['a','c','f','j','h','i','a']
     @roster.player_stats.get.should == ['a','c','f','j','h','i','a']
+  end
+
+  it "should be able to directly assign values of set" do
+    @roster.outfielders << 'c'
+    @roster.outfielders = ['a', 'b']
+    @roster.outfielders.member?('a').should.be.true
+    @roster.outfielders.member?('b').should.be.true
+    @roster.outfielders.member?('c').should.be.false
   end
 
   it "should handle sets of simple values" do
