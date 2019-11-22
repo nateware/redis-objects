@@ -26,6 +26,15 @@ class Redis
                   )
                 )
             end
+
+            define_method(:"#{name}=") do |values|
+              set = public_send(name)
+
+              redis.pipelined do
+                set.clear
+                set.merge(*values)
+              end
+            end
           end
 
           if options[:global]

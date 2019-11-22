@@ -89,7 +89,7 @@ class Redis
     # Redis uses separate API's to interact with integers vs floats.
     def decrbyfloat(by=1.0, &block)
       val = allow_expiration { redis.incrbyfloat(key, -by) }.to_f
-      block_given? ? rewindable_block(:incrbyfloat, -by, val, &block) : val
+      block_given? ? rewindable_block(:incrbyfloat, by, val, &block) : val
     end
 
     ##
