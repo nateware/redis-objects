@@ -16,9 +16,7 @@ class Redis
     # arguments to this are flipped; the member comes first rather than
     # the score, since the member is the unique item (not the score).
     def add(member, score)
-      allow_expiration do
-        redis.zadd(key, score, marshal(member))
-      end
+      allow_expiration { redis.zadd(key, score, marshal(member)) }
     end
 
     # Add a list of members and their corresponding value (or a hash mapping
@@ -27,7 +25,7 @@ class Redis
     # item (not the score).
     def merge(values)
       allow_expiration do
-        vals = values.map{|v,s| [s, marshal(v)] }
+        vals = values.map { |v, s| [s, marshal(v)] }
         redis.zadd(key, vals)
       end
     end
@@ -117,7 +115,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      redis.zrangebyscore(key, min, max, args).map{|v| unmarshal(v) }
+      redis.zrangebyscore(key, min, max, args).map { |v| unmarshal(v) }
     end
 
     # Returns all the elements in the sorted set at key with a score between max and min
@@ -153,9 +151,7 @@ class Redis
 
     # Delete the value from the set.  Redis: ZREM
     def delete(value)
-      allow_expiration do
-        redis.zrem(key, marshal(value))
-      end
+      allow_expiration { redis.zrem(key, marshal(value)) }
     end
 
     # Delete element if it matches block
@@ -173,18 +169,14 @@ class Redis
     # Increment the rank of that member atomically and return the new value. This
     # method is aliased as incr() for brevity. Redis: ZINCRBY
     def increment(member, by=1)
-      allow_expiration do
-        zincrby(member, by)
-      end
+      allow_expiration { zincrby(member, by) }.to_i
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
 
     # Convenience to calling increment() with a negative number.
     def decrement(member, by=1)
-      allow_expiration do
-        zincrby(member, -by)
-      end
+      allow_expiration { zincrby(member, -by) }.to_i
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -206,9 +198,8 @@ class Redis
 
       redis.multi do
         interstore(temp_key, *sets)
-        redis.expire(temp_key, 1)
-
         result = redis.zrange(temp_key, 0, -1)
+        redis.del(temp_key)
       end
 
       result.value
@@ -243,9 +234,8 @@ class Redis
 
       redis.multi do
         unionstore(temp_key, *sets)
-        redis.expire(temp_key, 1)
-
         result = redis.zrange(temp_key, 0, -1)
+        redis.del(temp_key)
       end
 
       result.value
@@ -254,7 +244,7 @@ class Redis
     alias_method :+, :union
 
     # Calculate the union and store it in Redis as +name+. Returns the number
-    # of elements in the stored union. Redis: SUNIONSTORE
+    # of elements in the stored union. Redis: ZUNIONSTORE
     def unionstore(name, *sets)
       allow_expiration do
         opts = sets.last.is_a?(Hash) ? sets.pop : {}
@@ -319,7 +309,7 @@ class Redis
     end
 
     def zincrby(member, by)
-      redis.zincrby(key, by, marshal(member)).to_i
+      redis.zincrby(key, by, marshal(member))
     end
   end
 end

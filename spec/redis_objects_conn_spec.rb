@@ -266,11 +266,23 @@ describe 'Connection tests' do
   it "should support pipelined changes" do
     list = Redis::List.new('pipelined/list')
     key = Redis::HashKey.new('pipelined/hash')
+    counter = Redis::Counter.new('pipelined/counter')
+    float_counter = Redis::Counter.new('pipelined/float_counter')
+
     Redis::Objects.redis.pipelined do
       key['foo'] = 'bar'
+      key.incrby('baz')
+      key.incrbyfloat('foobar')
       list.push 1, 2
+      counter.increment(2)
+      counter.decrement
+      float_counter.incrbyfloat(2.5)
+      float_counter.decrbyfloat
     end
-    key.all.should == { 'foo' => 'bar' }
+
+    key.all.should == { 'foo' => 'bar', 'baz' => '1', 'foobar' => '1' }
     list.values.should == %w[1 2]
+    counter.value.should == 1
+    float_counter.to_f.should == 1.5
   end
 end

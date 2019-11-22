@@ -22,18 +22,27 @@ class Redis
 
     def set_expiration
       if !@options[:expiration].nil?
-        redis.expire(@key, @options[:expiration]) if redis.ttl(@key) < 0
+        redis.expire(@key, @options[:expiration])
       elsif !@options[:expireat].nil?
         expireat = @options[:expireat]
         at = expireat.respond_to?(:call) ? expireat.call.to_i : expireat.to_i
-        redis.expireat(@key, at) if redis.ttl(@key) < 0
+        redis.expireat(@key, at)
       end
     end
 
-    def allow_expiration(&block)
-      result = block.call
-      set_expiration
-      result
+    def allow_expiration
+      expiration_set = false
+      result =
+        redis.multi do
+          yield
+          expiration_set = set_expiration
+        end
+      # Nested calls to multi/pipelined return `nil`,
+      # return value should be handled by outer call to multi/pipelined.
+      return if result.nil?
+
+      result.pop if expiration_set
+      result.size == 1 ? result.first : result
     end
 
     def to_json(*args)

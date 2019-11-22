@@ -14,9 +14,9 @@ class Redis
     # Add the specified value to the set only if it does not exist already.
     # Redis: SADD
     def add(value)
-      allow_expiration do
-        redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
-      end
+      return unless value.nil? || !Array(value).empty?
+
+      allow_expiration { redis.sadd(key, marshal(value)) }
     end
 
     # Remove and return a random member.  Redis: SPOP
@@ -32,15 +32,13 @@ class Redis
     # Adds the specified values to the set. Only works on redis > 2.4
     # Redis: SADD
     def merge(*values)
-      allow_expiration do
-        redis.sadd(key, values.flatten.map{|v| marshal(v)})
-      end
+      allow_expiration { redis.sadd(key, values.flatten.map { |v| marshal(v) }) }
     end
 
     # Return all members in the set.  Redis: SMEMBERS
     def members
       vals = redis.smembers(key)
-      vals.nil? ? [] : vals.map{|v| unmarshal(v) }
+      vals.nil? ? [] : vals.map { |v| unmarshal(v) }
     end
     alias_method :get, :members
     alias_method :value, :members

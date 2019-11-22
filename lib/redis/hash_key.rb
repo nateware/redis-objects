@@ -12,15 +12,13 @@ class Redis
 
     # Redis: HSET
     def store(field, value)
-      allow_expiration do
-        redis.hset(key, field, marshal(value, options[:marshal_keys][field]))
-      end
+      allow_expiration { redis.hset(key, field, marshal(value, options[:marshal_keys][field])) }
     end
     alias_method :[]=, :store
 
     # Redis: HGET
     def hget(field)
-      unmarshal redis.hget(key, field), options[:marshal_keys][field]
+      unmarshal(redis.hget(key, field), options[:marshal_keys][field])
     end
     alias_method :get, :hget
     alias_method :[],  :hget
@@ -134,14 +132,7 @@ class Redis
 
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, by=1)
-      allow_expiration do
-        ret = redis.hincrby(key, field, by)
-        unless ret.is_a? Array
-          ret.to_i
-        else
-          nil
-        end
-      end
+      allow_expiration { redis.hincrby(key, field, by) }.to_i
     end
     alias_method :incr, :incrby
 
@@ -153,14 +144,7 @@ class Redis
 
     # Increment value by float at field. Redis: HINCRBYFLOAT
     def incrbyfloat(field, by=1.0)
-      allow_expiration do
-        ret = redis.hincrbyfloat(key, field, by)
-        unless ret.is_a? Array
-          ret.to_f
-        else
-          nil
-        end
-      end
+      allow_expiration { redis.hincrbyfloat(key, field, by) }.to_f
     end
 
     # Decrement value by float at field. Redis: HINCRBYFLOAT

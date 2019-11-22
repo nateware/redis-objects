@@ -7,13 +7,9 @@ class Redis
   #
   class Value < BaseObject
     def value=(val)
-      allow_expiration do
-        if val.nil?
-          delete
-        else
-          redis.set key, marshal(val)
-        end
-      end
+      return delete if val.nil?
+
+      allow_expiration { redis.set key, marshal(val) }
     end
     alias_method :set, :value=
 
