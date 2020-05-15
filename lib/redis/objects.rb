@@ -46,8 +46,6 @@ class Redis
   #
   #
   module Objects
-    dir = File.expand_path(__FILE__.sub(/\.rb$/,''))
-
     autoload :Counters,   'redis/objects/counters'
     autoload :Lists,      'redis/objects/lists'
     autoload :Locks,      'redis/objects/locks'
