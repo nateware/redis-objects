@@ -112,7 +112,7 @@ class Redis
     alias_method :to_i, :value
 
     def nil?
-      !redis.exists(key)
+      !redis.exists?(key)
     end
 
     ##
