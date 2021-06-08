@@ -3,7 +3,7 @@ class Redis
     # These are core commands that all types share (rename, etc)
     module CoreCommands
       def exists?
-        redis.exists key
+        redis.exists? key
       end
 
       # Delete key. Redis: DEL
