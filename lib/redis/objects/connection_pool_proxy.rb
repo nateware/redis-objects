@@ -9,6 +9,7 @@ class Redis
       def method_missing(name, *args, &block)
         @pool.with { |x| x.send(name, *args, &block) }
       end
+      ruby2_keywords :method_missing if respond_to?(:ruby2_keywords, true)
 
       def respond_to_missing?(name, include_all = false)
         @pool.with { |x| x.respond_to?(name, include_all) }
