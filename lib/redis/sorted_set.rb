@@ -117,7 +117,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      redis.zrangebyscore(key, min, max, args).map{|v| unmarshal(v) }
+      redis.zrangebyscore(key, min, max, **args).map{|v| unmarshal(v) }
     end
 
     # Returns all the elements in the sorted set at key with a score between max and min
@@ -133,7 +133,7 @@ class Redis
                 options[:offset] || options[:limit] || options[:count]
       args[:with_scores] = true if options[:withscores] || options[:with_scores]
 
-      redis.zrevrangebyscore(key, max, min, args).map{|v| unmarshal(v) }
+      redis.zrevrangebyscore(key, max, min, **args).map{|v| unmarshal(v) }
     end
 
     # Remove all elements in the sorted set at key with rank between start and end. Start and end are
@@ -222,7 +222,7 @@ class Redis
     def interstore(name, *sets)
       allow_expiration do
         opts = sets.last.is_a?(Hash) ? sets.pop : {}
-        redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+        redis.zinterstore(key_from_object(name), keys_from_objects([self] + sets), **opts)
       end
     end
 
@@ -258,7 +258,7 @@ class Redis
     def unionstore(name, *sets)
       allow_expiration do
         opts = sets.last.is_a?(Hash) ? sets.pop : {}
-        redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), opts)
+        redis.zunionstore(key_from_object(name), keys_from_objects([self] + sets), **opts)
       end
     end
 

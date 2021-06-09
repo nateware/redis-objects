@@ -16,7 +16,7 @@ class Redis
     def sort(options={})
       return super() if block_given?
       options[:order] = "asc alpha" if options.keys.count == 0  # compat with Ruby
-      val = redis.sort(key, options)
+      val = redis.sort(key, **options)
       val.is_a?(Array) ? val.map{|v| unmarshal(v)} : val
     end
 
