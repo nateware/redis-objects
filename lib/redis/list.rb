@@ -13,32 +13,30 @@ class Redis
     end
 
     # Add a member before or after pivot in the list. Redis: LINSERT
-    def insert(where,pivot,value)
-      allow_expiration do
-        redis.linsert(key,where,marshal(pivot),marshal(value))
-      end
+    def insert(where, pivot, value)
+      allow_expiration { redis.linsert(key, where, marshal(pivot), marshal(value)) }
     end
 
     # Add a member to the end of the list. Redis: RPUSH
     def push(*values)
-      allow_expiration do
-        count = redis.rpush(key, values.map{|v| marshal(v) })
-        redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
-        count
-      end
+      count, =
+        allow_expiration do
+          redis.rpush(key, values.map { |v| marshal(v) })
+          redis.ltrim(key, -options[:maxlength], -1) if options[:maxlength]
+        end
+      count
     end
 
     # Remove a member from the end of the list. Redis: RPOP
     def pop(n=nil)
-      if n
-        result, = redis.multi do
+      return unmarshal(redis.rpop(key)) unless n
+
+      result, =
+        redis.multi do
           redis.lrange(key, -n, -1)
           redis.ltrim(key, 0, -n - 1)
         end
-        unmarshal result
-      else
-        unmarshal redis.rpop(key)
-      end
+      unmarshal(result)
     end
 
     # Atomically pops a value from one list, pushes to another and returns the
@@ -55,24 +53,26 @@ class Redis
 
     # Add a member to the start of the list. Redis: LPUSH
     def unshift(*values)
-      allow_expiration do
-        count = redis.lpush(key, values.map{|v| marshal(v) })
-        redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
-        count
-      end
+      count, =
+        allow_expiration do
+          redis.multi do
+            redis.lpush(key, values.map { |v| marshal(v) })
+            redis.ltrim(key, 0, options[:maxlength] - 1) if options[:maxlength]
+          end
+        end
+      count
     end
 
     # Remove a member from the start of the list. Redis: LPOP
     def shift(n=nil)
-      if n
-        result, = redis.multi do
+      return unmarshal(redis.lpop(key)) unless n
+
+      result, =
+        redis.multi do
           redis.lrange(key, 0, n - 1)
           redis.ltrim(key, n, -1)
         end
-        unmarshal result
-      else
-        unmarshal redis.lpop(key)
-      end
+      unmarshal(result)
     end
 
     # Return all values in the list. Redis: LRANGE(0,-1)
@@ -103,9 +103,7 @@ class Redis
 
     # Same functionality as Ruby arrays.
     def []=(index, value)
-      allow_expiration do
-        redis.lset(key, index, marshal(value))
-      end
+      allow_expiration { redis.lset(key, index, marshal(value)) }
     end
 
     # Delete the element(s) from the list that match name. If count is specified,

@@ -21,10 +21,8 @@ class Redis
     # with a parent and starting over (for example, restarting a game and
     # disconnecting all players).
     def reset(to=options[:start])
-      allow_expiration do
-        redis.set key, to.to_i
-        true  # hack for redis-rb regression
-      end
+      allow_expiration { redis.set(key, to.to_i) }
+      true  # hack for redis-rb regression
     end
 
     # Reset the counter to its starting value, and return previous value.
@@ -45,13 +43,9 @@ class Redis
     alias_method :get, :value
 
     def value=(val)
-      allow_expiration do
-        if val.nil?
-          delete
-        else
-          redis.set key, val
-        end
-      end
+      return delete if val.nil?
+
+      allow_expiration { redis.set(key, val) }
     end
     alias_method :set, :value=
 
@@ -66,10 +60,8 @@ class Redis
     # counter will automatically be decremented to its previous value.  This
     # method is aliased as incr() for brevity.
     def increment(by=1, &block)
-      allow_expiration do
-        val = redis.incrby(key, by).to_i
-        block_given? ? rewindable_block(:decrement, by, val, &block) : val
-      end
+      val = allow_expiration { redis.incrby(key, by) }.to_i
+      block_given? ? rewindable_block(:decrement, by, val, &block) : val
     end
     alias_method :incr, :increment
     alias_method :incrby, :increment
@@ -80,10 +72,8 @@ class Redis
     # counter will automatically be incremented to its previous value.  This
     # method is aliased as decr() for brevity.
     def decrement(by=1, &block)
-      allow_expiration do
-        val = redis.decrby(key, by).to_i
-        block_given? ? rewindable_block(:increment, by, val, &block) : val
-      end
+      val = allow_expiration { redis.decrby(key, by) }.to_i
+      block_given? ? rewindable_block(:increment, by, val, &block) : val
     end
     alias_method :decr, :decrement
     alias_method :decrby, :decrement
@@ -91,19 +81,15 @@ class Redis
     # Increment a floating point counter atomically.
     # Redis uses separate API's to interact with integers vs floats.
     def incrbyfloat(by=1.0, &block)
-      allow_expiration do
-        val = redis.incrbyfloat(key, by).to_f
-        block_given? ? rewindable_block(:decrbyfloat, by, val, &block) : val
-      end
+      val = allow_expiration { redis.incrbyfloat(key, by) }.to_f
+      block_given? ? rewindable_block(:decrbyfloat, by, val, &block) : val
     end
 
     # Decrement a floating point counter atomically.
     # Redis uses separate API's to interact with integers vs floats.
     def decrbyfloat(by=1.0, &block)
-      allow_expiration do
-        val = redis.incrbyfloat(key, -by).to_f
-        block_given? ? rewindable_block(:incrbyfloat, by, val, &block) : val
-      end
+      val = allow_expiration { redis.incrbyfloat(key, -by) }.to_f
+      block_given? ? rewindable_block(:incrbyfloat, by, val, &block) : val
     end
 
     ##
