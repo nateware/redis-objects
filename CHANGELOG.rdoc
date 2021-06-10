@@ -1,5 +1,22 @@
 = Changelog for Redis::Objects
 
+== 1.5.1 (10 Jul 2021)
+
+* Added double-splat for **options to account for Ruby 3.0  [Nate Wiger]
+
+* Fix ConnectionPoolProxy Ruby 3.0 compatibility Fix: https://github.com/nateware/redis-objects/pull/258 [Jean byroot Boussier]
+
+* Change Redis#exists to Redis#exists? * bump redis version to 4.2 [Alina Hryshchuk]
+
+* Local variable `dir` is not in use since 98226b95f35ef455f231692fdb679dfd61200a78 [Akira Matsuda]
+
+* Issue 249: when atomic decrbyfloat fails, increment back instead of decrementing again [Slava Samoliuk]
+
+* Update documentation to reflect ability to assign values directly [Artin Boghosian]
+
+* Allow directly assigning values of lists, hashes and sets [Artin Boghosian]
+
+
 == 1.5.0 (18 Sep 2019)
 
 * updated README on expireat  [Nate Wiger]
