@@ -2,6 +2,7 @@ Redis::Objects - Map Redis types directly to Ruby objects
 =========================================================
 
 [![Build Status](https://travis-ci.com/nateware/redis-objects.png)](https://travis-ci.com/nateware/redis-objects)
+[![Code Coverage](https://codecov.io/gh/nateware/redis-objects/branch/master/graph/badge.svg)](https://codecov.io/gh/nateware/redis-objects)
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MJF7JU5M7F8VL)
 
 This is **not** an ORM. People that are wrapping ORM’s around Redis are missing the point.
