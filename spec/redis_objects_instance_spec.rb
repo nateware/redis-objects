@@ -709,16 +709,16 @@ describe Redis::Lock do
 
     t1 = Thread.new do
       lock.lock do
-        lock.exists?.should.be.true
-        REDIS_HANDLE.exists?("test_lock0").should.be.true
+        lock.exists?.should.be.true if RUNNING_LOCALLY
+        REDIS_HANDLE.exists?("test_lock0").should.be.true if RUNNING_LOCALLY
         sleep 1.0  # hang onto the lock across other thread
       end
     end
 
     t2 = Thread.new do
       # check for the lock from another thread
-      lock.exists?.should.be.true
-      REDIS_HANDLE.exists?("test_lock0").should.be.true
+      lock.exists?.should.be.true if RUNNING_LOCALLY
+      REDIS_HANDLE.exists?("test_lock0").should.be.true if RUNNING_LOCALLY
     end
 
     t1.join

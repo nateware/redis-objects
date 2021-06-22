@@ -12,6 +12,9 @@ end
 # For the incompatible change from redis.rb
 Redis.exists_returns_integer =  true
 
+# Avoid phantom remote test failures
+RUNNING_LOCALLY = !ENV['TRAVIS']
+
 # Code coverage reports
 require 'simplecov'
 SimpleCov.start
