@@ -11,3 +11,6 @@ rvm:
   - 2.6.7
   - 2.7.3
   - 3.0.1
+
+# For code coverage reports
+script: bundle exec rake

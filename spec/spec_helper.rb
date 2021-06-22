@@ -9,6 +9,13 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+# Code coverage reports
+require 'simplecov'
+SimpleCov.start
+
+require 'codecov'
+SimpleCov.formatter = SimpleCov::Formatter::Codecov
+
 require "active_support/testing/time_helpers"
 include ActiveSupport::Testing::TimeHelpers
 
