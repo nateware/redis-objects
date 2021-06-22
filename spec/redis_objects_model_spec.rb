@@ -14,11 +14,15 @@ class Roster
   list :player_stats, :marshal => true
   set :outfielders, :marshal => true
   sorted_set :rank
+  lock :per_field
 
   # global class counters
   counter :total_players_online, :global => true
   set :all_players_online, :global => true
   value :last_player, :global => true
+  lock :nasty_global_mutex, :global => true  # remember it appends "_lock"
+  sorted_set :global_player_leaderboard, :global => true
+  hash_key :global_player_online_status, :global => true
 
   # custom keys
   counter :player_totals, :key => 'players/#{username}/total'
@@ -210,6 +214,21 @@ describe Redis::Objects do
      end
   end
 
+  it "should handle obtaining / clearing locks" do
+    # class-level calls for Admin reasons
+    # this is a really weird API and I wonder if anyone actually uses it
+    id = 88
+    roster = Roster.new(id)
+    roster.per_field_lock.exists?.should == false
+    Roster.obtain_lock(:per_field, id) do
+      roster.per_field_lock.exists?.should == true
+    end
+    roster.per_field_lock.exists?.should == false
+
+    Roster.clear_lock(:per_field, id)
+    roster.per_field_lock.exists?.should == false
+  end
+
   it "should support increment/decrement of counters" do
     @roster.available_slots.key.should == 'roster:1:available_slots'
     @roster.available_slots.should == 10
@@ -271,6 +290,26 @@ describe Redis::Objects do
     Roster.get_counter(:total_players_online).should == 0
     Roster.getset_counter(:total_players_online, nil, 111).should == 0
     Roster.get_counter(:total_players_online).should == 111
+  end
+
+  it "should support class-level manipulation of global objects" do
+    Roster.nasty_global_mutex_lock.exists?.should == false
+    Roster.nasty_global_mutex_lock do
+      Roster.nasty_global_mutex_lock.exists?.should == true
+    end
+    Roster.nasty_global_mutex_lock.exists?.should == false
+
+    Roster.global_player_leaderboard.exists?.should == false
+    Roster.global_player_leaderboard.add('nate', 22)
+    Roster.global_player_leaderboard.add('jim', 11)
+    Roster.global_player_leaderboard.rank('nate').should == 1 # 0-based
+
+    Roster.global_player_online_status.exists?.should == false
+    Roster.global_player_online_status['nate'] = 'online'
+    Roster.global_player_online_status['jeff'] = 'offline'
+    Roster.global_player_online_status['nate'].should == 'online'
+    Roster.global_player_online_status['jeff'].should == 'offline'
+    Roster.global_player_online_status['bobby'].should.be.nil
   end
 
   it "should take an atomic block for increment/decrement" do
@@ -430,6 +469,13 @@ describe Redis::Objects do
     rescue => error
     end
     error.should.be.kind_of(NoMethodError)
+
+    error = nil
+    begin
+      Roster.increment_counter(:available_slots, nil)
+    rescue => error
+    end
+    error.should.be.kind_of(Redis::Objects::MissingID)
 
     error = nil
     begin
@@ -1041,5 +1087,11 @@ describe Redis::Objects do
     @roster.redis_instance_keys.include?('players:my_rank:user1').should == true
     @roster.redis_instance_keys.include?('roster:1:player_stats').should == true
     @roster.redis_instance_keys.include?('players:all_stats').should == false
+  end
+
+  it "should handle per-class connection handles" do
+    redis = Roster.redis
+    Roster.redis = redis
+    Roster.redis.should == redis
   end
 end

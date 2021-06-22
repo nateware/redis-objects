@@ -9,6 +9,9 @@ if $0 =~ /\brspec$/
   raise "\n===\nThese tests are in bacon, not rspec.  Try: bacon #{ARGV * ' '}\n===\n"
 end
 
+# For the incompatible change from redis.rb
+Redis.exists_returns_integer =  true
+
 # Code coverage reports
 require 'simplecov'
 SimpleCov.start

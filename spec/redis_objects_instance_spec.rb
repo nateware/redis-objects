@@ -19,6 +19,21 @@ describe Redis::Value do
     @value.value.should == false
   end
 
+  it "should handle simple values" do
+    @value.should == nil
+    @value.value = 'Trevor Hoffman'
+    @value.should == 'Trevor Hoffman'
+    @value.get.should == 'Trevor Hoffman'
+    @value.exists?.should == true
+    @value.exists.should == 1
+    @value.del.should == 1
+    @value.should.be.nil
+    @value.exists?.should == false
+    @value.exists.should == 0
+    @value.value = 42
+    @value.value.should == '42'
+  end
+
   it "should compress non marshaled values" do
     @value = Redis::Value.new('spec/value', compress: true)
     @value.value = 'Trevor Hoffman'
@@ -39,17 +54,8 @@ describe Redis::Value do
     @value.value.should == nil
     @value.value = ''
     @value.value.should == ''
-  end
-
-  it "should handle simple values" do
-    @value.should == nil
-    @value.value = 'Trevor Hoffman'
-    @value.should == 'Trevor Hoffman'
-    @value.get.should == 'Trevor Hoffman'
-    @value.del.should == 1
-    @value.should.be.nil
-    @value.value = 42
-    @value.value.should == '42'
+    @value.delete
+    @value.value.should.be.nil
   end
 
   it "should handle complex marshaled values" do
@@ -88,7 +94,7 @@ describe Redis::Value do
     marshalled_string = Marshal.dump({json: 'marshal'})
     @value = Redis::Value.new('spec/marshal', :default => marshalled_string, :marshal => true)
     @value.value.should == marshalled_string
-    @value.clear
+    @value.delete
   end
 
   it "should support renaming values" do
@@ -499,6 +505,7 @@ describe Redis::Counter do
     @counter.incrbyfloat 2.0e2
     @counter.to_f.should == 5214.31
     @counter.clear
+    @counter.should.be.nil
   end
 
   it "should support an atomic block" do
@@ -545,6 +552,9 @@ describe Redis::Counter do
     @updated = @counter.decrement(1) { |updated| updated == 2 ? 'yep' : nil }
     @updated.should == 'yep'
     @counter.should == 2
+
+    @counter.value = nil
+    @counter.should == 0
   end
 
   it "should support #to_json" do
@@ -644,7 +654,7 @@ describe Redis::Lock do
     REDIS_HANDLE.get("test_lock").should.be.nil
   end
 
-  it "should not let non-expired locks be gettable" do
+  it "should not let blocks execute if they timeout" do
     expiry = 15
     lock = Redis::Lock.new(:test_lock, :expiration => expiry, :timeout => 0.1)
 
@@ -669,19 +679,68 @@ describe Redis::Lock do
     REDIS_HANDLE.get("test_lock").should.not.be.nil
   end
 
+  it "should handle a timeout of 0" do
+    expiry = 15
+    lock = Redis::Lock.new(:test_lock, :timeout => 0)
+
+    # create a fake lock
+    REDIS_HANDLE.set("test_lock", (Time.now + expiry).to_f)
+
+    gotit = false
+    error = nil
+    begin
+      lock.lock do
+        gotit = true
+      end
+    rescue => error
+    end
+
+    error.should.be.kind_of(Redis::Lock::LockTimeout)
+
+    # should not have the lock
+    gotit.should.not.be.true
+
+    # lock value should still be set
+    REDIS_HANDLE.get("test_lock").should.not.be.nil
+  end
+
+  it "should properly keep the lock across threads" do
+    lock = Redis::Lock.new(:test_lock0)
+
+    t1 = Thread.new do
+      lock.lock do
+        lock.exists?.should.be.true
+        REDIS_HANDLE.exists?("test_lock0").should.be.true
+        sleep 0.3  # hand onto the lock
+      end
+    end
+
+    t2 = Thread.new do
+      # check for the lock from another thread
+      lock.exists?.should.be.true
+      REDIS_HANDLE.exists?("test_lock0").should.be.true
+    end
+
+    t1.join
+    t2.join
+
+    # lock value should not be set since the lock was held for more than the expiry
+    lock.exists?.should.be.false
+    REDIS_HANDLE.exists?("test_lock0").should.be.false
+  end
+
   it "Redis should remove the key if lock is held past expiration" do
-    lock = Redis::Lock.new(:test_lock, :expiration => 0.1)
+    lock = Redis::Lock.new(:test_lock1, :expiration => 0.1)
 
     lock.lock do
-      REDIS_HANDLE.exists("test_lock").should.be.true
-      sleep 0.3
-      # technically undefined behavior because we don't have a BG thread
-      # running and deleting lock keys - that is only triggered on block exit
-      #REDIS_HANDLE.exists("test_lock").should.be.false
+      lock.exists?.should.be.true
+      REDIS_HANDLE.exists?("test_lock1").should.be.true
+      sleep 0.3  # hang onto the lock > expiry
     end
 
     # lock value should not be set since the lock was held for more than the expiry
-    REDIS_HANDLE.exists("test_lock").should.be.false
+    lock.exists?.should.be.false
+    REDIS_HANDLE.exists?("test_lock1").should.be.false
   end
 
 
@@ -689,9 +748,9 @@ describe Redis::Lock do
     lock = Redis::Lock.new(:test_lock2, :expiration => 0.1)
 
     lock.lock do
-      REDIS_HANDLE.exists("test_lock2").should.be.true
+      REDIS_HANDLE.exists?("test_lock2").should.be.true
       sleep 0.3 # expired, key is deleted
-      REDIS_HANDLE.exists("test_lock2").should.be.false
+      REDIS_HANDLE.exists?("test_lock2").should.be.false
       REDIS_HANDLE.set("test_lock2", "foo") # this is no longer a lock key, name is a coincidence
     end
 
@@ -699,17 +758,17 @@ describe Redis::Lock do
   end
 
   it "should manually delete the key if finished before expiration" do
-    lock = Redis::Lock.new(:test_lock3, :expiration => 0.5)
+    lock = Redis::Lock.new(:test_lock3, :expiration => 1.0)
 
     lock.lock do
-      REDIS_HANDLE.exists("test_lock3").should.be.true
+      REDIS_HANDLE.exists?("test_lock3").should.be.true
       sleep 0.1
-      REDIS_HANDLE.exists("test_lock3").should.be.true
+      REDIS_HANDLE.exists?("test_lock3").should.be.true
     end
 
-    # should delete the key because the lock block is done, regardless of time
+    # should delete the key because the lock block is done, regardless of expiry
     # for some strange reason, I have seen this test fail randomly, which is worrisome.
-    #REDIS_HANDLE.exists("test_lock3").should.be.false
+    REDIS_HANDLE.exists?("test_lock3").should.be.false
   end
 
 
@@ -929,6 +988,13 @@ describe Redis::HashKey do
     hsh['foo'].should == 'bar'
   end
 
+  it "should return multiple items via bulk_values" do
+    @hash['taco'] = 42
+    @hash['burrito'] = 99
+    res = @hash.bulk_values('taco', 'burrito')
+    res.should == ['42', '99']  # hashes don't convert
+  end
+
   it "should increment field" do
     @hash.incr('counter')
     @hash.incr('counter')
@@ -1036,7 +1102,9 @@ describe Redis::Set do
 
   it "should handle sets of simple values" do
     @set.should.be.empty
-    @set << 'a' << 'a' << 'a'
+    @set << 'a'
+    @set.randmember.should == 'a'
+    @set << 'a' << 'a'
     @set.should == ['a']
     @set.to_s.should == 'a'
     @set.get.should == ['a']
@@ -1077,11 +1145,13 @@ describe Redis::Set do
     coll = @set.select{|st| st == 'c'}
     coll.should == ['c']
     @set.sort.should == ['a','b','c']
+    @set.randmember.should.not == 'd'
     @set.delete_if{|m| m == 'c'}
     @set.sort.should == ['a','b']
 
     @set << nil
     @set.include?("").should.be.true
+    @set.sort.should == ['','a','b']
   end
 
   it "should handle empty array adds" do
@@ -1197,6 +1267,12 @@ describe Redis::Set do
     @set_1.value.should == ['a']
   end
 
+  it "should support moving between sets" do
+    @set_1 << 'X' << 'Y' << 'Z'
+    @set_1.move('X', @set_2)
+    @set_2.should == ['X']
+  end
+
   it "should respond to #to_json" do
     @set_1 << 'a'
     JSON.parse(@set_1.to_json)['value'].should == ['a']
@@ -1296,6 +1372,9 @@ describe Redis::SortedSet do
     @set.to_s.should == 'a, b'
     @set.should == ['a','b']
     @set.members.should == ['a','b']
+    @set.member?('a').should == true
+    @set.member?('b').should == true
+    @set.member?('c').should == false
     @set['d'] = 0
 
     @set.rangebyscore(0, 4).should == ['d','a']
@@ -1345,6 +1424,10 @@ describe Redis::SortedSet do
 
     @set.delete_if{|m| m == 'b'}
     @set.size.should == 3
+
+    # this is destructive so must come last
+    res = @set.remrangebyrank(0, 2)
+    res.should == 3
   end
 
   it "should handle inserting multiple values at once" do

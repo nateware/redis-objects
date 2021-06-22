@@ -123,24 +123,20 @@ class Redis
       hsh
     end
 
-    # Get values in bulk, takes an array of keys as arguments.
+    # Get values in bulk, takes an array of fields as arguments.
     # Values are returned in a collection in the same order than their keys in *keys Redis: HMGET
-    def bulk_values(*keys)
-      get_keys = *keys.flatten
-      return [] if get_keys.empty?
-      res = redis.hmget(key, get_keys)
-      get_keys.inject([]){|collection, k| collection << unmarshal(res.shift, options[:marshal_keys][k])}
+    def bulk_values(*fields)
+      get_fields = *fields.flatten
+      return [] if get_fields.empty?
+      res = redis.hmget(key, get_fields)
+      get_fields.collect{|k| unmarshal(res.shift, options[:marshal_keys][k])}
     end
 
     # Increment value by integer at field. Redis: HINCRBY
     def incrby(field, by=1)
       allow_expiration do
         ret = redis.hincrby(key, field, by)
-        unless ret.is_a? Array
-          ret.to_i
-        else
-          nil
-        end
+        ret.to_i
       end
     end
     alias_method :incr, :incrby
@@ -155,11 +151,7 @@ class Redis
     def incrbyfloat(field, by=1.0)
       allow_expiration do
         ret = redis.hincrbyfloat(key, field, by)
-        unless ret.is_a? Array
-          ret.to_f
-        else
-          nil
-        end
+        ret.to_f
       end
     end
 

@@ -9,3 +9,4 @@ spec/redis.pid
 dump.rdb
 Gemfile.lock
 redis-objects-*.gem
+coverage/
