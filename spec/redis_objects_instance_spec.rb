@@ -711,7 +711,7 @@ describe Redis::Lock do
       lock.lock do
         lock.exists?.should.be.true
         REDIS_HANDLE.exists?("test_lock0").should.be.true
-        sleep 0.3  # hand onto the lock
+        sleep 1.0  # hang onto the lock across other thread
       end
     end
 
@@ -735,7 +735,7 @@ describe Redis::Lock do
     lock.lock do
       lock.exists?.should.be.true
       REDIS_HANDLE.exists?("test_lock1").should.be.true
-      sleep 0.3  # hang onto the lock > expiry
+      sleep 1.0  # hang onto the lock > expiry
     end
 
     # lock value should not be set since the lock was held for more than the expiry
@@ -749,7 +749,7 @@ describe Redis::Lock do
 
     lock.lock do
       REDIS_HANDLE.exists?("test_lock2").should.be.true
-      sleep 0.3 # expired, key is deleted
+      sleep 1.0 # expired, key is deleted
       REDIS_HANDLE.exists?("test_lock2").should.be.false
       REDIS_HANDLE.set("test_lock2", "foo") # this is no longer a lock key, name is a coincidence
     end
@@ -758,7 +758,7 @@ describe Redis::Lock do
   end
 
   it "should manually delete the key if finished before expiration" do
-    lock = Redis::Lock.new(:test_lock3, :expiration => 1.0)
+    lock = Redis::Lock.new(:test_lock3, :expiration => 10.0)
 
     lock.lock do
       REDIS_HANDLE.exists?("test_lock3").should.be.true
