@@ -33,5 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sqlite3"
 
   # Code coverage
-  spec.add_development_dependency "codecov"
+  spec.add_development_dependency "simplecov-cobertura"
 end

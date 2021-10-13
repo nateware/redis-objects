@@ -19,8 +19,8 @@ RUNNING_LOCALLY = !ENV['TRAVIS']
 require 'simplecov'
 SimpleCov.start
 
-require 'codecov'
-SimpleCov.formatter = SimpleCov::Formatter::Codecov
+require 'simplecov-cobertura'
+SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 
 require "active_support/testing/time_helpers"
 include ActiveSupport::Testing::TimeHelpers
