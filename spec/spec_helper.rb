@@ -22,6 +22,8 @@ SimpleCov.start
 require 'simplecov-cobertura'
 SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 
+#require "active_support/xml_mini"
+require "active_support"
 require "active_support/testing/time_helpers"
 include ActiveSupport::Testing::TimeHelpers
 
@@ -82,8 +84,6 @@ end
 
 # Grab a global handle
 REDIS_HANDLE = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-#$redis = REDIS_HANDLE
-Redis.current = REDIS_HANDLE
 
 SORT_ORDER = {:order => 'desc alpha'}
 SORT_LIMIT = {:limit => [2, 2]}

@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Only fix this one version or else tests break
-  spec.add_dependency "redis", "~> 4.2"
+  spec.add_dependency "redis", "< 4.6"
 
   # Ignore gemspec warnings on these.  Trying to fix them to versions breaks TravisCI
   spec.add_development_dependency "bundler"
@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
 
   # Compatibility testing
   spec.add_development_dependency "redis-namespace"
+  spec.add_development_dependency "activesupport"
   spec.add_development_dependency "activerecord"
   spec.add_development_dependency "sqlite3"
 

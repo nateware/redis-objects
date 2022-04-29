@@ -4,7 +4,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 # tests whether autoload functionality works correctly; had issues previously
 
 require 'redis/objects'
-# $redis used automatically
+Redis::Objects.redis = REDIS_HANDLE
 
 describe 'Redis::Objects' do
   it "should autoload everything" do

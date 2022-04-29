@@ -10,3 +10,4 @@ dump.rdb
 Gemfile.lock
 redis-objects-*.gem
 coverage/
+.DS_Store

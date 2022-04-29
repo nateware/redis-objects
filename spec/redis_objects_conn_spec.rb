@@ -5,6 +5,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/objects'
 require 'connection_pool'
+Redis::Objects.redis = REDIS_HANDLE
 
 BAD_REDIS = "totally bad bogus redis handle"
 
@@ -95,13 +96,13 @@ describe 'Connection tests' do
   end
 
   it "should support local handles with a vanilla redis connection" do
-    Redis.current = nil  # reset from other tests
+    # Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
     @redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
 
     # Redis.current is lazily auto-populated to touch 6379
     # This why we choose the weird 9212 port to avoid
-    Redis.current.inspect.should == Redis.new.inspect
+    # Redis.current.inspect.should == Redis.new.inspect
     Redis::Objects.redis.inspect.should == Redis.new.inspect
 
     v = Redis::Value.new('conn/value', @redis_handle)
@@ -140,13 +141,13 @@ describe 'Connection tests' do
   end
 
   it "should support local handles with a connection_pool" do
-    Redis.current = nil  # reset from other tests
+    # Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
     @redis_handle = ConnectionPool.new { Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
 
     # Redis.current is lazily auto-populated to touch 6379
     # This why we choose the weird 9212 port to avoid
-    Redis.current.inspect.should == Redis.new.inspect
+    # Redis.current.inspect.should == Redis.new.inspect
     Redis::Objects.redis.inspect.should == Redis.new.inspect
 
     v = Redis::Value.new('conn/value', @redis_handle)
@@ -184,24 +185,19 @@ describe 'Connection tests' do
     c.decr(1)
   end
 
-  it "should support Redis.current" do
-    Redis.current = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-
-    Redis::Value.new('conn/value').should == 'yay'
-    Redis::HashKey.new('conn/hash').keys.should == ['k']
-    Redis::List.new('conn/list').sort.should  == ['3', '4', '5']
-    Redis::Set.new('conn/set').sort.should    == ['5', '6', '7']
-    Redis::SortedSet.new('conn/zset').should  == ['d', 'b', 'a', 'c']
-    Redis::Counter.new('conn/counter').should == 2
+  it "should properly support fallback handle variables" do
+    # Redis.current is lazily auto-populated to touch 6379
+    # This why we choose the weird 9212 port to avoid
+    old_redis = $redis
+    $redis = BAD_REDIS
+    Redis::Objects.redis.should == BAD_REDIS
+    $redis = old_redis
   end
 
   it "should support Redis::Objects.redis= with a connection_pool" do
+    # reset redis
     @redis_handle = ConnectionPool.new { Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
-
-    # Redis.current is lazily auto-populated to touch 6379
-    # This why we choose the weird 9212 port to avoid
-    Redis.current = BAD_REDIS
-    Redis::Objects.redis.should == BAD_REDIS
+    Redis::Objects.redis = @redis_handle
 
     # This set of tests sucks, it fucks up the per-data-type handles
     # because Redis.current is then set to a BS value, and the lazy
@@ -229,13 +225,8 @@ describe 'Connection tests' do
 
   it "should support Redis::Objects.redis= with a vanilla redis connection" do
     # reset redis
-    Redis::Objects.redis = nil
     @redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-
-    # Redis.current is lazily auto-populated to touch 6379
-    # This why we choose the weird 9212 port to avoid
-    Redis.current = BAD_REDIS
-    Redis::Objects.redis.should == BAD_REDIS
+    Redis::Objects.redis = @redis_handle
 
     # This set of tests sucks, it fucks up the per-data-type handles
     # because Redis.current is then set to a BS value, and the lazy
@@ -260,7 +251,7 @@ describe 'Connection tests' do
     Redis::Counter.new('conn/counter').should == 2
 
     # Fix for future tests
-    Redis.current = @redis_handle
+    # Redis.current = @redis_handle
   end
 
   it "should support pipelined changes" do

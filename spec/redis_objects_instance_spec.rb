@@ -2,6 +2,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 require 'redis/objects'
+Redis::Objects.redis = REDIS_HANDLE
 
 describe Redis::Value do
   before do
