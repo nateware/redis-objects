@@ -1,5 +1,10 @@
 = Changelog for Redis::Objects
 
+== 1.6.0 (29 Apr 2022)
+
+* Upgrade version to 1.6.0 due to redis-rb changes to Redis.current [Nate Wiger]
+
+
 == 1.5.1 (10 Jul 2021)
 
 * Added double-splat for **options to account for Ruby 3.0  [Nate Wiger]
