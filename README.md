@@ -564,10 +564,10 @@ value :value_with_expiration, :expiration => 1.hour
 value :value_with_expireat, :expireat => lambda { Time.now + 1.hour }
 ~~~
 
-:warning: In the above example, `expiration` is evaluated at class load time.
-In this example, it will be one hour after loading the class, not after one hour
-after setting a value. If you want to expire one hour after setting the value,
-please use `:expireat` with `lambda`.
+:warning: `expireat` is evaluated at class load time.
+If set to a value such as `Time.now + 1.hour`, it will be one hour after loading
+the class, not after one hour after setting a value. If you want to expire one
+hour after setting the value, please use `:expireat` with `lambda`.
 
 Custom serialization
 --------------------
