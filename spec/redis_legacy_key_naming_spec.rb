@@ -256,25 +256,6 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj2.redis_value2.should.be.kind_of(Redis::Value)
     obj2.redis_value.key.should == 'dynamic_class2:1:redis_value'
     obj2.redis_value2.key.should == 'dynamic_class2:1:redis_value2'
-  end
 
-  it 'issues a warning if a key name change is detected' do
-    module Nested
-      class LevelNine
-        include Redis::Objects
-        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-
-        def id
-          1
-        end
-
-        value :redis_value
-      end
-    end
-
-    obj = Nested::LevelNine.new
-    val = SecureRandom.hex(10)
-    obj.redis_value = val
-    obj.redis_value.should == val
   end
 end
