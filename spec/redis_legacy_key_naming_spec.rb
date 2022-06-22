@@ -38,6 +38,7 @@ describe 'Legacy redis key prefix naming compatibility' do
     module Nested
       class NamingOne
         include Redis::Objects
+        self.redis_silence_warnings = true
   
         def id
           1
@@ -54,6 +55,7 @@ describe 'Legacy redis key prefix naming compatibility' do
       class NamingTwo
         include Redis::Objects
         self.redis_legacy_naming = true
+        self.redis_silence_warnings = true
   
         def id
           1
@@ -71,6 +73,7 @@ describe 'Legacy redis key prefix naming compatibility' do
       module Further
         class NamingThree
           include Redis::Objects
+          self.redis_silence_warnings = true
     
           def id
             1
@@ -115,6 +118,7 @@ describe 'Legacy redis key prefix naming compatibility' do
         class NamingFive
           include Redis::Objects
           self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+          self.redis_silence_warnings = true
     
           def id
             1
@@ -141,6 +145,7 @@ describe 'Legacy redis key prefix naming compatibility' do
         class Five
           include Redis::Objects
           self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+          self.redis_silence_warnings = true
     
           def id
             1
@@ -166,6 +171,7 @@ describe 'Legacy redis key prefix naming compatibility' do
         class NamingFive
           include Redis::Objects
           self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+          self.redis_silence_warnings = true
     
           def id
             1
@@ -183,5 +189,73 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj.redis_value.should == val
     obj.redis_value.key.should == 'nested__level_further__naming_five:1:redis_value'
     obj.redis.get('nested__level_further__naming_five:1:redis_value').should == val
+  end
+
+  it 'handles dynamically created classes correctly' do
+    module Nested
+      class LevelSix
+        include Redis::Objects
+        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+        self.redis_silence_warnings = true
+
+        def id
+          1
+        end
+
+        value :redis_value
+      end
+    end
+
+    obj = Nested::LevelSix.new
+    obj.class.redis_prefix.should == 'nested__level_six'
+    val = SecureRandom.hex(10)
+    obj.redis_value = val
+    obj.redis_value.should == val
+    obj.redis_value.key.should == 'nested__level_six:1:redis_value'
+    obj.redis.get('nested__level_six:1:redis_value').should == val
+
+    DynamicClass = Class.new(Nested::LevelSix)
+    DynamicClass.value :redis_value2
+    obj2 = DynamicClass.new
+    DynamicClass.redis_prefix.should == 'dynamic_class'
+    obj2.redis_value.should.be.kind_of(Redis::Value)
+    obj2.redis_value2.should.be.kind_of(Redis::Value)
+    obj2.redis_value.key.should == 'dynamic_class:1:redis_value'
+    obj2.redis_value2.key.should == 'dynamic_class:1:redis_value2'
+
+  end
+
+  it 'handles dynamically created classes correctly in legacy mode' do
+    module Nested
+      class LevelSeven
+        include Redis::Objects
+        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+        self.redis_legacy_naming = true
+
+        def id
+          1
+        end
+
+        value :redis_value
+      end
+    end
+
+    obj = Nested::LevelSeven.new
+    obj.class.redis_prefix.should == 'level_seven'
+    val = SecureRandom.hex(10)
+    obj.redis_value = val
+    obj.redis_value.should == val
+    obj.redis_value.key.should == 'level_seven:1:redis_value'
+    obj.redis.get('level_seven:1:redis_value').should == val
+
+    DynamicClass2 = Class.new(Nested::LevelSeven)
+    DynamicClass2.value :redis_value2
+    obj2 = DynamicClass2.new
+    DynamicClass2.redis_prefix.should == 'dynamic_class2'
+    obj2.redis_value.should.be.kind_of(Redis::Value)
+    obj2.redis_value2.should.be.kind_of(Redis::Value)
+    obj2.redis_value.key.should == 'dynamic_class2:1:redis_value'
+    obj2.redis_value2.key.should == 'dynamic_class2:1:redis_value2'
+
   end
 end

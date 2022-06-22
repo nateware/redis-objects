@@ -966,9 +966,13 @@ describe Redis::Objects do
   end
 
   it "should pick up class methods from superclass automatically" do
+    Roster.redis_prefix.should == 'roster'
     CounterRoster = Class.new(Roster)
+    CounterRoster.redis_prefix.should == 'counter_roster'
     CounterRoster.counter :extended_counter
     extended_roster = CounterRoster.new
+    Roster.redis_prefix.should == 'roster'
+    extended_roster.class.redis_prefix.should == 'counter_roster'
     extended_roster.basic.should.be.kind_of(Redis::Counter)
     extended_roster.extended_counter.should.be.kind_of(Redis::Counter)
     @roster.respond_to?(:extended_counter).should == false

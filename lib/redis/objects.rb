@@ -104,19 +104,32 @@ class Redis
       # Toggles whether to use the legacy redis key naming scheme, which causes
       # naming conflicts in certain cases.
       attr_accessor :redis_legacy_naming
+      attr_accessor :redis_silence_warnings
 
-      # Set the Redis redis_prefix to use. Defaults to model_name
-      def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
+      # Set the Redis redis_prefix to use. Defaults to class_name.
+      def redis_prefix=(redis_prefix)
+        @silence_warnings_as_redis_prefix_was_set_manually = true
+        @redis_prefix = redis_prefix
+      end
+
       def redis_prefix(klass = self) #:nodoc:
-        @redis_prefix ||= if redis_legacy_naming
-          legacy_redis_prefix(klass)
-        else
-          klass.name.to_s.
+        @redis_prefix ||=
+          if redis_legacy_naming
+            legacy_redis_prefix(klass)
+          else
+            legacy_naming_warning_message(klass)
+            modern_redis_prefix(klass)
+          end
+
+        @redis_prefix
+      end
+
+      def modern_redis_prefix(klass = self) #:nodoc:
+        klass.name.to_s.
           gsub(/::/, '__').                     # Nested::Class => Nested__Class
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
           gsub(/([a-z\d])([A-Z])/,'\1_\2').     # className => class_Name
           downcase
-        end
       end
 
       def legacy_redis_prefix(klass = self) #:nodoc:
@@ -125,6 +138,24 @@ class Redis
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
           gsub(/([a-z\d])([A-Z])/,'\1_\2').     # className => class_Name
           downcase
+      end
+
+        # Temporary warning to help with migrating key names
+      def legacy_naming_warning_message(klass)
+        # warn @silence_warnings_as_redis_prefix_was_set_manually.inspect
+        unless redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
+          modern = modern_redis_prefix(klass)
+          legacy = legacy_redis_prefix(klass)
+          if modern != legacy
+            warn <<EOW
+WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
+Your class #{klass.name.to_s} will be affected by this change!
+Current key prefix: #{legacy.inspect}
+Future  key prefix: #{modern.inspect}
+Read more at https://github.com/nateware/redis-objects/issues/231
+EOW
+          end
+        end
       end
 
       def redis_options(name)
