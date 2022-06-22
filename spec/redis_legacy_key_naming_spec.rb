@@ -5,6 +5,20 @@ Redis::Objects.redis = REDIS_HANDLE
 
 require 'securerandom'
 
+require "stringio"
+
+def capture_stderr
+  # The output stream must be an IO-like object. In this case we capture it in
+  # an in-memory IO object so we can return the string value. You can assign any
+  # IO object here.
+  previous_stderr, $stderr = $stderr, StringIO.new
+  yield
+  $stderr.string
+ensure
+  # Restore the previous value of stderr (typically equal to STDERR).
+  $stderr = previous_stderr
+end
+
 describe 'Legacy redis key prefix naming compatibility' do
   it 'verifies single level classes work the same' do
     class SingleLevelOne
@@ -256,6 +270,30 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj2.redis_value2.should.be.kind_of(Redis::Value)
     obj2.redis_value.key.should == 'dynamic_class2:1:redis_value'
     obj2.redis_value2.key.should == 'dynamic_class2:1:redis_value2'
+  end
 
+  it 'prints a warning message if the key name changes' do
+    module Nested
+      class LevelNine
+        include Redis::Objects
+        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+
+        def id
+          1
+        end
+
+        value :redis_value
+      end
+    end
+
+    captured_output = capture_stderr do
+      # Does not output anything directly.
+      obj = Nested::LevelNine.new
+      val = SecureRandom.hex(10)
+      obj.redis_value = val
+      obj.redis_value.should == val
+    end
+
+    captured_output.should =~ /Warning:/i
   end
 end
