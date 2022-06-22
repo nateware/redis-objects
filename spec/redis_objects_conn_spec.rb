@@ -34,8 +34,8 @@ describe 'Connection tests' do
     obj.redis_value.value.should == nil
 
     obj.default_redis_value.clear
-    obj.redis_value.value = 'foo'
-    obj.redis_value.value.should == 'foo'
+    obj.redis_value.value = 'bar'
+    obj.redis_value.value.should == 'bar'
     obj.default_redis_value.value.should == nil
 
     obj.redis_value.clear
