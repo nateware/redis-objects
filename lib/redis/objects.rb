@@ -101,13 +101,29 @@ class Redis
         @redis_objects ||= {}
       end
 
+      # Toggles whether to use the legacy redis key naming scheme, which causes
+      # naming conflicts in certain cases.
+      attr_accessor :redis_legacy_naming
+
       # Set the Redis redis_prefix to use. Defaults to model_name
       def redis_prefix=(redis_prefix) @redis_prefix = redis_prefix end
       def redis_prefix(klass = self) #:nodoc:
-        @redis_prefix ||= klass.name.to_s.
-          sub(%r{(.*::)}, '').
-          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-          gsub(/([a-z\d])([A-Z])/,'\1_\2').
+        @redis_prefix ||= if redis_legacy_naming
+          legacy_redis_prefix(klass)
+        else
+          klass.name.to_s.
+          gsub(/::/, '__').                     # Nested::Class => Nested__Class
+          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
+          gsub(/([a-z\d])([A-Z])/,'\1_\2').     # className => class_Name
+          downcase
+        end
+      end
+
+      def legacy_redis_prefix(klass = self) #:nodoc:
+        klass.name.to_s.
+          sub(%r{(.*::)}, '').                  # Nested::Class => Class (problematic)
+          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
+          gsub(/([a-z\d])([A-Z])/,'\1_\2').     # className => class_Name
           downcase
       end
 
