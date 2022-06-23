@@ -14,7 +14,7 @@ class Redis
       module ClassMethods
         # Define a new lock.  It will function like a model attribute,
         # so it can be used alongside ActiveRecord/DataMapper, etc.
-        def lock(name, options={})
+        def redis_lock(name, options={})
           options[:timeout] ||= 5  # seconds
           lock_name = "#{name}_lock"
           redis_objects[lock_name.to_sym] = options.merge(:type => :lock)

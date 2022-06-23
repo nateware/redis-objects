@@ -5,8 +5,56 @@ Redis::Objects - Map Redis types directly to Ruby objects
 [![Code Coverage](https://codecov.io/gh/nateware/redis-objects/branch/master/graph/badge.svg)](https://codecov.io/gh/nateware/redis-objects)
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MJF7JU5M7F8VL)
 
-**IMPORTANT: redis-objects 2.0.0 introduces a backwards incompatible change to key naming to fix a longstanding bug. For more information see [issue #213](https://github.com/nateware/redis-objects/issues/231)**
+Important 2.0 changes
+---------------------
+Redis::Objects 2.0 introduces several important backwards incompatible changes.
+Currently 2.0 can be installed with `gem install redis-objects --pre` or by listing it
+explicitly in your Gemfile:
+~~~ruby
+# Gemfile
+gem 'redis-objects', '>= 2.0.0.alpha'
+~~~
+You're encouraged to try it out in test code (not production) to ensure it works for you.
+Official release is expected later in 2022.
 
+Key Naming Changes
+==================
+The internal key naming scheme has changed for `Nested::Class::Namespaces` to fix a longstanding bug.
+**This means your existing data in Redis will not be accessible until you call `migrate_redis_legacy_keys`.**
+
+To fix this (only needed once), create a script like this:
+
+~~~ruby
+class YouClassNameHere < ActiveRecord::Base
+  include Redis::Objects
+  # ... your relevant definitions here ...
+end
+
+YourClassName.migrate_redis_legacy_keys
+~~~
+
+Then, you need to find a time when you can temporarily pause writes to your redis server
+so that you can run that script. It uses `redis.scan` internally so it should be able to
+handle a high number of keys. For large data sets, it could take a while.
+
+For more details on the issue and fix refer to [#213](https://github.com/nateware/redis-objects/issues/231).
+
+Rename of `lock` Method
+=======================
+The `lock` method that collided with `ActiveRecord::Base` has been renamed `redis_lock`.
+This means your classes need to be updated to call `redis_lock` instead:
+
+~~~ruby
+class YouClassNameHere < ActiveRecord::Base
+  include Redis::Objects
+  redis_lock :mylock  # formerly just "lock"
+end 
+~~~
+
+For more details on the issue and fix refer to [#213](https://github.com/nateware/redis-objects/issues/231).
+
+Overview
+--------
 This is **not** an ORM. People that are wrapping ORM’s around Redis are missing the point.
 
 The killer feature of Redis is that it allows you to perform _atomic_ operations
@@ -121,7 +169,7 @@ Here's an example that integrates several data types with an ActiveRecord model:
 class Team < ActiveRecord::Base
   include Redis::Objects
 
-  lock :trade_players, :expiration => 15  # sec
+  redis_lock :trade_players, :expiration => 15  # sec
   value :at_bat
   counter :hits
   counter :runs
@@ -526,7 +574,7 @@ Locks work similarly. On completion or exception the lock is released:
 
 ~~~ruby
 class Team < ActiveRecord::Base
-  lock :reorder # declare a lock
+  redis_lock :reorder # declare a lock
 end
 
 @team.reorder_lock.lock do
@@ -550,7 +598,7 @@ lock time.
 
 ~~~ruby
 class Team < ActiveRecord::Base
-  lock :reorder, :expiration => 15.minutes
+  redis_lock :reorder, :expiration => 15.minutes
 end
 ~~~
 

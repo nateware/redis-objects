@@ -10,18 +10,18 @@ class Roster
   counter :pitchers, :limit => :max_pitchers
   counter :basic
   hash_key :contact_information, :marshal_keys=>{'updated_at'=>true}
-  lock :resort, :timeout => 2
+  redis_lock :resort, :timeout => 2
   value :starting_pitcher, :marshal => true
   list :player_stats, :marshal => true
   set :outfielders, :marshal => true
   sorted_set :rank
-  lock :per_field
+  redis_lock :per_field
 
   # global class counters
   counter :total_players_online, :global => true
   set :all_players_online, :global => true
   value :last_player, :global => true
-  lock :nasty_global_mutex, :global => true  # remember it appends "_lock"
+  redis_lock :nasty_global_mutex, :global => true  # remember it appends "_lock"
   sorted_set :global_player_leaderboard, :global => true
   hash_key :global_player_online_status, :global => true
 
@@ -985,7 +985,7 @@ describe Redis::Objects do
     @roster.respond_to?(:extended_hash_key).should == false
 
     LockRoster = Class.new(Roster)
-    LockRoster.lock :extended
+    LockRoster.redis_lock :extended
     extended_roster = LockRoster.new
     extended_roster.resort_lock.should.be.kind_of(Redis::Lock)
     extended_roster.extended_lock.should.be.kind_of(Redis::Lock)
