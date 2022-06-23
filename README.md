@@ -51,7 +51,7 @@ class YouClassNameHere < ActiveRecord::Base
 end 
 ~~~
 
-For more details on the issue and fix refer to [#213](https://github.com/nateware/redis-objects/issues/231).
+For more details on the issue and fix refer to [#196](https://github.com/nateware/redis-objects/issues/196).
 
 Overview
 --------
