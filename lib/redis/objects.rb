@@ -115,16 +115,16 @@ class Redis
       def redis_prefix(klass = self) #:nodoc:
         @redis_prefix ||=
           if redis_legacy_naming
-            legacy_redis_prefix(klass)
+            redis_legacy_prefix(klass)
           else
-            legacy_naming_warning_message(klass)
-            modern_redis_prefix(klass)
+            redis_legacy_naming_warning_message(klass)
+            redis_modern_prefix(klass)
           end
 
         @redis_prefix
       end
 
-      def modern_redis_prefix(klass = self) #:nodoc:
+      def redis_modern_prefix(klass = self) #:nodoc:
         klass.name.to_s.
           gsub(/::/, '__').                     # Nested::Class => Nested__Class
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
@@ -132,7 +132,7 @@ class Redis
           downcase
       end
 
-      def legacy_redis_prefix(klass = self) #:nodoc:
+      def redis_legacy_prefix(klass = self) #:nodoc:
         klass.name.to_s.
           sub(%r{(.*::)}, '').                  # Nested::Class => Class (problematic)
           gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2'). # ClassName => Class_Name
@@ -141,11 +141,11 @@ class Redis
       end
 
         # Temporary warning to help with migrating key names
-      def legacy_naming_warning_message(klass)
+      def redis_legacy_naming_warning_message(klass)
         # warn @silence_warnings_as_redis_prefix_was_set_manually.inspect
         unless redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
-          modern = modern_redis_prefix(klass)
-          legacy = legacy_redis_prefix(klass)
+          modern = redis_modern_prefix(klass)
+          legacy = redis_legacy_prefix(klass)
           if modern != legacy
             warn <<EOW
 WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
@@ -156,6 +156,36 @@ Read more at https://github.com/nateware/redis-objects/issues/231
 EOW
           end
         end
+      end
+
+      def migrate_redis_legacy_keys
+        cursor = 0
+        legacy = redis_legacy_prefix
+        total_keys = 0
+        if legacy == redis_prefix
+          raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
+        end
+        warn "Migrating keys from #{legacy} prefix to #{redis_prefix}"
+
+        loop do
+          cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
+          total_keys += keys.length
+          keys.each do |key|
+            # Split key name apart on ':'
+            base_class, id, name = key.split(':')
+
+            # Figure out the new name
+            new_key = redis_field_key(name, id=id, context=self)
+
+            # Rename the key
+            warn "Rename '#{key}', '#{new_key}'"
+            ok = redis.rename(key, new_key)
+            warn "Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
+          end
+          break if cursor == "0"
+        end
+
+        warn "Migrated #{total_keys} total number of redis keys"
       end
 
       def redis_options(name)

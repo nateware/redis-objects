@@ -47,7 +47,6 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj.class.redis_prefix.should == 'single_level_two'
   end
 
-
   it 'verifies nested classes do NOT work the same' do
     module Nested
       class NamingOne
@@ -295,5 +294,126 @@ describe 'Legacy redis key prefix naming compatibility' do
     end
 
     captured_output.should =~ /Warning:/i
+  end
+
+  it 'supports a method to migrate legacy key names' do
+    module Nested
+      class Legacy
+        include Redis::Objects
+        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+        self.redis_legacy_naming = true
+
+        # override this for testing - need two classes as if we imagine an old and new one
+        # also use the legacy flat prefix that ignores the nested class name
+        self.redis_prefix = 'modern'
+
+        def initialize(id)
+          @id = id
+        end
+        def id
+          @id
+        end
+
+        value :redis_value
+        counter :redis_counter
+        hash_key :redis_hash
+        list :redis_list
+        set :redis_set
+        sorted_set :redis_sorted_set
+
+        # global class counters
+        value :global_value, :global => true
+        counter :global_counter, :global => true
+        hash_key :global_hash_key, :global => true
+        list :global_list, :global => true
+        set :global_set, :global => true
+        sorted_set :global_sorted_set, :global => true
+      
+        #callable as key
+        value :global_proc_value, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
+      end
+    end
+
+    module Nested
+      class Modern
+        include Redis::Objects
+        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
+
+        def initialize(id)
+          @id = id
+        end
+        def id
+          @id
+        end
+
+        value :redis_value
+        counter :redis_counter
+        hash_key :redis_hash
+        list :redis_list
+        set :redis_set
+        sorted_set :redis_sorted_set
+
+        # global class counters
+        value :global_value, :global => true
+        counter :global_counter, :global => true
+        hash_key :global_hash_key, :global => true
+        list :global_list, :global => true
+        set :global_set, :global => true
+        sorted_set :global_sorted_set, :global => true
+      
+        #callable as key
+        value :global_proc_value, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
+      end
+    end
+
+    # Iterate over them
+    Nested::Modern.redis_objects.length.should == 13
+    Nested::Modern.redis_objects.length.should == Nested::Legacy.redis_objects.length.should
+    Nested::Legacy.redis_prefix.should == 'modern'
+    Nested::Modern.redis_prefix.should == 'nested__modern'
+
+    # Create a whole bunch of keys using the legacy names
+    30.times do |i|
+      # warn i.inspect
+      obj = Nested::Legacy.new(i)
+      obj.redis_value = i
+      obj.redis_value.to_i.should == i
+      obj.redis_counter.increment
+      obj.redis_hash[:key] = i
+      obj.redis_list << i
+      obj.redis_set << i
+      obj.redis_sorted_set[i] = i
+    end
+
+    obj = Nested::Legacy.new(99)
+    obj.global_value = 42
+    obj.global_counter.increment
+    obj.global_counter.increment
+    obj.global_counter.increment
+    obj.global_hash_key[:key] = 'value'
+    obj.global_set << 'a' << 'b'
+    obj.global_sorted_set[:key] = 2.2
+
+    Nested::Modern.migrate_redis_legacy_keys
+
+    # Try to access the keys through modern names now
+    30.times do |i|
+      # warn i.inspect
+      obj = Nested::Modern.new(i)
+      obj.redis_value.to_i.should == i
+      obj.redis_counter.to_i.should == 1
+      obj.redis_hash[:key].to_i.should == i
+      obj.redis_list[0].to_i.should == i
+      obj.redis_set.include?(i).should == true
+      obj.redis_sorted_set[i].should == i
+    end
+
+    obj = Nested::Modern.new(99)
+    obj.global_value.to_i.should == 42
+    obj.global_counter.to_i.should == 3
+    obj.global_hash_key[:key].should == 'value'
+    obj.global_set.should.include?('a').should == true
+    obj.global_set.should.include?('b').should == true
+    obj.global_sorted_set[:key].should == 2.2
   end
 end

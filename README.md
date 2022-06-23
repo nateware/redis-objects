@@ -598,5 +598,5 @@ end
 
 Author
 =======
-Copyright (c) 2009-2019 [Nate Wiger](http://nateware.com).  All Rights Reserved.
+Copyright (c) 2009-2022 [Nate Wiger](http://nateware.com).  All Rights Reserved.
 Released under the [Artistic License](http://www.opensource.org/licenses/artistic-license-2.0.php).
