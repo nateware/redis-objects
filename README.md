@@ -6,7 +6,7 @@ Redis::Objects - Map Redis types directly to Ruby objects
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MJF7JU5M7F8VL)
 
 Important 2.0 changes
----------------------
+=====================
 Redis::Objects 2.0 introduces several important backwards incompatible changes.
 Currently 2.0 can be installed with `gem install redis-objects --pre` or by listing it
 explicitly in your Gemfile:
@@ -18,7 +18,7 @@ You're encouraged to try it out in test code (not production) to ensure it works
 Official release is expected later in 2022.
 
 Key Naming Changes
-==================
+------------------
 The internal key naming scheme has changed for `Nested::Class::Namespaces` to fix a longstanding bug.
 **This means your existing data in Redis will not be accessible until you call `migrate_redis_legacy_keys`.**
 
@@ -39,8 +39,8 @@ handle a high number of keys. For large data sets, it could take a while.
 
 For more details on the issue and fix refer to [#213](https://github.com/nateware/redis-objects/issues/231).
 
-Rename of `lock` Method
-=======================
+Renaming of `lock` Method
+-------------------------
 The `lock` method that collided with `ActiveRecord::Base` has been renamed `redis_lock`.
 This means your classes need to be updated to call `redis_lock` instead:
 
