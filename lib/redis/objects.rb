@@ -62,7 +62,7 @@ class Redis
         @redis = Objects::ConnectionPoolProxy.proxy_if_needed(conn)
       end
       def redis
-        @redis || $redis || Redis.current ||
+        @redis || $redis || Redis.new ||
           raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
