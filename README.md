@@ -12,10 +12,10 @@ Currently 2.0 can be installed with `gem install redis-objects --pre` or by list
 explicitly in your Gemfile:
 ~~~ruby
 # Gemfile
-gem 'redis-objects', '>= 2.0.0.alpha'
+gem 'redis-objects', '>= 2.0.0.beta'
 ~~~
 You're encouraged to try it out in test code (not production) to ensure it works for you.
-Official release is expected later in 2022.
+Official release is expected later in 2023.
 
 Key Naming Changes
 ------------------

@@ -96,14 +96,9 @@ describe 'Connection tests' do
   end
 
   it "should support local handles with a vanilla redis connection" do
-    # Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
     @redis_handle = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
-
-    # Redis.current is lazily auto-populated to touch 6379
-    # This why we choose the weird 9212 port to avoid
-    # Redis.current.inspect.should == Redis.new.inspect
-    Redis::Objects.redis.inspect.should == Redis.new.inspect
+    raises_exception{ Redis::Objects.redis.inspect } # NotConnected
 
     v = Redis::Value.new('conn/value', @redis_handle)
     v.clear
@@ -141,14 +136,9 @@ describe 'Connection tests' do
   end
 
   it "should support local handles with a connection_pool" do
-    # Redis.current = nil  # reset from other tests
     Redis::Objects.redis = nil
     @redis_handle = ConnectionPool.new { Redis.new(:host => REDIS_HOST, :port => REDIS_PORT) }
-
-    # Redis.current is lazily auto-populated to touch 6379
-    # This why we choose the weird 9212 port to avoid
-    # Redis.current.inspect.should == Redis.new.inspect
-    Redis::Objects.redis.inspect.should == Redis.new.inspect
+    raises_exception{ Redis::Objects.redis.inspect } # NotConnected
 
     v = Redis::Value.new('conn/value', @redis_handle)
     v.clear

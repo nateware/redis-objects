@@ -31,11 +31,7 @@ class Redis
     # Remove a member from the end of the list. Redis: RPOP
     def pop(n=nil)
       if n
-        result, = redis.multi do
-          redis.lrange(key, -n, -1)
-          redis.ltrim(key, 0, -n - 1)
-        end
-        unmarshal result
+        unmarshal redis.rpop(key, n)
       else
         unmarshal redis.rpop(key)
       end
@@ -65,11 +61,7 @@ class Redis
     # Remove a member from the start of the list. Redis: LPOP
     def shift(n=nil)
       if n
-        result, = redis.multi do
-          redis.lrange(key, 0, n - 1)
-          redis.ltrim(key, n, -1)
-        end
-        unmarshal result
+        unmarshal redis.lpop(key, n)
       else
         unmarshal redis.lpop(key)
       end

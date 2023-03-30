@@ -211,7 +211,7 @@ class Redis
         result = redis.zrange(temp_key, 0, -1)
       end
 
-      result.value
+      result
     end
     alias_method :intersect, :intersection
     alias_method :inter, :intersection
@@ -248,7 +248,7 @@ class Redis
         result = redis.zrange(temp_key, 0, -1)
       end
 
-      result.value
+      result
     end
     alias_method :|, :union
     alias_method :+, :union

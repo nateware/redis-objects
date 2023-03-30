@@ -1,5 +1,13 @@
 = Changelog for Redis::Objects
 
+== 2.0.0.beta (30 Mar 2023)
+
+* Updated internal calls to match `redis-rb`
+
+* INCOMPAT: `Redis.current` is no longer allowed due to changes in `redis-rb`
+
+* INCOMPAT: The order of items popped off a list by the rarely-used command `list.pop(n)` to specify multiple elements is now reversed to match redis.
+
 == 1.7.0 (29 Apr 2022)
 
 * Bumped version to 1.7.0 to revert redis-rb version lock [Nate Wiger]

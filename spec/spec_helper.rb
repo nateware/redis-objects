@@ -10,7 +10,7 @@ if $0 =~ /\brspec$/
 end
 
 # For the incompatible change from redis.rb
-Redis.exists_returns_integer =  true
+# Redis.exists_returns_integer =  true
 
 # Avoid phantom remote test failures
 RUNNING_LOCALLY = !ENV['TRAVIS']
@@ -61,7 +61,7 @@ def kill_redis
   Process.kill "TERM", pid
   Process.kill "KILL", pid
   File.unlink pidfile
-  File.unlink rdbfile if File.exists? rdbfile
+  File.unlink rdbfile if File.exist? rdbfile
 end
 
 # Start redis-server except under JRuby

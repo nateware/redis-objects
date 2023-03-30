@@ -15,7 +15,8 @@ class Redis
     # Redis: SADD
     def add(value)
       allow_expiration do
-        redis.sadd(key, marshal(value)) if value.nil? || !Array(value).empty?
+        value = '' if value.nil?
+        redis.sadd(key, marshal(value)) if !Array(value).empty? # allow empty adds
       end
     end
 
