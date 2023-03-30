@@ -148,11 +148,11 @@ class Redis
           legacy = redis_legacy_prefix(klass)
           if modern != legacy
             warn <<EOW
-WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
-Your class #{klass.name.to_s} will be affected by this change!
-Current key prefix: #{legacy.inspect}
-Future  key prefix: #{modern.inspect}
-Read more at https://github.com/nateware/redis-objects/issues/231
+[redis-objects] WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
+[redis-objects] Your class #{klass.name.to_s} will be affected by this change!
+[redis-objects] Current key prefix: #{legacy.inspect}
+[redis-objects] Future  key prefix: #{modern.inspect}
+[redis-objects] Read more at https://github.com/nateware/redis-objects/issues/231
 EOW
           end
         end
@@ -165,7 +165,7 @@ EOW
         if legacy == redis_prefix
           raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
         end
-        warn "Migrating keys from #{legacy} prefix to #{redis_prefix}"
+        warn "[redis-objects] Migrating keys from #{legacy} prefix to #{redis_prefix}"
 
         loop do
           cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
@@ -178,14 +178,14 @@ EOW
             new_key = redis_field_key(name, id=id, context=self)
 
             # Rename the key
-            warn "Rename '#{key}', '#{new_key}'"
+            warn "[redis-objects] Rename '#{key}', '#{new_key}'"
             ok = redis.rename(key, new_key)
-            warn "Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
+            warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
           break if cursor == "0"
         end
 
-        warn "Migrated #{total_keys} total number of redis keys"
+        warn "[redis-objects] Migrated #{total_keys} total number of redis keys"
       end
 
       def redis_options(name)
