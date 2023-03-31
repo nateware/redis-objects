@@ -922,6 +922,15 @@ describe Redis::Objects do
     VanillaRoster.last_player.should.be.kind_of(Redis::Value)
   end
 
+  it "should allow subclass objects to get options from superclass" do
+    @vanilla_roster.available_slots.options[:start].should == 10
+    @vanilla_roster.contact_information.options[:marshal_keys].should == { 'updated_at'=> true }
+    @vanilla_roster.resort_lock.options[:timeout].should == 2
+    @vanilla_roster.starting_pitcher.options[:marshal].should == true
+    @vanilla_roster.player_stats.options[:marshal].should == true
+    @vanilla_roster.outfielders.options[:marshal].should == true
+  end
+
   it "should allow subclass overrides of the same redis object" do
     @roster.basic.should == 0
     @custom_roster.basic.increment.should == 1

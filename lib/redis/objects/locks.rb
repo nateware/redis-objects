@@ -25,7 +25,7 @@ class Redis
               instance_variable_get(ivar_name) or
                 instance_variable_set(ivar_name,
                   Redis::Lock.new(
-                    redis_field_key(lock_name), redis_field_redis(lock_name), redis_objects[lock_name.to_sym]
+                    redis_field_key(lock_name), redis_field_redis(lock_name), redis_options(lock_name)
                   )
                 )
             end
