@@ -236,7 +236,7 @@ Counters can be atomically incremented/decremented (but not assigned):
 @team.runs = 4        # exception
 ~~~
 
-Defining a different method as the `id` field is easy
+Defining a different method as the `id` field is easy:
 
 ~~~ruby
 class User
