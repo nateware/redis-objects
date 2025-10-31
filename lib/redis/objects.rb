@@ -160,10 +160,13 @@ EOW
 
       def migrate_redis_legacy_keys(scan_count=10, verbose=false)
         legacy = redis_legacy_prefix
-        if legacy == redis_prefix
-          raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
+        modern = redis_modern_prefix
+        if modern == legacy
+          warn "[redis-objects] #{self.name}.#{__method__} NOOP. Legacy and modern redis_prefix are the same (#{modern})"
+          return
         end
-        warn "[redis-objects] Migrating keys from #{legacy} prefix to #{redis_prefix}"
+
+        warn "\n[redis-objects] Migrating keys from '#{legacy}' prefix to '#{modern}'"
 
         cursor = 0
         total_keys = 0
