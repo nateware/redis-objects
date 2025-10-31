@@ -143,19 +143,19 @@ class Redis
       # Temporary warning to help with migrating key names
       def redis_legacy_naming_warning_message(klass)
         # warn @silence_warnings_as_redis_prefix_was_set_manually.inspect
-        unless redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
-          modern = redis_modern_prefix(klass)
-          legacy = redis_legacy_prefix(klass)
-          if modern != legacy
-            warn <<EOW
+        return if redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
+
+        modern = redis_modern_prefix(klass)
+        legacy = redis_legacy_prefix(klass)
+        return if modern == legacy
+
+        warn <<EOW
 [redis-objects] WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
 [redis-objects] Your class #{klass.name.to_s} will be affected by this change!
 [redis-objects] Current key prefix: #{legacy.inspect}
 [redis-objects] Future  key prefix: #{modern.inspect}
 [redis-objects] Read more at https://github.com/nateware/redis-objects/issues/231
 EOW
-          end
-        end
       end
 
       def migrate_redis_legacy_keys
