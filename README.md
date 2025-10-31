@@ -6,7 +6,7 @@ Redis::Objects - Map Redis types directly to Ruby objects
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MJF7JU5M7F8VL)
 
 Important 2.0 changes
-=====================
+---------------------
 Redis::Objects 2.0 introduces several important backwards incompatible changes.
 Currently 2.0 can be installed with `gem install redis-objects --pre` or by listing it
 explicitly in your Gemfile:
@@ -55,9 +55,12 @@ end
 
 For more details on the issue and fix refer to [#196](https://github.com/nateware/redis-objects/issues/196).
 
+-------------------------
+
 Overview
 --------
-This is **not** an ORM. People that are wrapping ORM’s around Redis are missing the point.
+This is **not** an ORM ([Object-Relational Mapping](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping)).
+People that are wrapping ORM’s around Redis are missing the point.
 
 The killer feature of Redis is that it allows you to perform _atomic_ operations
 on _individual_ data structures, like counters, lists, and sets.  The **atomic** part is HUGE.
@@ -77,8 +80,8 @@ This gem originally arose out of a need for high-concurrency atomic operations;
 for a fun rant on the topic, see [An Atomic Rant](http://nateware.com/2010/02/18/an-atomic-rant),
 or scroll down to [Atomic Counters and Locks](#atomicity) in this README.
 
-There are two ways to use Redis::Objects, either as an include in a model class (to
-tightly integrate with ORMs or other classes), or standalone by using classes such
+There are two ways to use Redis::Objects, either as an include within a [model class](#option-1-model-class-include) (to
+tightly integrate with ORMs or other classes), or [standalone](#option-2-standalone-usage) by using classes such
 as `Redis::List` and `Redis::SortedSet`.
 
 Installation and Setup
@@ -89,29 +92,29 @@ Add it to your Gemfile as:
 gem 'redis-objects'
 ~~~
 
-Redis::Objects needs a handle created by `Redis.new` or a [ConnectionPool](https://github.com/mperham/connection_pool):
+Redis::Objects needs a handle created by `Redis.new` or a [ConnectionPool](https://github.com/mperham/connection_pool).
+
+If you're using Rails, `config/initializers/redis.rb` is a good place for this.
+However, there are **no** dependencies on Rails. Redis::Objects can be used in any Ruby code; Sinatra, 
+Resque, or Standalone - no problem.
 
 The recommended approach is to use a `ConnectionPool` since this guarantees that most timeouts in the `redis` client
-do not pollute your existing connection. However, you need to make sure that both `:timeout` and `:size` are set appropriately
-in a multithreaded environment.
+do not pollute your existing connection.
 ~~~ruby
 require 'connection_pool'
 Redis::Objects.redis = ConnectionPool.new(size: 5, timeout: 5) { Redis.new(:host => '127.0.0.1', :port => 6379) }
 ~~~
-
-Redis::Objects can also default to `Redis.current` if `Redis::Objects.redis` is not set.
-~~~ruby
-Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
-~~~
-
-(If you're on Rails, `config/initializers/redis.rb` is a good place for this.)
-Remember you can use Redis::Objects in any Ruby code.  There are **no** dependencies
-on Rails.  Standalone, Sinatra, Resque - no problem.
+However, you need to make sure that both `:timeout` and `:size` are set appropriately
+in a multithreaded environment.
 
 Alternatively, you can set the `redis` handle directly:
-
 ~~~ruby
 Redis::Objects.redis = Redis.new(...)
+~~~
+
+Redis::Objects will also default to `Redis.current` if `Redis::Objects.redis` is not set.
+~~~ruby
+Redis.current = Redis.new(:host => '127.0.0.1', :port => 6379)
 ~~~
 
 Finally, you can even set different handles for different classes:
@@ -181,11 +184,10 @@ class Team < ActiveRecord::Base
   list :coaches, :marshal => true
   set  :outfielders
   hash_key :pitchers_faced  # "hash" is taken by Ruby
-  sorted_set :rank, :global => true
 end
 ~~~
 
-Familiar Ruby array operations Just Work (TM):
+Familiar Ruby array operations Just Work™:
 
 ~~~ruby
 @team = Team.find_by_name('New York Yankees')
@@ -249,6 +251,22 @@ end
 
 user.uid                # 195137a1bdea4473
 user.my_posts.increment # 1
+~~~
+
+You can also define globals redis attributes that are accessed through the class itself.
+No id needed/used for these.
+
+~~~ruby
+class Team < ActiveRecord::Base
+  include Redis::Objects
+
+  sorted_set :rank, :global => true
+end
+
+Team.rank['Yankees']   = 12
+Team.rank['Red Socks'] = 5
+Team.rank['Mariners']  = 7
+Team.rank.members(:with_scores => true) # => [["Red Socks", 5], ["Mariners", 7], ["Yankees", 12]]
 ~~~
 
 Finally, for free, you get a `redis` method that points directly to a Redis connection:
@@ -645,6 +663,20 @@ end
 @newest  = Redis::Value.new('custom_serializer', marshal: true, serializer: CustomSerializer)
 @newest.value = @account.attributes
 ~~~
+
+---------------------
+
+Under the Hood
+--------------
+
+Redis keys are prefixed to namespace keys with the same names.
+By default the prefix is generated from the embedded class's name.
+But you can also set a custom prefix using `redis_prefix=`.
+
+If needed the redis key for a specific attribute of a class can be obtained by:
+`MyClass.redis_field_key(attr_name, primary_id)`
+or for globals
+`MyClass.redis_field_key(attr_name)`
 
 Author
 =======
