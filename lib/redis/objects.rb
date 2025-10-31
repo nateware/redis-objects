@@ -150,8 +150,9 @@ class Redis
         return if modern == legacy
 
         warn <<EOW
-[redis-objects] WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
-[redis-objects] Your class #{klass.name.to_s} will be affected by this change!
+
+[redis-objects] WARNING: redis-objects 2.0.0, revises key naming to fix a longstanding bug.
+[redis-objects] Your class #{klass.name} should be updated to resolve this bug!
 [redis-objects] Current key prefix: #{legacy.inspect}
 [redis-objects] Future  key prefix: #{modern.inspect}
 [redis-objects] Read more at https://github.com/nateware/redis-objects/issues/231
