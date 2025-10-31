@@ -179,10 +179,12 @@ EOW
           total_keys += keys.length
           keys.each do |key|
             # Split key name apart on ':'
-            base_class, id, name = key.split(':')
+            # REM: global keys will have an empty id
+            #      klass::object_accessor_name
+            _base_class, id, name = key.split(':')
 
             # Figure out the new name
-            new_key = redis_field_key(name, id=id, context=self)
+            new_key = redis_field_key(name, id)
 
             # Rename the key
             if verbose
