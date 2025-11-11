@@ -394,7 +394,7 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj.global_set << 'a' << 'b'
     obj.global_sorted_set[:key] = 2.2
 
-    Nested::Modern.migrate_redis_legacy_keys
+    Nested::Modern.migrate_redis_legacy_keys(1000)
 
     # Try to access the keys through modern names now
     30.times do |i|

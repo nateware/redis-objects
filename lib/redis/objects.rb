@@ -158,7 +158,7 @@ class Redis
 EOW
       end
 
-      def migrate_redis_legacy_keys
+      def migrate_redis_legacy_keys(scan_count=10, verbose=false)
         legacy = redis_legacy_prefix
         if legacy == redis_prefix
           raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
@@ -169,7 +169,7 @@ EOW
         total_keys = 0
 
         loop do
-          cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
+          cursor, keys = redis.scan(cursor, :match => "#{legacy}:*", :count => scan_count)
           total_keys += keys.length
           keys.each do |key|
             # Split key name apart on ':'
@@ -179,7 +179,9 @@ EOW
             new_key = redis_field_key(name, id=id, context=self)
 
             # Rename the key
-            warn "[redis-objects] Rename '#{key}', '#{new_key}'"
+            if verbose
+              warn "[redis-objects] Rename '#{key}', '#{new_key}'"
+            end
             ok = redis.rename(key, new_key)
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
