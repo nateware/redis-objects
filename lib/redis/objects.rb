@@ -170,6 +170,9 @@ EOW
 
         loop do
           cursor, keys = redis.scan(cursor, :match => "#{legacy}:*", :count => scan_count)
+          # REM: scan returns keys in a randomized order
+          keys.sort!
+          #puts "got #{keys.length} keys"
           total_keys += keys.length
           keys.each do |key|
             # Split key name apart on ':'
