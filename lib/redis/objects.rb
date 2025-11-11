@@ -159,13 +159,14 @@ EOW
       end
 
       def migrate_redis_legacy_keys
-        cursor = 0
         legacy = redis_legacy_prefix
-        total_keys = 0
         if legacy == redis_prefix
           raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
         end
         warn "[redis-objects] Migrating keys from #{legacy} prefix to #{redis_prefix}"
+
+        cursor = 0
+        total_keys = 0
 
         loop do
           cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
