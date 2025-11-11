@@ -139,7 +139,6 @@ describe 'Redis key prefix naming compatibility' do
         module Further
           class NamingFive
             include Redis::Objects
-            self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
             self.redis_silence_warnings = true
 
             def id
@@ -166,7 +165,6 @@ describe 'Redis key prefix naming compatibility' do
         module LevelFurtherNaming
           class Five
             include Redis::Objects
-            self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
             self.redis_silence_warnings = true
 
             def id
@@ -192,7 +190,6 @@ describe 'Redis key prefix naming compatibility' do
         module LevelFurther
           class NamingFive
             include Redis::Objects
-            self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
             self.redis_silence_warnings = true
 
             def id
@@ -221,7 +218,6 @@ describe 'Redis key prefix naming compatibility' do
       module Nested
         class LevelSix
           include Redis::Objects
-          self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
           self.redis_silence_warnings = true
 
           def id
@@ -255,7 +251,6 @@ describe 'Redis key prefix naming compatibility' do
       module Nested
         class LevelSeven
           include Redis::Objects
-          self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
           self.redis_legacy_naming = true
 
           def id
@@ -292,7 +287,6 @@ describe 'Redis key prefix naming compatibility' do
     module Nested
       class LevelNine
         include Redis::Objects
-        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
 
         def id
           1
@@ -317,7 +311,6 @@ describe 'Redis key prefix naming compatibility' do
     module Nested
       class Legacy
         include Redis::Objects
-        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
         self.redis_legacy_naming = true
 
         # override this for testing - need two classes as if we imagine an old and new one
@@ -354,7 +347,6 @@ describe 'Redis key prefix naming compatibility' do
     module Nested
       class Modern
         include Redis::Objects
-        self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
 
         def initialize(id)
           @id = id
