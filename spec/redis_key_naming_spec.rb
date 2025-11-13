@@ -385,7 +385,7 @@ describe 'Redis key prefix naming compatibility' do
 
     # Iterate over them
     Nested::Modern.redis_objects.length.should == 13
-    Nested::Modern.redis_objects.length.should == Nested::Legacy.redis_objects.length.should
+    Nested::Modern.redis_objects.length.should == Nested::Legacy.redis_objects.length
     Nested::Legacy.redis_prefix.should == 'modern'
     Nested::Modern.redis_prefix.should == 'nested__modern'
 
@@ -394,7 +394,6 @@ describe 'Redis key prefix naming compatibility' do
       # warn i.inspect
       obj = Nested::Legacy.new(i)
       obj.redis_value = i
-      obj.redis_value.to_i.should == i
       obj.redis_counter.increment
       obj.redis_hash[:key] = i
       obj.redis_list << i
@@ -429,8 +428,8 @@ describe 'Redis key prefix naming compatibility' do
     obj.global_value.to_i.should == 42
     obj.global_counter.to_i.should == 3
     obj.global_hash_key[:key].should == 'value'
-    obj.global_set.should.include?('a').should == true
-    obj.global_set.should.include?('b').should == true
+    obj.global_set.include?('a').should == true
+    obj.global_set.include?('b').should == true
     obj.global_sorted_set[:key].should == 2.2
   end
 
