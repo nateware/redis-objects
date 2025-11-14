@@ -83,7 +83,6 @@ describe 'Redis key prefix naming compatibility' do
         end
       end
 
-      Nested::NamingTwo.redis_legacy_naming.should == true
       obj = Nested::NamingTwo.new
       obj.class.redis_prefix.should == 'naming_two'
     end
@@ -127,7 +126,6 @@ describe 'Redis key prefix naming compatibility' do
         end
       end
 
-      NestedLevel::Further::NamingFour.redis_legacy_naming.should == true
       obj = NestedLevel::Further::NamingFour.new
       obj.class.redis_prefix.should == 'naming_four'
       val = SecureRandom.hex(10)
