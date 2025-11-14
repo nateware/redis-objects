@@ -23,7 +23,9 @@ describe 'Redis key prefix naming compatibility' do
 
   describe 'verifies single level classes' do # context
 
-    it 'work the same' do
+    it 'work the same (modern)' do
+      Redis::Objects.prefix_style = :modern
+
       class SingleLevelOne
         include Redis::Objects
 
@@ -36,10 +38,11 @@ describe 'Redis key prefix naming compatibility' do
       obj.class.redis_prefix.should == 'single_level_one'
     end
 
-    it 'obey the legacy naming flag' do
+    it 'work the same (legacy)' do
+      Redis::Objects.prefix_style = :legacy
+
       class SingleLevelTwo
         include Redis::Objects
-        self.redis_legacy_naming = true
 
         def id
           1
@@ -54,11 +57,12 @@ describe 'Redis key prefix naming compatibility' do
 
   describe 'verifies nested classes' do # context
 
-    it 'do NOT work the same' do
+    it 'do NOT work the same (modern)' do
+      Redis::Objects.prefix_style = :modern
+
       module Nested
         class NamingOne
           include Redis::Objects
-          self.redis_silence_warnings = true
 
           def id
             1
@@ -70,11 +74,12 @@ describe 'Redis key prefix naming compatibility' do
       obj.class.redis_prefix.should == 'nested__naming_one'
     end
 
-    it 'respect the legacy naming flag' do
+    it 'do NOT work the same (legacy)' do
+      Redis::Objects.prefix_style = :legacy
+
       module Nested
         class NamingTwo
           include Redis::Objects
-          self.redis_legacy_naming = true
           self.redis_silence_warnings = true
 
           def id
@@ -92,11 +97,12 @@ describe 'Redis key prefix naming compatibility' do
   describe 'verifies that multiple levels' do # context
 
     it 'respect __ vs _' do
+      Redis::Objects.prefix_style = :modern
+
       module NestedLevel
         module Further
           class NamingThree
             include Redis::Objects
-            self.redis_silence_warnings = true
 
             def id
               1
@@ -109,12 +115,14 @@ describe 'Redis key prefix naming compatibility' do
       obj.class.redis_prefix.should == 'nested_level__further__naming_three'
     end
 
-    it 'respect the legacy naming' do
+    it 'respect legacy naming' do
+      Redis::Objects.prefix_style = :legacy
+
       module NestedLevel
         module Further
           class NamingFour
             include Redis::Objects
-            self.redis_legacy_naming = true
+            self.redis_silence_warnings = true
 
             def id
               1
@@ -135,11 +143,12 @@ describe 'Redis key prefix naming compatibility' do
     end
 
     it 'do not conflict 1' do
+      Redis::Objects.prefix_style = :modern
+
       module NestedLevel
         module Further
           class NamingFive
             include Redis::Objects
-            self.redis_silence_warnings = true
 
             def id
               1
@@ -161,11 +170,12 @@ describe 'Redis key prefix naming compatibility' do
     end
 
     it 'do not conflict 2' do
+      Redis::Objects.prefix_style = :modern
+
       module Nested
         module LevelFurtherNaming
           class Five
             include Redis::Objects
-            self.redis_silence_warnings = true
 
             def id
               1
@@ -186,11 +196,12 @@ describe 'Redis key prefix naming compatibility' do
     end
 
     it 'do not conflict 3' do
+      Redis::Objects.prefix_style = :modern
+
       module Nested
         module LevelFurther
           class NamingFive
             include Redis::Objects
-            self.redis_silence_warnings = true
 
             def id
               1
@@ -215,10 +226,11 @@ describe 'Redis key prefix naming compatibility' do
   describe 'handles dynamically created classes correctly' do # context
 
     it 'in modern mode' do
+      Redis::Objects.prefix_style = :modern
+
       module Nested
         class LevelSix
           include Redis::Objects
-          self.redis_silence_warnings = true
 
           def id
             1
@@ -248,10 +260,12 @@ describe 'Redis key prefix naming compatibility' do
     end
 
     it 'in legacy mode' do
+      Redis::Objects.prefix_style = :legacy
+
       module Nested
         class LevelSeven
           include Redis::Objects
-          self.redis_legacy_naming = true
+          self.redis_silence_warnings = true
 
           def id
             1
@@ -284,6 +298,8 @@ describe 'Redis key prefix naming compatibility' do
   # ---- other tests ----
 
   it 'prints a warning message if the key name changes' do
+    Redis::Objects.prefix_style = :legacy
+
     module Nested
       class LevelNine
         include Redis::Objects
