@@ -169,6 +169,10 @@ EOW
       end
 
       def migrate_redis_legacy_keys
+        unless Objects.redis_legacy_naming?
+          raise "Redis::Objects is already configured to use modern key prefixes."
+        end
+
         legacy = redis_legacy_prefix
         if legacy == redis_prefix
           raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
@@ -177,6 +181,10 @@ EOW
 
         cursor = 0
         total_keys = 0
+
+        # Temporarily update the prefix to modern while we update these keys.
+        # NOTE: we cannot simply adjust the prefix_style, because the prefix is cached by @redis_prefix
+        self.redis_prefix = modern
 
         loop do
           cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
@@ -194,6 +202,10 @@ EOW
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
           break if cursor == "0"
+
+        ensure
+          # Change the prefix back (just in case)
+          self.redis_prefix = legacy
         end
 
         warn "[redis-objects] Migrated #{total_keys} total number of redis keys"
