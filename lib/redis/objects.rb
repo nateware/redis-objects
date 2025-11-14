@@ -158,6 +158,7 @@ class Redis
 EOW
       end
 
+      # To be run once per Redis::Objects enhanced model
       def migrate_redis_legacy_keys
         legacy = redis_legacy_prefix
         if legacy == redis_prefix
@@ -208,18 +209,24 @@ EOW
         klass = first_ancestor_with(name)
         # READ THIS: This can never ever ever ever change or upgrades will corrupt all data
         # I don't think people were using Proc as keys before (that would create a weird key). Should be ok
+        
+        # If a custom key was set for this accessor
         if key = klass.redis_objects[name.to_sym][:key]
+          # If that custom key was callable (E.G. a proc)
           if key.respond_to?(:call)
             key = key.call context
           else
             context.instance_eval "%(#{key})"
           end
+
         else
+          # If its not a global key, and ID is nil, then throw an error
           if id.nil? and !klass.redis_objects[name.to_sym][:global]
             raise NilObjectId,
               "[#{klass.redis_objects[name.to_sym]}] Attempt to address redis-object " +
               ":#{name} on class #{klass.name} with nil id (unsaved record?) [object_id=#{object_id}]"
           end
+          # Otherwise return the constructed key
           "#{redis_prefix(klass)}:#{id}:#{name}"
         end
       end
