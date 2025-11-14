@@ -184,6 +184,15 @@ class Team < ActiveRecord::Base
   list :coaches, :marshal => true
   set  :outfielders
   hash_key :pitchers_faced  # "hash" is taken by Ruby
+
+  # Customized keys
+  counter :player_totals, :key => 'players/#{username}/total'
+  list :all_player_stats, :key => 'players:all_stats', :global => true
+  set :total_wins,        :key => 'players:#{id}:all_stats'
+  value :my_rank,         :key => 'players:my_rank:#{username}'
+
+  def id; @id; end
+  def username; "user#{id}"; end
 end
 ~~~
 
