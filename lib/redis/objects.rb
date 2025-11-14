@@ -140,7 +140,7 @@ class Redis
           downcase
       end
 
-        # Temporary warning to help with migrating key names
+      # Temporary warning to help with migrating key names
       def redis_legacy_naming_warning_message(klass)
         # warn @silence_warnings_as_redis_prefix_was_set_manually.inspect
         unless redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
