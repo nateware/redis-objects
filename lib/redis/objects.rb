@@ -160,25 +160,24 @@ class Redis
         return if modern == legacy
 
         warn <<EOW
-[redis-objects] WARNING: In redis-objects 2.0.0, key naming will change to fix longstanding bugs.
-[redis-objects] Your class #{klass.name.to_s} will be affected by this change!
+
+[redis-objects] WARNING: redis-objects 2.0.0, revises key naming to fix a longstanding bug.
+[redis-objects] Your class #{klass.name} should be updated to resolve this bug!
 [redis-objects] Current key prefix: #{legacy.inspect}
 [redis-objects] Future  key prefix: #{modern.inspect}
 [redis-objects] Read more at https://github.com/nateware/redis-objects/issues/231
 EOW
       end
 
-      # To be run once per Redis::Objects enhanced model
-      def migrate_redis_legacy_keys
-        unless Objects.redis_legacy_naming?
-          raise "Redis::Objects is already configured to use modern key prefixes."
+      def migrate_redis_legacy_keys(scan_count=10, verbose=false)
+        legacy = redis_legacy_prefix
+        modern = redis_modern_prefix
+        if modern == legacy
+          warn "[redis-objects] #{self.name}.#{__method__} NOOP. Legacy and modern redis_prefix are the same (#{modern})"
+          return
         end
 
-        legacy = redis_legacy_prefix
-        if legacy == redis_prefix
-          raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
-        end
-        warn "[redis-objects] Migrating keys from #{legacy} prefix to #{redis_prefix}"
+        warn "\n[redis-objects] Migrating keys from '#{legacy}' prefix to '#{modern}'"
 
         cursor = 0
         total_keys = 0
@@ -188,17 +187,24 @@ EOW
         self.redis_prefix = modern
 
         loop do
-          cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
+          cursor, keys = redis.scan(cursor, :match => "#{legacy}:*", :count => scan_count)
+          # REM: scan returns keys in a randomized order
+          keys.sort!
+          #puts "got #{keys.length} keys"
           total_keys += keys.length
           keys.each do |key|
             # Split key name apart on ':'
-            base_class, id, name = key.split(':')
+            # REM: global keys will have an empty id
+            #      klass::object_accessor_name
+            _base_class, id, name = key.split(':')
 
             # Figure out the new name
-            new_key = redis_field_key(name, id=id, context=self)
+            new_key = redis_field_key(name, id)
 
             # Rename the key
-            warn "[redis-objects] Rename '#{key}', '#{new_key}'"
+            if verbose
+              warn "[redis-objects] Rename '#{key}', '#{new_key}'"
+            end
             ok = redis.rename(key, new_key)
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
