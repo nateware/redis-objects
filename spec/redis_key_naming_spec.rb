@@ -185,7 +185,7 @@ describe 'Legacy redis key prefix naming compatibility' do
           include Redis::Objects
           self.redis = Redis.new(:host => REDIS_HOST, :port => REDIS_PORT)
           self.redis_silence_warnings = true
-    
+
           def id
             1
           end
@@ -328,7 +328,7 @@ describe 'Legacy redis key prefix naming compatibility' do
         list :global_list, :global => true
         set :global_set, :global => true
         sorted_set :global_sorted_set, :global => true
-      
+
         #callable as key
         value :global_proc_value, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
       end
@@ -360,7 +360,7 @@ describe 'Legacy redis key prefix naming compatibility' do
         list :global_list, :global => true
         set :global_set, :global => true
         sorted_set :global_sorted_set, :global => true
-      
+
         #callable as key
         value :global_proc_value, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
       end
@@ -416,4 +416,5 @@ describe 'Legacy redis key prefix naming compatibility' do
     obj.global_set.should.include?('b').should == true
     obj.global_sorted_set[:key].should == 2.2
   end
+
 end

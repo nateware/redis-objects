@@ -6,6 +6,7 @@ Redis::Objects.redis = REDIS_HANDLE
 
 class Roster
   include Redis::Objects
+
   counter :available_slots, :start => 10
   counter :pitchers, :limit => :max_pitchers
   counter :basic
@@ -35,7 +36,7 @@ class Roster
   def self.jimmyhat; 350; end
   value :weird_key, :key => 'players:weird_key:#{jimmyhat}', :global => true
 
-  #callable as key
+  # callable as key
   counter :daily, :global => true, :key => Proc.new { |roster| "#{roster.name}:#{Time.now.strftime('%Y-%m-%dT%H')}:daily" }
 
   # set default expiration
@@ -61,14 +62,29 @@ class Roster
 end
 
 class VanillaRoster < Roster
-  # No explicit Redis::Objects
+  # inherits Redis::Objects
+  # No explicit RedisAccessors (but they are inherited)
 end
 
 class CustomRoster < Roster
-  include Redis::Objects
+  # inherits Redis::Objects
 
   counter :basic # Override
   counter :special # New
+end
+
+class UidRoster < Roster
+  # inherits Redis::Objects
+
+  attr_accessor :uid
+  def initialize(uid=123) @uid = uid end
+end
+
+class CustomIdFieldRoster < UidRoster
+  # inherits Redis::Objects
+  redis_id_field :uid
+
+  counter :basic
 end
 
 class MethodRoster
@@ -87,18 +103,24 @@ class CustomMethodRoster < MethodRoster
   counter :basic
 end
 
-class UidRoster < Roster
-  attr_accessor :uid
-  def initialize(uid=123) @uid = uid end
-end
 
-class CustomIdFieldRoster < UidRoster
-  redis_id_field :uid
-  include Redis::Objects
-  counter :basic
-end
+# TODO: @redis_objects is un-initialized in subclasses. It only picks up accessors declared within the subclass itself.
+#       but all the accessors continue to work as expected.
+=begin
+puts "Roster.redis_objects.length: #{Roster.redis_objects.length} (expected: 35)" # got 35
+VanillaRoster.total_players_online.increment(5)
+VanillaRoster.global_player_leaderboard.add('nate', 22)
+puts "VanillaRoster.redis_objects.length: #{VanillaRoster.redis_objects.length} (expected: 35)" # got 0
+puts "VanillaRoster: total_players_online: #{VanillaRoster.total_players_online} global_player_leaderboard: #{VanillaRoster.global_player_leaderboard}" # got 5 & nate
+puts "CustomRoster.redis_objects.length: #{CustomRoster.redis_objects.length} (expected: 36)" # got 2
+puts "UidRoster.redis_objects.length: #{UidRoster.redis_objects.length} (expected: 35)" # got 0
+puts "CustomIdFieldRoster.redis_objects.length: #{CustomIdFieldRoster.redis_objects.length} (expected: 35)" # got 1
+#puts "MethodRoster.redis_objects.length: #{MethodRoster.redis_objects.length}"
+puts "CustomMethodRoster.redis_objects.length: #{CustomMethodRoster.redis_objects.length} (expected: 1)" # got 1
+=end
 
 describe Redis::Objects do
+  # Before each
   before do
     @roster  = Roster.new
     @roster2 = Roster.new
