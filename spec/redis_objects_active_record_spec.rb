@@ -44,7 +44,7 @@ begin
     def self.up
       create_table :posts do |t|
         t.string :title
-        t.string :description, :length => 200
+        t.string :description, :limit => 200
         t.integer :total
         t.integer :blog_id
         t.timestamps null: true
