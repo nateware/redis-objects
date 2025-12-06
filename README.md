@@ -19,12 +19,14 @@ Official release is expected eventually.
 
 Key Naming Changes
 ------------------
-The internal key naming scheme has changed for `Nested::Class::Namespaces` to fix a longstanding bug.
-(Refer to [#213](https://github.com/nateware/redis-objects/issues/231))
-If your Redis::Object enhanced classes are nested in this way then
-**your existing data in Redis will not be accessible until you call `migrate_redis_legacy_keys`.**
+A new method to generate the internal key naming scheme has been added to fix a
+longstanding bug. (Refer to [#213](https://github.com/nateware/redis-objects/issues/231))
+It can be controlled by `Redis::Objects.prefix_style =` either `:legacy` (default)
+or `:modern`.
+If your Redis::Object enhanced classes are nested such as `Nested::Class::Namespaces`
+then you should upgrade them using the below proceedure. (only needed once)
 
-To fix this (only needed once), create a script like this:
+Create a script like this:
 
 ~~~ruby
 class YouClassNameHere < ActiveRecord::Base
@@ -39,7 +41,10 @@ Then, you need to find a time when you can temporarily pause writes to your redi
 so that you can run that script. It uses `redis.scan` internally so it should be able to
 handle a high number of keys. For large data sets, it could take a while.
 
-Alternatively you can revert the behavior to the old prefix scheme by setting `redis_legacy_naming = true`. Use at your own risk.
+After migrating all of your redis keys, update `Redis::Objects.prefix_style = :modern` to
+start using the new keys.
+**Your existing data in Redis will not be accessible after running `migrate_redis_legacy_keys`
+until the prefix_style has been changed.**
 
 Renaming of `lock` Method
 -------------------------

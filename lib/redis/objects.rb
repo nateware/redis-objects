@@ -66,6 +66,19 @@ class Redis
           raise(NotConnected, "Redis::Objects.redis not set to a Redis.new connection")
       end
 
+      # Toggles whether to use the legacy redis key naming scheme, which causes
+      # naming conflicts in certain cases.
+      # (attr_accessor with a default value)
+      attr_writer :prefix_style
+      def prefix_style
+        # NOTE: In a future release the default will change to :modern
+        @prefix_style ||= :legacy
+      end
+
+      def redis_legacy_naming?
+        prefix_style == :legacy
+      end
+
       def included(klass)
         # Core (this file)
         klass.instance_variable_set(:@redis, nil)
@@ -101,11 +114,6 @@ class Redis
         @redis_objects ||= {}
       end
 
-      # Toggles whether to use the legacy redis key naming scheme, which causes
-      # naming conflicts in certain cases.
-      attr_accessor :redis_legacy_naming
-      attr_accessor :redis_silence_warnings
-
       # Set the Redis redis_prefix to use. Defaults to class_name.
       def redis_prefix=(redis_prefix)
         @silence_warnings_as_redis_prefix_was_set_manually = true
@@ -114,10 +122,10 @@ class Redis
 
       def redis_prefix(klass = self) #:nodoc:
         @redis_prefix ||=
-          if redis_legacy_naming
+          if Objects.redis_legacy_naming?
+            redis_legacy_naming_warning_message(klass)
             redis_legacy_prefix(klass)
           else
-            redis_legacy_naming_warning_message(klass)
             redis_modern_prefix(klass)
           end
 
@@ -140,10 +148,12 @@ class Redis
           downcase
       end
 
+      attr_accessor :redis_silence_warnings
+
       # Temporary warning to help with migrating key names
       def redis_legacy_naming_warning_message(klass)
         # warn @silence_warnings_as_redis_prefix_was_set_manually.inspect
-        return if redis_legacy_naming || redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
+        return if redis_silence_warnings || @silence_warnings_as_redis_prefix_was_set_manually
 
         modern = redis_modern_prefix(klass)
         legacy = redis_legacy_prefix(klass)
@@ -160,6 +170,10 @@ EOW
 
       # To be run once per Redis::Objects enhanced model
       def migrate_redis_legacy_keys
+        unless Objects.redis_legacy_naming?
+          raise "Redis::Objects is already configured to use modern key prefixes."
+        end
+
         legacy = redis_legacy_prefix
         if legacy == redis_prefix
           raise "Failed to migrate keys for #{self.name.to_s} as legacy and new redis_prefix are the same (#{redis_prefix})"
@@ -168,6 +182,10 @@ EOW
 
         cursor = 0
         total_keys = 0
+
+        # Temporarily update the prefix to modern while we update these keys.
+        # NOTE: we cannot simply adjust the prefix_style, because the prefix is cached by @redis_prefix
+        self.redis_prefix = modern
 
         loop do
           cursor, keys = redis.scan(cursor, :match => "#{legacy}:*")
@@ -185,6 +203,10 @@ EOW
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
           break if cursor == "0"
+
+        ensure
+          # Change the prefix back (just in case)
+          self.redis_prefix = legacy
         end
 
         warn "[redis-objects] Migrated #{total_keys} total number of redis keys"

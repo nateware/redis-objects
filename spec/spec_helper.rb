@@ -24,8 +24,9 @@ SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 
 #require "active_support/xml_mini"
 require "active_support"
+require "active_support/core_ext/integer/time" # needed for 1.second 1.minute etc durations to function
 require "active_support/testing/time_helpers"
-include ActiveSupport::Testing::TimeHelpers
+include ActiveSupport::Testing::TimeHelpers # needed by one line in redis_objects_model_spec.rb
 
 REDIS_CLASS_NAMES = [:Counter, :HashKey, :List, :Lock, :Set, :SortedSet, :Value]
 
