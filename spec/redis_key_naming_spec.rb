@@ -392,7 +392,7 @@ describe 'Redis key prefix naming compatibility' do
     obj.global_sorted_set[:key] = 2.2
 
     # Run the upgrade
-    Nested::UpgradeTest.migrate_redis_legacy_keys
+    Nested::UpgradeTest.migrate_redis_legacy_keys(1000)
 
     # Re-Create the class using modern prefix
     Nested.send(:remove_const, :UpgradeTest)

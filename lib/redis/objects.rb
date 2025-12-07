@@ -169,7 +169,12 @@ class Redis
 EOW
       end
 
+      # To be run once per Redis::Objects enhanced model
       def migrate_redis_legacy_keys(scan_count=10, verbose=false)
+        unless Objects.redis_legacy_naming?
+          raise "Redis::Objects is already configured to use modern key prefixes."
+        end
+
         legacy = redis_legacy_prefix
         modern = redis_modern_prefix
         if modern == legacy
