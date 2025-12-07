@@ -214,13 +214,13 @@ EOW
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
           break if cursor == "0"
-
-        ensure
-          # Change the prefix back (just in case)
-          self.redis_prefix = legacy
         end
 
         warn "[redis-objects] Migrated #{total_keys} total number of redis keys"
+
+      ensure
+        # Change the prefix back (just in case)
+        self.redis_prefix = legacy
       end
 
       def redis_options(name)
