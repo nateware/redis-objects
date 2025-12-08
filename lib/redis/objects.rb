@@ -169,7 +169,12 @@ class Redis
 EOW
       end
 
+      # To be run once per Redis::Objects enhanced model
       def migrate_redis_legacy_keys(scan_count=10, verbose=false)
+        unless Objects.redis_legacy_naming?
+          raise "Redis::Objects is already configured to use modern key prefixes."
+        end
+
         legacy = redis_legacy_prefix
         modern = redis_modern_prefix
         if modern == legacy
@@ -209,13 +214,13 @@ EOW
             warn "[redis-objects] Warning: Rename '#{key}', '#{new_key}' failed: #{ok}" if ok != 'OK'
           end
           break if cursor == "0"
-
-        ensure
-          # Change the prefix back (just in case)
-          self.redis_prefix = legacy
         end
 
         warn "[redis-objects] Migrated #{total_keys} total number of redis keys"
+
+      ensure
+        # Change the prefix back (just in case)
+        self.redis_prefix = legacy
       end
 
       def redis_options(name)
