@@ -1,5 +1,9 @@
 = Changelog for Redis::Objects
 
+== 2.0.0 (13 Jan 2026)
+
+Happy New Year! Finally releasing 2.0.0
+
 == 2.0.0.beta2 (8 Dec 2025)
 
 * Better approach to the legacy key naming bug that preserves backwards compat [Matthew Hively]
