@@ -18,8 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  # Only fix this one version or else tests break
-  spec.add_dependency "redis", '~> 5.0'
+  spec.add_dependency "redis", '>= 5.0', '< 7'
 
   # Ignore gemspec warnings on these.  Trying to fix them to versions breaks TravisCI
   spec.add_development_dependency "bundler"
